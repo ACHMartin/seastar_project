@@ -27,4 +27,8 @@ def doSomethingElse(value=0):
 
 def doSomethingNew():
 
+
+    ## this is a new line of code
+    a = 2 + 6
+
     print('this is a new function')
