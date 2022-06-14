@@ -35,5 +35,6 @@ def doSomethingNew():
 
     c = a + b
 
+    d = 24
 
-    print(f'this is a new function: {c}')
+    print(f'this is a new function: {c}, {d}')
