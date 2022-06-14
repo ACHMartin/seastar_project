@@ -31,4 +31,9 @@ def doSomethingNew():
     ## this is a new line of code
     a = 2 + 6
 
-    print('this is a new function')
+    b= 4*24
+
+    c = a + b
+
+
+    print(f'this is a new function: {c}')
