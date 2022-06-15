@@ -4,11 +4,11 @@ def isThisTreeSpeciesKnown(tree_species_str=''):
 
     :param tree_species_str: a tree species to test, defaults to ''
     :type tree_species_str: String
-    ...
-    :raises [ErrorType]: [ErrorDescription]
-    ...
-    :return: [ReturnDescription]
-    :rtype: [ReturnType]
+
+
+    :return: True if the tree species parameter appears in list of 
+    native or other trees else False
+    :rtype: Boolean
     """
 
     is_known_species = True
