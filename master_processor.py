@@ -3,7 +3,7 @@
 import sys
 
 
-from processing import example_functions, adriens_fuctions
+from processing import clives_functions, adriens_fuctions
 
 
 class SEASTARX(object):
@@ -13,10 +13,10 @@ class SEASTARX(object):
     @staticmethod
     def run():
 
-        example_functions.isThisAKnownTree()
+        clives_functions.doSomething()
         adriens_fuctions.speakEnglish()
 
-        print(f'triple MY_VALUE: {example_functions.doSomethingElse(SEASTARX.MY_VALUE)}')
+        print(f'triple MY_VALUE: {clives_functions.doSomethingElse(SEASTARX.MY_VALUE)}')
         adriens_fuctions.speakFrench()
 
 

@@ -1,4 +1,4 @@
-def isThisAKnownTree(type_of_tree_str=None):
+def doSomething(type_of_tree_str=None):
     """This function checks the input to see whether it is a recognised tree type,
     it prints to console whether or not it is recognised and returns a suitabel Boolean
 
@@ -9,7 +9,6 @@ def isThisAKnownTree(type_of_tree_str=None):
     :rtype: Boolean
     """
     KNOWN_TREES = ['ash', 'elm', 'oak', 'rowan', 'beech']
-    
     if type_of_tree_str.lower() in KNOWN_TREES:
 
         print(f'I recognise this tree: {type_of_tree_str}')
