@@ -20,13 +20,13 @@ def isThisTreeSpeciesKnown(tree_species_str=''):
 
         print(f'{tree_species_str} is a native tree species')
 
-    elif tree_species_str.lower in OTHER_TREE_SPECIES:
+    elif tree_species_str.lower() in OTHER_TREE_SPECIES:
 
         print(f'{tree_species_str} is a known tree species but not native')
 
     else:
 
-        print(f'{tree_species_str} is unknown to this code')
+        print(f'{tree_species_str} is an unknown tree species')
         is_known_species = False
 
     return is_known_species

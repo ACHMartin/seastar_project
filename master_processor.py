@@ -3,7 +3,7 @@
 import sys
 
 
-from processing import example_functions
+from processing import example_functions, daves_functions
 
 
 class SEASTARX(object):
@@ -13,7 +13,16 @@ class SEASTARX(object):
     @staticmethod
     def run():
 
-        example_functions.isThisTreeSpeciesKnown()
+        print('Hello, HAL. Do you read me, HAL?')
+        print('Affirmative, Dave. I read you')
+
+        print(example_functions.isThisTreeSpeciesKnown('Ash'))
+        print(example_functions.isThisTreeSpeciesKnown('Hazel'))
+        print(example_functions.isThisTreeSpeciesKnown('Aspen'))
+
+        daves_functions.plotSimpleLine()
+
+        print('Dave, this conversation can serve no purpose anymore. Goodbye.')
 
 
 if __name__ == '__main__':
