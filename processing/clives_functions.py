@@ -23,18 +23,3 @@ def doSomethingElse(value=0):
     """
 
     return value * 3
-
-
-def doSomethingNew():
-
-
-    ## this is a new line of code
-    a = 2 + 6
-
-    b= 4*24
-
-    c = a + b
-
-    d = 24
-
-    print(f'this is a new function: {c}, {d}')
