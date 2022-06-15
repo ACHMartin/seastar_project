@@ -28,5 +28,5 @@ def isThisAKnonwTreeSpecies(tree_species_str=''):
 
         print(f'{tree_species_str} is unknown to this code')
         is_known_species = False
-        
+
     return is_known_species
