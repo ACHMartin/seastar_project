@@ -34,6 +34,6 @@ def doSomethingNew():
     b= 4*24
 
     c = a + b
-
+    d = 'flint'
 
     print(f'this is a new function: {c}')
