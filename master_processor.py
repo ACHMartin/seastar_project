@@ -3,7 +3,7 @@
 import sys
 
 
-from processing import example_function, adriens_fuctions
+from processing import example_functions
 
 
 class SEASTARX(object):
@@ -13,11 +13,7 @@ class SEASTARX(object):
     @staticmethod
     def run():
 
-        example_function.doSomething()
-        adriens_fuctions.speakEnglish()
-
-        print(f'triple MY_VALUE: {example_function.doSomethingElse(SEASTARX.MY_VALUE)}')
-        adriens_fuctions.speakFrench()
+        example_functions.doSomething()
 
 
 if __name__ == '__main__':
