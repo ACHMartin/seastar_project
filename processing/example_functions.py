@@ -1,5 +1,5 @@
 def isThisAKnonwTreeSpecies(tree_species_str=''):
-    """This function tests whether aan iinput tree species is known and
+    """This function tests whether a tree species is known and
     prints to console whether it is native or not
 
     :param tree_species_str: a tree species to test, defaults to ''
@@ -26,8 +26,7 @@ def isThisAKnonwTreeSpecies(tree_species_str=''):
 
     else:
 
-        is_known_species = False
         print(f'{tree_species_str} is unknown to this code')
-
-
+        is_known_species = False
+        
     return is_known_species
