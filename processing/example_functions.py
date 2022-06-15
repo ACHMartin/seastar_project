@@ -1,4 +1,4 @@
-def isThisAKnonwTreeSpecies(tree_species_str=''):
+def isThisTreeSpeciesKnown(tree_species_str=''):
     """This function tests whether a tree species is known and
     prints to console whether it is native or not
 
