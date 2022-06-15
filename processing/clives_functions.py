@@ -9,11 +9,13 @@ def doSomething(type_of_tree_str=None):
     :rtype: Boolean
     """
     KNOWN_TREES = ['ash', 'elm', 'oak', 'rowan', 'beech']
+    is_known = False
     if type_of_tree_str.lower() in KNOWN_TREES:
 
         print(f'I recognise this tree: {type_of_tree_str}')
-        return True
+        is_known = True
     else:
 
         print(f'I do not recognise this tree: {type_of_tree_str}')
-        return False
+
+    return is_known
