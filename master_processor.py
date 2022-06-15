@@ -13,7 +13,7 @@ class SEASTARX(object):
     @staticmethod
     def run():
 
-        example_functions.doSomething()
+        example_functions.isThisAKnonwTreeSpecies()
 
 
 if __name__ == '__main__':
