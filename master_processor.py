@@ -3,8 +3,7 @@ import os
 import sys
 import configparser
 
-from processing import example_functions, daves_functions
-
+from processing import daves_functions, example_functions
 
 config_parser = configparser.RawConfigParser(comment_prefixes='%')
 with open('seastarx_config.txt') as f:
