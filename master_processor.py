@@ -1,9 +1,18 @@
 #!/usr/bin/env python
-
+import os
 import sys
-
+import configparser
 
 from processing import example_functions, daves_functions
+
+
+config_parser = configparser.RawConfigParser(comment_prefixes='%')
+with open('seastarx_config.txt') as f:
+    config_file_content = '[configuration]\n' + f.read()
+config_parser.read_string(config_file_content)
+seastarx_config = config_parser['configuration']
+
+DATA_DIR = seastarx_config['DATA_DIRECTORY']
 
 
 class SEASTARX(object):
@@ -13,16 +22,22 @@ class SEASTARX(object):
     @staticmethod
     def run():
 
-        print('Hello, HAL. Do you read me, HAL?')
-        print('Affirmative, Dave. I read you')
+        print('calling test function #1')
+        OSCAR_DIR = os.path.join(DATA_DIR, 'OSCAR')
+        netCDF_filepaths = example_functions.findNetCDFilepaths(OSCAR_DIR)
 
-        print(example_functions.isThisTreeSpeciesKnown('Ash'))
-        print(example_functions.isThisTreeSpeciesKnown('Hazel'))
-        print(example_functions.isThisTreeSpeciesKnown('Aspen'))
+        if netCDF_filepaths:
+            print(f'the list of netCDF files found in {OSCAR_DIR}:')
+            for filepath in netCDF_filepaths:
 
+                _, filename = os.path.split(filepath)
+                print(filename)
+        else:
+            print(f'no netCDF files found in {OSCAR_DIR}')
+
+        print('calling test function #2')
         daves_functions.plotSimpleLine()
-
-        print('Dave, this conversation can serve no purpose anymore. Goodbye.')
+        print('')
 
 
 if __name__ == '__main__':
