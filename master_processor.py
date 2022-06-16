@@ -1,23 +1,44 @@
 #!/usr/bin/env python
-
+import os
 import sys
+import configparser
+
+from processing import example_functions, daves_functions
 
 
-from processing import clives_functions, adriens_fuctions
+config_parser = configparser.RawConfigParser(comment_prefixes='%')
+with open('seastarx_config.txt') as f:
+    config_file_content = '[configuration]\n' + f.read()
+config_parser.read_string(config_file_content)
+seastarx_config = config_parser['configuration']
+
+DATA_DIR = seastarx_config['DATA_DIRECTORY']
 
 
 class SEASTARX(object):
 
-    MY_VALUE = 42
 
     @staticmethod
     def run():
 
-        clives_functions.doSomething()
-        adriens_fuctions.speakEnglish()
+        print('calling test function #1')
+        OSCAR_DIR = os.path.join(DATA_DIR, 'OSCAR')
+        netCDF_filepaths = example_functions.findNetCDFilepaths(OSCAR_DIR)
 
-        print(f'triple MY_VALUE: {clives_functions.doSomethingElse(SEASTARX.MY_VALUE)}')
-        adriens_fuctions.speakFrench()
+        if netCDF_filepaths:
+            print(f'the list of netCDF files found in {OSCAR_DIR}:')
+            for filepath in netCDF_filepaths:
+
+                _, filename = os.path.split(filepath)
+                print(filename)
+        else:
+            print(f'no netCDF files found in {OSCAR_DIR}')
+        print('call to test function #1 complete')
+
+        print('calling test function #2')
+        daves_functions.plotSimpleLine()
+        print('')
+        print('call to test function #2 complete')
 
 
 if __name__ == '__main__':
