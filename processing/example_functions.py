@@ -1,6 +1,7 @@
 import os
 import glob
 
+
 def findNetCDFilepaths(directory_path, recursive=False):
     """Returns a list of netCDF files fom a given directory and has
     a recursive option.
