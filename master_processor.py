@@ -34,10 +34,12 @@ class SEASTARX(object):
                 print(filename)
         else:
             print(f'no netCDF files found in {OSCAR_DIR}')
+        print('call to test function #1 complete')
 
         print('calling test function #2')
         daves_functions.plotSimpleLine()
         print('')
+        print('call to test function #2 complete')
 
 
 if __name__ == '__main__':
