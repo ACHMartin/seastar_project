@@ -17,7 +17,6 @@ DATA_DIR = seastarx_config['DATA_DIRECTORY']
 
 class SEASTARX(object):
 
-    
 
     @staticmethod
     def run():
