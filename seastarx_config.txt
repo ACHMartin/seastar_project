@@ -5,4 +5,4 @@
 %
 
 
-DATA_DIRECTORY = 'D:\data\seastar\'
+DATA_DIRECTORY = D:\data\seastar
