@@ -1,6 +1,10 @@
+import os
+import glob
+
+
 def isThisTreeSpeciesKnown(tree_species_str=''):
-    """This function tests whether a tree species is known and
-    prints to console whether it is native or not
+    """Tests whether a tree species is known and prints to console
+    whether it is native or not and returns boolean.
 
     :param tree_species_str: a tree species to test, defaults to ''
     :type tree_species_str: String
@@ -30,3 +34,27 @@ def isThisTreeSpeciesKnown(tree_species_str=''):
         is_known_species = False
 
     return is_known_species
+
+
+def findNetCDFilepaths(directory_path, recursive=False):
+    """Returns a list of netCDF files fom a given directory and has
+    a recursive option.
+
+    :param directory_path: path to the directory to look in
+    :type directory_path: String
+
+    :param recursive: whether to search in sub-directories
+    :type directory_path: Boolean, optional
+
+    :return: a list of file paths with '.nc' extension that were found
+    :rtype: List
+    """
+
+    if not os.path.isdir(directory_path):
+        print(f'WARNING: {directory_path} is not a directory')
+        return []
+
+    netCDF_filepaths = glob.glob(pathname=directory_path+'/*.nc',
+                                 recursive=recursive)
+
+    return netCDF_filepaths
