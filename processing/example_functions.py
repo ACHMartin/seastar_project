@@ -57,6 +57,4 @@ def findNetCDFilepaths(directory_path, recursive=False):
     netCDF_filepaths = glob.glob(pathname=directory_path+'/*.nc',
                                  recursive=recursive)
 
-    ## this is my new code and it does what its meant to
-
     return netCDF_filepaths
