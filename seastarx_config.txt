@@ -1,8 +1,0 @@
-
-% ============================================================
-%
-%    global constants needed by seastarx
-%
-
-
-DATA_DIRECTORY = D:\data\seastar
