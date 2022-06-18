@@ -3,16 +3,17 @@ import os
 import sys
 import configparser
 
-from processing import example_functions, daves_functions
+from processing import daves_functions, example_functions
+CONFIG_FILE = 'seastarx_config.txt'
 
-
+# read the local configration file
 config_parser = configparser.RawConfigParser(comment_prefixes='%')
-with open('seastarx_config.txt') as f:
+with open(CONFIG_FILE) as f:
     config_file_content = '[configuration]\n' + f.read()
 config_parser.read_string(config_file_content)
-seastarx_config = config_parser['configuration']
+SEATSARX_CONFIG = config_parser['configuration']
 
-DATA_DIR = seastarx_config['DATA_DIRECTORY']
+DATA_DIR = SEATSARX_CONFIG['DATA_DIRECTORY']
 
 
 class SEASTARX(object):
