@@ -16,22 +16,27 @@ class SEASTARX(object):
 
         SEASTARX_CONFIG = readers.readConfig(CONFIG_FILE_PATH)
 
-        DATA_DIR = SEASTARX_CONFIG['DATA_DIRECTORY']
+        DATA_DIR = SEASTARX_CONFIG['DATA DIRECTORY']
 
         OSCAR_DIR = os.path.join(DATA_DIR, 'OSCAR')
         netCDF_filepaths = readers.findNetCDFilepaths(OSCAR_DIR)
 
         if netCDF_filepaths:
             print(f'the list of netCDF files found in {OSCAR_DIR}:')
-            for filepath in netCDF_filepaths:
 
-                _, filename = os.path.split(filepath)
-                print(filename)
+            for file_index, filepath in enumerate(netCDF_filepaths):
+                print(f'netCDF file {file_index+1}:')
+
+                oscar_xr = readers.readNetCDFFile(netCDF_filepaths[0])
+
+                attributes = oscar_xr.attrs
+                for key in attributes.keys():
+                    print(f'\t{key}, {attributes[key]}')
+
         else:
             print(f'no netCDF files found in {OSCAR_DIR}')
 
-        oscar_xr = readers.readNetCDFFile(netCDF_filepaths[0])
-        print(oscar_xr)
+
 
 
 if __name__ == '__main__':
