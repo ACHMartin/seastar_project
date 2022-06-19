@@ -3,18 +3,24 @@ import os
 import sys
 
 from utils import readers
-
-
-CONFIG_FILE_PATH = 'c:\code\seastar\seastarx_config.txt'
+from processing import example_functions
 
 
 class SEASTARX(object):
+    """SEASTARX class reads netCDF files containing SAR data and processes the data
+
+    :param config_file: the conficuration file name
+    :type config_file: String"""
+
+    def __init__(self, config_file):
+        """Constructor method
+        """
+        self.CONFIG_FILE_PATH = config_file
 
 
-    @staticmethod
-    def run():
+    def run(self):
 
-        SEASTARX_CONFIG = readers.readConfig(CONFIG_FILE_PATH)
+        SEASTARX_CONFIG = readers.readConfig(self.CONFIG_FILE_PATH)
 
         DATA_DIR = SEASTARX_CONFIG['DATA DIRECTORY']
 
@@ -29,14 +35,14 @@ class SEASTARX(object):
 
                 oscar_xr = readers.readNetCDFFile(netCDF_filepaths[0])
 
-                attributes = oscar_xr.attrs
-                for key in attributes.keys():
-                    print(f'\t{key}, {attributes[key]}')
+                if oscar_xr:
+                    example_functions.doSomethin(oscar_xr)
+
+                else:
+                    print(f'WARNING {filepath} could not be opened as an xarray')
 
         else:
-            print(f'no netCDF files found in {OSCAR_DIR}')
-
-
+            print(f'WARNING no netCDF files found in {OSCAR_DIR}')
 
 
 if __name__ == '__main__':
@@ -47,5 +53,5 @@ if __name__ == '__main__':
         warnings.simplefilter('ignore')
 
     # make an instance of the class and implement the run method
-    obj = SEASTARX()
+    obj = SEASTARX('seastarx_config.txt')
     obj.run()
