@@ -2,5 +2,5 @@ documentation
 ========================
 
 
-.. automodule:: seastar.processing.example_functions
+.. automodule:: seastar.utils.readers
    :members:
