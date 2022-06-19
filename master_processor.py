@@ -1,19 +1,11 @@
 #!/usr/bin/env python
 import os
 import sys
-import configparser
 
-from processing import daves_functions, example_functions
-CONFIG_FILE = 'seastarx_config.txt'
+from utils import readers
 
-# read the local configration file
-config_parser = configparser.RawConfigParser(comment_prefixes='%')
-with open(CONFIG_FILE) as f:
-    config_file_content = '[configuration]\n' + f.read()
-config_parser.read_string(config_file_content)
-SEATSARX_CONFIG = config_parser['configuration']
 
-DATA_DIR = SEATSARX_CONFIG['DATA_DIRECTORY']
+CONFIG_FILE_PATH = 'c:\code\seastar\seastarx_config.txt'
 
 
 class SEASTARX(object):
@@ -22,9 +14,12 @@ class SEASTARX(object):
     @staticmethod
     def run():
 
-        print('calling test function #1')
+        SEASTARX_CONFIG = readers.readConfig(CONFIG_FILE_PATH)
+
+        DATA_DIR = SEASTARX_CONFIG['DATA_DIRECTORY']
+
         OSCAR_DIR = os.path.join(DATA_DIR, 'OSCAR')
-        netCDF_filepaths = example_functions.findNetCDFilepaths(OSCAR_DIR)
+        netCDF_filepaths = readers.findNetCDFilepaths(OSCAR_DIR)
 
         if netCDF_filepaths:
             print(f'the list of netCDF files found in {OSCAR_DIR}:')
@@ -34,12 +29,9 @@ class SEASTARX(object):
                 print(filename)
         else:
             print(f'no netCDF files found in {OSCAR_DIR}')
-        print('call to test function #1 complete')
 
-        print('calling test function #2')
-        daves_functions.plotSimpleLine()
-        print('')
-        print('call to test function #2 complete')
+        oscar_xr = readers.readNetCDFFile(netCDF_filepaths[0])
+        print(oscar_xr)
 
 
 if __name__ == '__main__':
@@ -49,6 +41,6 @@ if __name__ == '__main__':
         import warnings
         warnings.simplefilter('ignore')
 
-    # Make an instance of the class and implement the run function
+    # make an instance of the class and implement the run method
     obj = SEASTARX()
     obj.run()
