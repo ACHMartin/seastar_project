@@ -63,7 +63,7 @@ def readNetCDFFile(netCFD_path):
     try:
         data_xr = xr.open_dataset(netCFD_path)
 
-    except:
-        print('an exception occered')
+    except ValueError:
+        print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
 
     return data_xr

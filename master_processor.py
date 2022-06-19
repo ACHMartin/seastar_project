@@ -5,7 +5,7 @@ import sys
 from utils import readers
 
 
-CONFIG_FILE_PATH = 'c:\code\seastar\seastarx_config.txt'
+CONFIG_FILE_PATH = 'seastarx_config.txt'
 
 
 class SEASTARX(object):
@@ -35,8 +35,6 @@ class SEASTARX(object):
 
         else:
             print(f'no netCDF files found in {OSCAR_DIR}')
-
-
 
 
 if __name__ == '__main__':
