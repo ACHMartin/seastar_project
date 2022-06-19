@@ -49,11 +49,12 @@ def findNetCDFilepaths(directory_path, recursive=False):
 
 
 def readNetCDFFile(netCFD_path):
-    """Reads a netCDFFile as an xarray and returns it
+    """Reads a netCDFFile and returns it as an xarray
 
     :param netCFD_path: path to the netCDF file
     :type netCFD_path: String
 
+    :raises ValueError: if file cannot be read as netCDF
 
     :return: xrray read from the netCDF file
     :rtype: xarray

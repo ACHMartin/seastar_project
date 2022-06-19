@@ -1,4 +1,4 @@
-Seastar project dosumenation
+Seastar project documenation
 ===================================
 
 This is where the description for the project goes ...
@@ -9,10 +9,11 @@ xarray
 etc
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
    
-   code
+   modules
+   
 
 Indices and tables
 ==================
