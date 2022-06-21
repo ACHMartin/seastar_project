@@ -2,7 +2,8 @@
 import os
 import sys
 
-from examples import example_functions, example_readers
+from examples import example_functions
+from utils import readers
 
 
 class SEASTARX(object):
@@ -19,12 +20,12 @@ class SEASTARX(object):
 
     def run(self):
 
-        SEASTARX_CONFIG = example_readers.readConfig(self.CONFIG_FILE_PATH)
+        SEASTARX_CONFIG = readers.readConfig(self.CONFIG_FILE_PATH)
 
         DATA_DIR = SEASTARX_CONFIG['DATA DIRECTORY']
 
         OSCAR_DIR = os.path.join(DATA_DIR, 'OSCAR')
-        netCDF_filepaths = example_readers.findNetCDFilepaths(OSCAR_DIR)
+        netCDF_filepaths = readers.findNetCDFilepaths(OSCAR_DIR)
 
         if netCDF_filepaths:
             print(f'the list of netCDF files found in {OSCAR_DIR}:')
@@ -32,7 +33,7 @@ class SEASTARX(object):
             for file_index, filepath in enumerate(netCDF_filepaths):
                 print(f'netCDF file {file_index+1}:')
 
-                oscar_xr = example_readers.readNetCDFFile(netCDF_filepaths[0])
+                oscar_xr = readers.readNetCDFFile(netCDF_filepaths[0])
 
                 if oscar_xr:
                     example_functions.doSomething(oscar_xr)
