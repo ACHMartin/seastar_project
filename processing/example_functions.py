@@ -1,5 +1,5 @@
 
-def doSomethin(data_xr):
+def doSomething(data_xr):
     """Performs some processing on the data in the xarray.
 
     :param data_xr: the data to be processed
