@@ -12,18 +12,20 @@ def currentVelDir2UV(vel, cdir):
 
 
 def currentUV2VelDir(u, v):
-    """some kind of function
+    """Converts U and V currents to velocity and direction (in degrees)
 
     :param u: velocity
-    :type u: float
+    :type u: ``float``
     :param v: velocity
-    :type v: float
+    :type v: ``float``
     :return: velocity, direction,
     :rtype: ``float``, ``float``
     """
+
     tmp = u + 1j * v
     vel = np.abs(tmp)
     cdir = np.mod(90 - np.angle(tmp, deg=True), 360)
+    
     return vel, cdir
 
 
