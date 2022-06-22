@@ -23,7 +23,7 @@ def _readConfig(config_file_path):
 
 
 def findNetCDFilepaths(directory_path, recursive=False):
-    """Returns a list of netCDF files fom a given directory and has
+    """Returns a list of netCDF files fom a given directory with
     a recursive option.
 
     :param directory_path: path to the directory to look in
@@ -52,7 +52,7 @@ def readNetCDFFile(netCFD_path):
     :param netCFD_path: path to the netCDF file
     :type netCFD_path: ``str``
 
-    :raises ``ValueError``: if file cannot be read as netCDF
+    :raises: ``ValueError`` if file cannot be read as netCDF
 
     :return: xrray read from the netCDF file
     :rtype: ``xarray``
