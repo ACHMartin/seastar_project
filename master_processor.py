@@ -11,7 +11,7 @@ class SEASTARX(object):
     processes the the data from each file iteratively
 
     :param config_file: the configuration file name
-    :type config_file: String"""
+    :type config_file: ``str``"""
 
     def __init__(self, config_file):
         """Constructor method
