@@ -7,9 +7,10 @@ from utils import readers
 
 
 class SEASTARX(object):
-    """SEASTARX class reads netCDF files containing SAR data and processes the data
+    """SEASTARX class reads netCDF files containing SAR data and
+    processes the the data from each file iteratively
 
-    :param config_file: the conficuration file name
+    :param config_file: the configuration file name
     :type config_file: String"""
 
     def __init__(self, config_file):
@@ -20,7 +21,7 @@ class SEASTARX(object):
 
     def run(self):
 
-        SEASTARX_CONFIG = readers.readConfig(self.CONFIG_FILE_PATH)
+        SEASTARX_CONFIG = readers._readConfig(self.CONFIG_FILE_PATH)
 
         DATA_DIR = SEASTARX_CONFIG['DATA DIRECTORY']
 

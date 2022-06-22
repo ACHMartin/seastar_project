@@ -4,7 +4,7 @@ import configparser
 import xarray as xr
 
 
-def readConfig(config_file_path):
+def _readConfig(config_file_path):
     """Reads the configuration file and returns it.
 
     :param config_file_path: path to the configuration file
@@ -12,6 +12,8 @@ def readConfig(config_file_path):
 
     :return: the configuration object read from the lconfiguration file
     :rtype: configparser.SectionProxy
+
+    :meta private:
     """
 
     config_parser = configparser.RawConfigParser(comment_prefixes='%')
