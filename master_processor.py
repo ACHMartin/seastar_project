@@ -16,15 +16,24 @@ class SEASTARX(object):
     def __init__(self, config_file):
         """Constructor method
         """
-        self.CONFIG_FILE_PATH = config_file
+        self.CONFIG_FILE = config_file
+
+
+    def example_method(self):
+        """A simple example to show use of the ``self`` keyword.
+        """
+        data_dir_path = self.configuration['DIRECTORY PATHS']['data']
+
+        print(data_dir_path)
 
 
     def run(self):
 
-        DIRECTORY_PATHS = readers._readConfig(self.CONFIG_FILE_PATH)['DIRECTORY PATHS']
+        self.configuration = readers._readConfig(self.CONFIG_FILE)
+        DIRECTORY_PATHS = self.configuration['DIRECTORY PATHS']
         DATA_DIR = DIRECTORY_PATHS['data']
 
-        CAMPAIGNS = readers._readConfig(self.CONFIG_FILE_PATH)['CAMPAIGNS']
+        CAMPAIGNS = self.configuration['CAMPAIGNS']
         OSCAR_DIR = os.path.join(DATA_DIR, CAMPAIGNS['first'])
 
         netCDF_filepaths = readers.findNetCDFilepaths(OSCAR_DIR)
@@ -45,6 +54,10 @@ class SEASTARX(object):
 
         else:
             print(f'WARNING no netCDF files found in {OSCAR_DIR}')
+
+        # this calls an example method showing how self can use used to
+        # keep the state of the Class
+        self.example_method()
 
 
 if __name__ == '__main__':
