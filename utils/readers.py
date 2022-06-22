@@ -8,10 +8,10 @@ def _readConfig(config_file_path):
     """Reads the configuration ini file.
 
     :param config_file_path: path to the configuration file
-    :type config_file_path: String
+    :type config_file_path: ``str``
 
     :return: the configuration object read from the lconfiguration file
-    :rtype: configparser
+    :rtype: ``configparser``
 
     :meta private:
     """
@@ -27,13 +27,13 @@ def findNetCDFilepaths(directory_path, recursive=False):
     a recursive option.
 
     :param directory_path: path to the directory to look in
-    :type directory_path: String
+    :type directory_path: ``str``
 
     :param recursive: whether to search in sub-directories
-    :type directory_path: Boolean, optional
+    :type recursive: ``boolean``, optional
 
     :return: a list of file paths with '.nc' extension that were found
-    :rtype: List
+    :rtype: ``list``
     """
 
     if not os.path.isdir(directory_path):
@@ -55,7 +55,7 @@ def readNetCDFFile(netCFD_path):
     :raises ValueError: if file cannot be read as netCDF
 
     :return: xrray read from the netCDF file
-    :rtype: xarray
+    :rtype: ``xarray``
     """
 
     data_xr = None

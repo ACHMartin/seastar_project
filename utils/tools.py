@@ -19,7 +19,7 @@ def currentUV2VelDir(u, v):
     :param v: velocity
     :type v: float
     :return: velocity, direction,
-    :rtype: float, float
+    :rtype: ``float``, ``float``
     """
     tmp = u + 1j * v
     vel = np.abs(tmp)
