@@ -21,11 +21,12 @@ class SEASTARX(object):
 
     def run(self):
 
-        SEASTARX_CONFIG = readers._readConfig(self.CONFIG_FILE_PATH)
+        DIRECTORY_PATHS = readers._readConfig(self.CONFIG_FILE_PATH)['DIRECTORY PATHS']
+        DATA_DIR = DIRECTORY_PATHS['data']
 
-        DATA_DIR = SEASTARX_CONFIG['DATA DIRECTORY']
+        CAMPAIGNS = readers._readConfig(self.CONFIG_FILE_PATH)['CAMPAIGNS']
+        OSCAR_DIR = os.path.join(DATA_DIR, CAMPAIGNS['first'])
 
-        OSCAR_DIR = os.path.join(DATA_DIR, 'OSCAR')
         netCDF_filepaths = readers.findNetCDFilepaths(OSCAR_DIR)
 
         if netCDF_filepaths:
@@ -54,5 +55,5 @@ if __name__ == '__main__':
         warnings.simplefilter('ignore')
 
     # make an instance of the class and implement the run method
-    obj = SEASTARX('seastarx_config.txt')
+    obj = SEASTARX('seastarx_config.ini')
     obj.run()

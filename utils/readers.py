@@ -11,17 +11,13 @@ def _readConfig(config_file_path):
     :type config_file_path: String
 
     :return: the configuration object read from the lconfiguration file
-    :rtype: configparser.SectionProxy
+    :rtype: configparser
 
     :meta private:
     """
 
-    config_parser = configparser.RawConfigParser(comment_prefixes='%')
-    with open(config_file_path) as f:
-        config_file_content = '[configuration]\n' + f.read()
-    config_parser.read_string(config_file_content)
-
-    configuration = config_parser['configuration']
+    configuration = configparser.ConfigParser()
+    configuration.read(config_file_path)
 
     return configuration
 
