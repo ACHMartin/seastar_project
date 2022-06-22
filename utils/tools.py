@@ -28,8 +28,6 @@ def currentUV2VelDir(u, v):
 
 
 def windSpeedDir2UV(wspd, wdir):
-    """
-    """
     z = wspd * np.exp(-1j * (wdir + 90) / 180 * np.pi)
     u = z.real  # toward East
     v = z.imag  # toward North
