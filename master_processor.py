@@ -20,7 +20,7 @@ class SEASTARX(object):
 
     def run(self):
 
-        SEASTARX_CONFIG = readers.readConfig(self.CONFIG_FILE_PATH)
+        SEASTARX_CONFIG = readers._readConfig(self.CONFIG_FILE_PATH)
 
         DATA_DIR = SEASTARX_CONFIG['DATA DIRECTORY']
 
