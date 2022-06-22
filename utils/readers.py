@@ -5,7 +5,7 @@ import xarray as xr
 
 
 def _readConfig(config_file_path):
-    """Reads the configuration file and returns it.
+    """Reads the configuration ini file.
 
     :param config_file_path: path to the configuration file
     :type config_file_path: String
