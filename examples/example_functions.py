@@ -3,7 +3,7 @@ def doSomething(data_xr):
     """Performs some examples on the data in the xarray.
 
     :param data_xr: the data to be processed
-    :type data_xr: Xarray
+    :type data_xr: xarray
     """
 
     attributes = data_xr.attrs
