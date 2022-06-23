@@ -14,5 +14,5 @@ setup(
     version='1.0',
     packages=find_packages(include=['utils', 'examples', 'gmfs', 'retrieval']),
     cmdclass={'build_ext':build_ext},
-    setup_requires=['numpy', 'xarray'],
+    setup_requires=['numpy'],
 )
