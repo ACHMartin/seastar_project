@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='seastar',
+    name='seastar_project',
     version='1.0',
-    packages=find_packages(include=['utils', 'examples', 'gmfs', 'retrieval'])
+    packages=find_packages()
 )
