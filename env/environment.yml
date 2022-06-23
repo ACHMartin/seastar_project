@@ -13,8 +13,8 @@ dependencies:
   - pip
   - python=3.7
   - spyder=3.3.6
-  - sphinx
-  - sphinx-apidoc
-  - sphinx-nested-apidoc
+  - sphinx=4.4.0
+  - sphinx-nested-apidoc=0.3.2
+  - sphinx_rtd_theme=1.0.0
   - xarray=0.20.1
 
