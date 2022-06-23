@@ -1,0 +1,19 @@
+version: 1.0
+
+build:
+  os: "Windows"
+  tools:
+    python: "3.9"
+
+# Build from the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+  fail_on_warning: true
+
+# Explicitly set the version of Python and its requirements
+python:
+  install:
+    - requirements: docs/requirements.txt
+  # Install our python package before building the docs
+    - method: pip
+      path: .
