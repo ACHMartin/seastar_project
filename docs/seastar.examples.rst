@@ -1,6 +1,6 @@
 seastar.examples package
 ==========================
- **This package contains example functions.**
+ **This package contains examples.**
 
 
 Submodules
