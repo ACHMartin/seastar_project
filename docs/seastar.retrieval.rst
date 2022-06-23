@@ -2,8 +2,7 @@ seastar.retrieval package
 =========================
 
 
-Module contents
----------------
-
 .. automodule:: seastar.retrieval
    :members:
+   :undoc-members:
+   :show-inheritance:

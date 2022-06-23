@@ -13,7 +13,7 @@ etc
    :caption: Contents:
    
    getting_started
-   modules
+   code
    
 
 Indices and tables

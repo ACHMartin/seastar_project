@@ -2,15 +2,6 @@ seastar.utils package
 =====================
 
 **This package contains utility functions such as IO and tools.**
-
-
-Module contents
----------------
-
-.. automodule:: seastar.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
    
 
 Submodules
