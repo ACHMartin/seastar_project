@@ -8,10 +8,7 @@ Submodules
 
 seastar.examples.example_functions module
 --------------------------------------------
+**This module contains example functions.**
 
 .. automodule:: seastar.examples.example_functions
    :members:
-   :undoc-members:
-   :show-inheritance:
-
-
