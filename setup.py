@@ -1,4 +1,6 @@
 from setuptools import setup, find_packages
+import numpy
+import xarray
 
         
 setup(
