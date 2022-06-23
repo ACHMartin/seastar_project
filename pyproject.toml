@@ -1,5 +1,5 @@
 [build-system]
-requires = ['numpy', 'xarray']
+requires = ['setuptools', 'numpy', 'xarray']
 
 [project]
 name = "seastar_project"
