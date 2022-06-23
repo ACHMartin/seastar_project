@@ -1,5 +1,5 @@
-seastar
-=======
+code
+====
 
 .. toctree::
    :maxdepth: 2

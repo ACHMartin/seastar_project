@@ -1,5 +1,5 @@
 Seastar project documenation
-===================================
+============================
 
 This is where the description for the project goes ...
 
@@ -12,6 +12,7 @@ etc
    :maxdepth: 3
    :caption: Contents:
    
+   getting_started
    modules
    
 
