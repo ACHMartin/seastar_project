@@ -2,8 +2,8 @@
 import os
 import sys
 
-from examples import example_functions
-from utils import readers
+from seastar.examples import example_functions
+from seastar.utils import readers
 
 
 class SEASTARX(object):
