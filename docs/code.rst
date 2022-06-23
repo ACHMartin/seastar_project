@@ -21,5 +21,3 @@ master_processor module
 
 .. automodule:: master_processor
    :members:
-   :undoc-members:
-   :show-inheritance:
