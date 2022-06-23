@@ -4,6 +4,6 @@ requires = ["flit_core >=3.2,<4"]
 
 
 name = "seastar_project"
-description = "titanic_ml example package"
+description = "seastar package"
 version = "0.1.0"
 dependencies = ["numpy", "xarray"]
