@@ -1,5 +1,5 @@
 [project]
-name = "seastar_project"
+name = "seastar"
 description = "seastar package"
 version = "0.1.0"
 dependencies = ["numpy", "xarray"]
