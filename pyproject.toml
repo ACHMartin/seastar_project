@@ -1,6 +1,2 @@
 [build-system]
 requires = ['setuptools', 'numpy', 'xarray']
-
-[project]
-name = "seastar_project"
-dynamic = ["version", "description"]
