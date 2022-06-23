@@ -1,9 +1,10 @@
-[build-system]
-build-backend = "flit_core.buildapi"
-requires = ["flit_core >=3.2,<4"]
-
-
+[project]
 name = "seastar_project"
 description = "seastar package"
 version = "0.1.0"
 dependencies = ["numpy", "xarray"]
+
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]
