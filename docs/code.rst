@@ -19,5 +19,3 @@ master_processor module
     obj.run()
 
 
-.. automodule:: master_processor
-   :members:
