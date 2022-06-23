@@ -14,6 +14,7 @@ seastar.utils.readers module
 
 .. automodule:: seastar.utils.readers
    :members:
+   :undoc-members:
    :show-inheritance:
 
 seastar.utils.tools module
