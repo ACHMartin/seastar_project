@@ -18,7 +18,7 @@ def _currentUV2VelDir(u, v):
     :type u: ``float``
     :param v: velocity
     :type v: ``float``
-    :return: velocity, direction,
+    :return: velocity, direction
     :rtype: ``float``, ``float``
 
     :meta public:
