@@ -22,3 +22,6 @@ master_processor module
 
 .. automodule:: master_processor
    :members:
+
+
+* :ref:`genindex`

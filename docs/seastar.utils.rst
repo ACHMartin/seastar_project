@@ -20,3 +20,6 @@ seastar.utils.tools module
 
 .. automodule:: seastar.utils.tools
    :members:
+
+
+* :ref:`genindex`

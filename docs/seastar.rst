@@ -14,3 +14,6 @@ Subpackages
    seastar.examples
    seastar.utils
    seastar.retrieval
+
+
+* :ref:`genindex`
