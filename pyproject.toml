@@ -1,5 +1,5 @@
 [project]
-name = 'seastar'
+name = 'master_processor'
 description = 'seastar package'
 version = '1.0'
 dependencies = ['numpy', 'scipy', 'xarray']
