@@ -47,7 +47,7 @@ class SEASTARX(object):
                 oscar_xr = readers.readNetCDFFile(netCDF_filepaths[0])
 
                 if oscar_xr:
-                    example_functions.doSomething(oscar_xr)
+                    example_functions.printXarrayAttributeKeys(oscar_xr)
 
                 else:
                     print(f'WARNING {filepath} could not be opened as an xarray')
