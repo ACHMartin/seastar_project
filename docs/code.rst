@@ -18,4 +18,7 @@ master_processor module
     obj = SEASTARX('seastarx_config.ini')
     obj.run()
 
+**SEASTARX class**
 
+.. automodule:: master_processor
+   :members:
