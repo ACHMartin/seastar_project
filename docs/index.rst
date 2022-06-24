@@ -14,8 +14,6 @@ etc
    
    getting_started
    code
-   extra
-   
 
 Indices and tables
 ==================
