@@ -12,3 +12,5 @@ seastar.examples.example_functions module
 
 .. automodule:: seastar.examples.example_functions
    :members:
+
+* :ref:`genindex`

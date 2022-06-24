@@ -6,8 +6,6 @@ code
 
    seastar
 
-* :ref:`genindex`
-
 
 master_processor module
 -----------------------
@@ -24,3 +22,6 @@ master_processor module
 
 .. automodule:: master_processor
    :members:
+
+
+* :ref:`genindex`
