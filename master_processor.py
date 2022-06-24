@@ -21,10 +21,18 @@ class SEASTARX(object):
 
     def example_method(self):
         """A simple example to show use of the ``self`` keyword.
-        """
-        data_dir_path = self.configuration['DIRECTORY PATHS']['data']
 
-        print(data_dir_path)
+        :return: True if results directory was created else False
+        :rtype: ``boolean``
+        """
+        results_dir_path = self.configuration['DIRECTORY PATHS']['results']
+        self.results_dir = results_dir_path
+
+        if not os.path.isdir(results_dir_path):
+            os.mkdir(results_dir_path)
+            return True
+        else:
+            return False
 
 
     def run(self):
@@ -55,9 +63,9 @@ class SEASTARX(object):
         else:
             print(f'WARNING no netCDF files found in {OSCAR_DIR}')
 
-        # this calls an example method showing how self can use used to
-        # keep the state of the Class
-        self.example_method()
+        # this calls an example method showing how self can use used
+        if self.example_method():
+            print(f'created directory: {self.results_dir}')
 
 
 if __name__ == '__main__':
