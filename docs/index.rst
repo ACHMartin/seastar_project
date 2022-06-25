@@ -25,6 +25,8 @@ Seastar project documenation
 This is where the description for the project goes ...
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
+add something that sounds good
+
 Requirements
 ************
 
