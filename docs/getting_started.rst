@@ -7,5 +7,8 @@ Getting Started
 
     `<https://github.com/NOC-SEASTAR/seastar_project>`_
 
-2. edit **'seastarx_config.ini'** to set parameters.
+2. Set parameters in local configuration file::
+
+    seastarx_config.ini
+
 3. Hit the go button ...
