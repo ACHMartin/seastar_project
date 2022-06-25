@@ -1,6 +1,5 @@
 Seastar project documenation
 ============================
-|
 
 .. image:: images/seastar_img1.jpg
     :width: 400px
