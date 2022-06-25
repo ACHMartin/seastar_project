@@ -5,4 +5,4 @@ seastar.gmfs package
    :members:
 
 
-* :ref:`genindex`
+* :ref:`genindex`*

@@ -6,4 +6,4 @@ seastar.retrieval package
    :members:
 
 
-* :ref:`genindex`
+* :ref:`genindex`*
