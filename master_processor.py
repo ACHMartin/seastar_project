@@ -18,8 +18,6 @@ class SEASTARX(object):
 
         :param config_file: name of local configuration file
     :   type config_file: ``str``
-
-        :meta public:
         """
         self.CONFIG_FILE = config_file
 

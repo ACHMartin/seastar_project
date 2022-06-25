@@ -12,7 +12,7 @@ def currentVelDir2UV(vel, cdir):
 
 
 def _currentUV2VelDir(u, v):
-    """Converts U and V currents to velocity and direction (in degrees)
+    """Converts U and V currents to velocity and direction (in degrees).
 
     :param u: velocity
     :type u: ``float``
@@ -20,8 +20,6 @@ def _currentUV2VelDir(u, v):
     :type v: ``float``
     :return: velocity, direction
     :rtype: ``float``, ``float``
-
-    :meta public:
     """
 
     tmp = u + 1j * v
