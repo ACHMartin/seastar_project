@@ -27,10 +27,8 @@ This is where the description for the project goes.
 
 add something that sounds good and is interesting
 
-|
 funding - blah blah blah
 
-|
 team - AM, CG, DM, CN
 
 Requirements
