@@ -25,7 +25,8 @@ Seastar project documenation
 This is where the description for the project goes.
 """""""""""""""""""""""""""""""""""""""""""""""""""
 
-add something that sounds good and is interesting
+add some interesting details about the project and they \
+will appear here in the pdf or the online docs.
 
 funding - blah blah blah
 
