@@ -11,14 +11,17 @@ class SEASTARX(object):
     processes the the data from each file iteratively
 
     :param config_file: the configuration file name
-    :type config_file: ``str``"""
+    :type config_file: ``str``
+    """
 
     def __init__(self, config_file):
         """Constructor method.
 
-        :param config_file: name of local configuration file
-    :   :type config_file: ``str``
+
+        :param config_file: the configuration file name
+        :type config_file: ``str``
         """
+
         self.CONFIG_FILE = config_file
 
 
@@ -28,6 +31,7 @@ class SEASTARX(object):
         :return: True if results directory was created else False
         :rtype: ``boolean``
         """
+
         results_dir_path = self.configuration['DIRECTORY PATHS']['results']
         self.results_dir = results_dir_path
 
