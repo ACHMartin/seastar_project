@@ -5,11 +5,10 @@
 </p>
 
 
-##Project seastar is unded by ESA
+Project seastar is unded by ESA
+NOC team is:
 
-##NOC team is:
-
-Adrien Martin PI
-Christine Gommeginger co PI
-David Mccann
-Clive Neil
+Adrien Martin PI/n
+Christine Gommeginger co PI/n
+David Mccann/n
+Clive Neil/n
