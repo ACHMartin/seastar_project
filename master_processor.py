@@ -41,6 +41,8 @@ class SEASTARX(object):
 
 
     def run(self):
+        """The run method to control all workflow.
+        """
 
         self.configuration = readers._readConfig(self.CONFIG_FILE)
         DIRECTORY_PATHS = self.configuration['DIRECTORY PATHS']
