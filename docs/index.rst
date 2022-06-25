@@ -1,13 +1,30 @@
 Seastar project documenation
 ============================
+|
 
 .. image:: images/seastar_img1.jpg
-    :width: 300px
-    :align: center
-    :height: 200px
-    :alt: alternate text
+    :width: 400px
+    :align: left
+    :height: 300px
+    :alt: starfish
 
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 This is where the description for the project goes ...
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Requirements
 ************
