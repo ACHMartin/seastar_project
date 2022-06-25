@@ -1,4 +1,4 @@
 # seastar
 
-!(images/seastar_img1.jpg?raw=true "Title")
+!(images/seastar_img1.jpg)
  
