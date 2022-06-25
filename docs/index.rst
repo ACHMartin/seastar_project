@@ -1,7 +1,7 @@
 Seastar project documenation
 ============================
 
-.. image:: ../images/seastar_img1.jpg
+.. image:: images/seastar_img1.jpg
     :width: 300px
     :align: center
     :height: 200px
