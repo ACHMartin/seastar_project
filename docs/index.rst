@@ -4,7 +4,7 @@ Seastar project documenation
 .. image:: images/seastar_img1.jpg
     :width: 400px
     :align: left
-    :height: 300px
+    :height: 400px
     :alt: starfish
 
 |
@@ -21,11 +21,14 @@ Seastar project documenation
 |
 |
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-This is where the description for the project goes ...
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+This is where the description for the project goes.
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-add something that sounds good
+add something that sounds good and is interesting
+
+funding - blah blah blah
+team - it's us!
 
 Requirements
 ************
