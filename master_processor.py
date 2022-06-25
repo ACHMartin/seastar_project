@@ -17,7 +17,7 @@ class SEASTARX(object):
         """Constructor method.
 
         :param config_file: name of local configuration file
-    :   type config_file: ``str``
+    :   :type config_file: ``str``
         """
         self.CONFIG_FILE = config_file
 
