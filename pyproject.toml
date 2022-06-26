@@ -2,6 +2,7 @@
 name = 'seastar'
 description = 'seastar package'
 version = '1.0'
+dependencies = ['numpy', 'pandas', ''scipy', 'xarray']
 
 
 [build-system]
