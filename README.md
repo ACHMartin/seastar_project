@@ -34,7 +34,7 @@ To confirm that you have successfully activated `seatar`, your terminal command 
 
 ### 2.1 Set parameters for your local environment
 
-From the directory containing the **project_seatar** edit the file **seatarx_config.ini** and set the parameters as required e.g. set the path to the  local directories for the SAR data and for writing the result.
+From the directory containing the **project_seatar** edit the file **seatarx_config.ini** and set the parameters as required e.g. set the path to the  local directories for the SAR data and for writing the results.
 
 ### 2.2 Execute the processor
 
