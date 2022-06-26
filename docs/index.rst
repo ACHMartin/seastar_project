@@ -2,7 +2,7 @@
 Seastar project documenation
 """"""""""""""""""""""""""""
 
-.. image:: images/seastar_img1.jpg
+.. image:: images/seastar_img3.jpg
     :width: 400px
     :align: center
     :height: 300px
