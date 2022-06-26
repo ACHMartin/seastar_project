@@ -1,14 +1,18 @@
 Getting Started
 ===============
 
-**Get started with Seastar in 3 simple steps:**
+**Get started with Seastar in 4 simple steps:**
 
-1. Install the ``seastar`` package from GitHub:
-
+* Install the "seastar" project from GitHub:
     `<https://github.com/NOC-SEASTAR/seastar_project>`_
 
-2. Set parameters in local configuration file::
+* Create a python environment for the project::
+
+    >>> conda create --file env/environment.yml
+    >>> conda activate seastar
+
+* Set parameters in local configuration file::
 
     seastarx_config.ini
 
-3. Hit the go button ...
+* Hit the go button ...
