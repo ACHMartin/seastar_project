@@ -9,7 +9,7 @@ general project info can go here
 
 ## 1. Installation
 
-### 1.1 Download the **project_seastar** repository
+### 1.1 Download the **seastar_project** repository
 
 Navigate to the latest release on the RHS of this page and download and unzip the source code.
 
@@ -18,7 +18,7 @@ Navigate to the latest release on the RHS of this page and download and unzip th
 
 To run the code in the project you need to install the required Python packages in an environment. To do this we will use **Anaconda**, which can be downloaded freely [here](https://www.anaconda.com/download/).
 
-Open the Anaconda prompt (in Mac and Linux, open a terminal window) and use the `cd` command (change directory) to go the folder where you have downloaded the **project_seastar** repository.
+Open the Anaconda prompt (in Mac and Linux, open a terminal window) and use the `cd` command (change directory) to go the folder where you have downloaded the **seastar_project** repository.
 
 Create a new environment named `seatar` with all the required packages and activate this environment by entering the following commands:
 
@@ -34,7 +34,7 @@ To confirm that you have successfully activated `seatar`, your terminal command 
 
 ### 2.1 Set parameters for your local environment
 
-From the directory containing the **project_seatar** edit the file **seatarx_config.ini** and set the parameters as required e.g. set the path to the  local directories for the SAR data and for writing the results.
+From the directory containing the **seastar_project** edit the file **seatarx_config.ini** and set the parameters as required e.g. set the path to the  local directories for the SAR data and for writing the results.
 
 ### 2.2 Execute the processor
 
