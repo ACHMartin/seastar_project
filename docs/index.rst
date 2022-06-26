@@ -1,3 +1,4 @@
+============================
 Seastar project documenation
 ============================
 
@@ -22,7 +23,7 @@ Seastar project documenation
 |
 
 This is where the description for the project goes
-**************************************************
+--------------------------------------------------
 
 Add an overview of the project details and it \
 will appear here in the online docs and in the pdf.
@@ -32,9 +33,16 @@ funding - blah blah blah
 team - AM, CG, DM, CN
 
 Requirements
-************
+------------
 
 xarray, scipy, numpy
+
+--------
+Comments
+--------
+
+.. This is a comment
+   Special notes that are not shown but might come out as HTML comments
 
 .. toctree::
    :maxdepth: 3
