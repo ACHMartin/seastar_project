@@ -11,7 +11,7 @@ master_processor module
 -----------------------
 
 **This module provides control for processing and can be run from an IDE or using \
-the command line and requires a local configuration file.** `seastarx_config.ini`
+the command line and requires a local configuration file:** `seastarx_config.ini`
 
 .. sourcecode:: python
 
