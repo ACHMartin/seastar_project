@@ -8,7 +8,7 @@ Getting Started
 
 * Create a python environment for the project::
 
-    >>> conda create --file env/environment.yml
+    >>> conda env create --file env/environment.yml
     >>> conda activate seastar
 
 * Set parameters in local configuration file::
