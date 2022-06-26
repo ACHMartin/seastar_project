@@ -10,8 +10,8 @@ source code
 master_processor module
 -----------------------
 
-**This module provides control for processing and can be run from command line.**
-**Requires a local configuration file when instantiated. See below.**
+**This module provides control for processing and can be run from an IDE or using \
+the command line and requires a local configuration file to run.**
 
 .. sourcecode:: python
 
