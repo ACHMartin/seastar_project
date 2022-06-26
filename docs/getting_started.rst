@@ -3,7 +3,7 @@ Getting Started
 
 **Get started with Seastar in 3 simple steps:**
 
-1. Install the package from GitHub:
+1. Install the ``seastar`` package from GitHub:
 
     `<https://github.com/NOC-SEASTAR/seastar_project>`_
 
