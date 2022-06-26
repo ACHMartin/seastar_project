@@ -3,7 +3,7 @@ seastar.utils package
 **This package contains utility functions such as IO and tools.**
    
 
-Submodules
+submodules
 ----------
 
 seastar.utils.readers module

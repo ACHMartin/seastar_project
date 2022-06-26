@@ -3,7 +3,7 @@ seastar.examples package
  **This package contains examples.**
 
 
-Submodules
+submodules
 ----------
 
 seastar.examples.example_functions module
