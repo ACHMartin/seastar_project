@@ -11,7 +11,7 @@ general project info can go here
 
 ### 1.1 Download the **seastar_project** repository
 
-Navigate to the latest release `(v1.0)` on the RHS of this page and download and unzip the source code.
+Navigate to the latest release `(v1.0)` on the RHS of the root project page and download and unzip the source code.
 
 
 ### 1.2 Create an environment with Anaconda
@@ -43,4 +43,3 @@ In the terminal window opened in the **seastar_project** directory enter the fol
 ```
 >>> python master_processor.py
 ```
-
