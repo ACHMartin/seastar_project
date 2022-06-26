@@ -52,7 +52,8 @@ def readNetCDFFile(netCFD_path):
     :param netCFD_path: path to the netCDF file
     :type netCFD_path: ``str``
 
-    :raises: ``ValueError`` if file cannot be read as netCDF
+    :raises: ``ValueError`` if file cannot be read as netCDF and \
+    returns ``None`` object
 
     :return: xrray read from the netCDF file
     :rtype: ``xarray``
