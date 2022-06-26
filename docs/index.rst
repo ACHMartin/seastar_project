@@ -19,7 +19,7 @@ will appear here in the online docs and in the pdf.
 
 funding - blah blah blah
 
-team - AM, CG, DM, CN
+NOC team - AM, CG, DM, CN
 
 ============
 Requirements
