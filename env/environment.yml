@@ -11,7 +11,7 @@ dependencies:
   - packaging
   - pandas=1.3.5
   - pip
-  - python=3.7
+  - python=3.8
   - spyder=3.3.6
   - sphinx=4.4.0
   - sphinx-nested-apidoc=0.3.2
