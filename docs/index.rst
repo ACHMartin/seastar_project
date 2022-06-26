@@ -25,7 +25,7 @@ team - AM, CG, DM, CN
 Requirements
 ============
 
-xarray, scipy, numpy
+numpy, pandas, scipy, xarray
 
 
 .. toctree::
