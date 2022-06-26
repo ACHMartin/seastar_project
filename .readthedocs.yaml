@@ -4,7 +4,7 @@ sphinx:
   fail_on_warning: true
   
 python:
-  version: 3.7
+  version: 3.8
   # Install our python package before building the docs
   install:
     - method: pip
