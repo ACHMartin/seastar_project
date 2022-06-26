@@ -28,3 +28,19 @@ Create a new environment named `seatar` with all the required packages and activ
 ```
 
 To confirm that you have successfully activated `seatar`, your terminal command line prompt should now start with (seatar).
+
+
+## 2. Running the code
+
+### 2.1 Set parameters for your local environment
+
+From the directory containing the **project_seatar** edit the file **seatarx_config.ini** and set the parameters as required e.g. set the path to the  local directories for the SAR data and for writing the result.
+
+### 2.2 Execute the processor
+
+In the terminal window opened in the **seastar_project** directory enter the follwing command:
+
+```
+>>> python master_processor.py
+```
+
