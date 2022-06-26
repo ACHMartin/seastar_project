@@ -7,8 +7,8 @@ from seastar.utils import readers
 
 
 class SEASTARX(object):
-    """SEASTARX class reads netCDF files containing SAR data and
-    processes the the data from each file iteratively
+    """SEASTARX class that includes a ``run()`` method to iteratively
+    process each netCDF file found in the SAR data directory.
 
     :param config_file: the configuration file name
     :type config_file: ``str``
