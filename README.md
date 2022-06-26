@@ -38,7 +38,7 @@ From the directory containing the **seastar_project** edit the file **seatarx_co
 
 ### 2.2 Execute the processor
 
-In the terminal window opened in the **seastar_project** directory enter the follwing command:
+In the terminal window opened in the **seastar_project** directory enter the following command:
 
 ```
 >>> python master_processor.py
