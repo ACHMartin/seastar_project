@@ -21,12 +21,11 @@ Seastar project documenation
 |
 |
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""
-This is where the description for the project goes.
-"""""""""""""""""""""""""""""""""""""""""""""""""""
+This is where the description for the project goes
+**************************************************
 
-Add some interesting details about the project and it \
-will appear here in online docs and in the pdf.
+Add an overview of the project details and it \
+will appear here in the online docs and in the pdf.
 
 funding - blah blah blah
 
