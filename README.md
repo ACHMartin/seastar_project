@@ -11,7 +11,7 @@ general project info can go here
 
 ### 1.1 Download the **project_seastar** repository
 
-Navigate to the latest release on th eRHS of this page and download and unzip the source code.
+Navigate to the latest release on the RHS of this page and download and unzip the source code.
 
 
 ### 1.2 Create an environment with Anaconda
@@ -20,7 +20,7 @@ To run the code in the project you need to install the required Python packages 
 
 Open the Anaconda prompt (in Mac and Linux, open a terminal window) and use the `cd` command (change directory) to go the folder where you have downloaded the **project_seastar** repository.
 
-Create a new environment named `seatar` with all the required packages and activate ti senvironment by entering these commands in succession:
+Create a new environment named `seatar` with all the required packages and activate this environment by entering the following commands:
 
 ```
 >>> conda create --file env/environment.yml
