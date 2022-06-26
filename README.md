@@ -20,14 +20,14 @@ To run the code in the project you need to install the required Python packages 
 
 Open the Anaconda prompt (in Mac and Linux, open a terminal window) and use the `cd` command (change directory) to go the folder where you have downloaded the **seastar_project** repository.
 
-Create a new environment named `seatar` with all the required packages and activate this environment by entering the following commands:
+Create a new environment named `seastar` with all the required packages and activate this environment by entering the following commands:
 
 ```
 >>> conda create --file env/environment.yml
 >>> conda activate seastar
 ```
 
-To confirm that you have successfully activated `seatar`, your terminal command line prompt should now start with (seatar).
+To confirm that you have successfully activated `seastar`, your terminal command line prompt should now start with (seatar).
 
 
 ## 2. Running the code
