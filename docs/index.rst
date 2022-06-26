@@ -1,26 +1,12 @@
-============================
+""""""""""""""""""""""""""""
 Seastar project documenation
-============================
+""""""""""""""""""""""""""""
 
 .. image:: images/seastar_img1.jpg
     :width: 400px
     :align: left
     :height: 300px
     :alt: starfish
-
-|
-|
-|
-|
-|
-|
-|
-|
-|
-|
-|
-|
-|
 
 This is where the description for the project goes
 --------------------------------------------------
@@ -32,17 +18,12 @@ funding - blah blah blah
 
 team - AM, CG, DM, CN
 
+============
 Requirements
-------------
+============
 
 xarray, scipy, numpy
 
---------
-Comments
---------
-
-.. This is a comment
-   Special notes that are not shown but might come out as HTML comments
 
 .. toctree::
    :maxdepth: 3
@@ -51,7 +32,8 @@ Comments
    getting_started
    code
 
-Indices and tables
+==================
+Indices and search
 ==================
 
 * :ref:`genindex`
