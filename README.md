@@ -27,7 +27,7 @@ Create a new environment named `seastar` with all the required packages and acti
 >>> conda activate seastar
 ```
 
-To confirm that you have successfully activated `seastar`, your terminal command line prompt should now start with (seatar).
+To confirm that you have successfully activated `seastar`, your terminal command line prompt should now start with `(seatar)`.
 
 
 ## 2. Running the code
