@@ -9,9 +9,6 @@ from seastar.utils import readers
 class SEASTARX(object):
     """SEASTARX class that includes a ``run()`` method to iteratively
     process each netCDF file found in the SAR data directory.
-
-    :param config_file: the configuration file name
-    :type config_file: ``str``
     """
 
     def __init__(self, config_file):
