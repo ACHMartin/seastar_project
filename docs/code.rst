@@ -6,7 +6,6 @@ source code
 
    seastar
 
-
 master_processor module
 -----------------------
 

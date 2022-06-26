@@ -17,7 +17,6 @@ class SEASTARX(object):
     def __init__(self, config_file):
         """Constructor method.
 
-
         :param config_file: the configuration file name
         :type config_file: ``str``
         """
