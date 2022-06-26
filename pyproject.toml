@@ -2,7 +2,7 @@
 name = 'seastar'
 description = 'seastar package'
 version = '1.0'
-
+dependencies = ['numpy']
 
 [build-system]
 build-backend = 'flit_core.buildapi'
