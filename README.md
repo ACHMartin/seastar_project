@@ -43,3 +43,7 @@ In the terminal window opened in the **seastar_project** directory enter the fol
 ```
 >>> python master_processor.py
 ```
+
+## 3. Documentaion
+
+[readthedocs](https://seastar-project.readthedocs.io/en/latest/)
