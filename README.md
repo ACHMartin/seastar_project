@@ -16,7 +16,7 @@ Navigate to the latest release `(v1.0)` on the RHS of the root project page and 
 
 ### 1.2 Create an environment with Anaconda
 
-To run the code in the project you need to install the required Python packages in an environment. To do this we will use **Anaconda**, which can be downloaded freely [here](https://www.anaconda.com/download/).
+To run the code in the project you need to install the required Python packages in an environment. To do this we will use **Anaconda**, which can be downloaded [here](https://www.anaconda.com/download/).
 
 Open the Anaconda prompt (in Mac and Linux, open a terminal window) and use the `cd` command (change directory) to the directory where you have installed the **seastar_project** repository.
 
