@@ -1,12 +1,32 @@
+""""""""""""""""""""""""""""
 Seastar project documenation
-============================
+""""""""""""""""""""""""""""
 
-This is where the description for the project goes ...
+.. image:: images/seastar_img3.jpg
+    :width: 400px
+    :align: center
+    :height: 300px
+    :alt: starfish
 
-requirements:
-xarray
+|
 
-etc
+............................................
+Extracting high-resolution currents from SAR
+............................................
+
+Add an overview of the project details and it \
+will appear here in the online docs and in the pdf.
+
+funding - blah blah blah
+
+NOC team - AM, CG, DM, CN
+
+============
+Requirements
+============
+
+numpy, pandas, scipy, xarray
+
 
 .. toctree::
    :maxdepth: 3
@@ -14,10 +34,9 @@ etc
    
    getting_started
    code
-   extra
-   
 
-Indices and tables
+==================
+Indices and search
 ==================
 
 * :ref:`genindex`

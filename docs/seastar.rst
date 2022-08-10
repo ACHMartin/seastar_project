@@ -1,10 +1,11 @@
+===============
 seastar package
 ===============
 
-**Top level package containing all code for the project.**
+**Top level package containing the source code.**
    
-  
-Subpackages
+-----------
+subpackages
 -----------
 
 .. toctree::
@@ -14,3 +15,6 @@ Subpackages
    seastar.examples
    seastar.utils
    seastar.retrieval
+
+
+* :ref:`genindex`
