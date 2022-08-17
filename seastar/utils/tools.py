@@ -3,7 +3,6 @@
 
 import numpy as np
 
-
 def currentVelDir2UV(vel, cdir):
     z = vel * np.exp(-1j * (cdir - 90) / 180 * np.pi)
     u = z.real  # toward East
@@ -41,3 +40,9 @@ def windUV2SpeedDir(u, v):
     wspd = np.abs(tmp)
     wdir = np.mod(-90 - np.angle(tmp) * 180 / np.pi, 360)
     return wspd, wdir
+
+def cdop_func(x):
+    """ Function to assist in CDOP calculation
+    """
+    cdop_f = np.divide(1,(1+np.exp(-x)))
+    return cdop_f
