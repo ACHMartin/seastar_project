@@ -1,21 +1,26 @@
 seastar.utils package
 =====================
+**This package contains utility functions such as IO and tools.**
+   
 
-Submodules
+submodules
 ----------
 
 seastar.utils.readers module
 ----------------------------
+**This module contains functions to interact with the file system.**
 
 .. automodule:: seastar.utils.readers
    :members:
-   :undoc-members:
-   :show-inheritance:
 
-Module contents
----------------
 
-.. automodule:: seastar.utils
+seastar.utils.tools module
+--------------------------
+**This module contains helper functions for wind and currents.**
+
+.. automodule:: seastar.utils.tools
    :members:
-   :undoc-members:
-   :show-inheritance:
+   :private-members:
+
+
+* :ref:`genindex`

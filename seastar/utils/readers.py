@@ -4,38 +4,36 @@ import configparser
 import xarray as xr
 
 
-def readConfig(config_file_path):
-    """Reads the configuration file and returns it.
+def _readConfig(config_file_path):
+    """Reads the configuration ini file.
 
     :param config_file_path: path to the configuration file
-    :type config_file_path: String
+    :type config_file_path: ``str``
 
     :return: the configuration object read from the lconfiguration file
-    :rtype: configparser.SectionProxy
+    :rtype: ``configparser``
+
+    :meta private:
     """
 
-    config_parser = configparser.RawConfigParser(comment_prefixes='%')
-    with open(config_file_path) as f:
-        config_file_content = '[configuration]\n' + f.read()
-    config_parser.read_string(config_file_content)
-
-    configuration = config_parser['configuration']
+    configuration = configparser.ConfigParser()
+    configuration.read(config_file_path)
 
     return configuration
 
 
 def findNetCDFilepaths(directory_path, recursive=False):
-    """Returns a list of netCDF files fom a given directory and has
+    """Returns a list of netCDF files fom a given directory with
     a recursive option.
 
     :param directory_path: path to the directory to look in
-    :type directory_path: String
+    :type directory_path: ``str``
 
     :param recursive: whether to search in sub-directories
-    :type directory_path: Boolean, optional
+    :type recursive: ``boolean``, optional
 
     :return: a list of file paths with '.nc' extension that were found
-    :rtype: List
+    :rtype: ``list``
     """
 
     if not os.path.isdir(directory_path):
@@ -49,15 +47,16 @@ def findNetCDFilepaths(directory_path, recursive=False):
 
 
 def readNetCDFFile(netCFD_path):
-    """Reads a netCDFFile and returns it as an xarray
+    """Reads a netCDF file and returns it as an xarray.
 
     :param netCFD_path: path to the netCDF file
-    :type netCFD_path: String
+    :type netCFD_path: ``str``
 
-    :raises ValueError: if file cannot be read as netCDF
+    :raises: ``ValueError`` if file cannot be read as netCDF and \
+    returns ``None`` object
 
     :return: xrray read from the netCDF file
-    :rtype: xarray
+    :rtype: ``xarray``
     """
 
     data_xr = None
@@ -68,3 +67,15 @@ def readNetCDFFile(netCFD_path):
         print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
 
     return data_xr
+
+
+def doSomethingElse(data_xr):
+    """Performs some examples on the data in the xarray.
+
+    :param data_xr: the data to be processed
+    :type data_xr: ``xarray``
+    """
+
+    attributes = data_xr.attrs
+    for key in attributes.keys():
+        print(f'\t{key}, {attributes[key]}')

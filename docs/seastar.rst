@@ -1,31 +1,20 @@
+===============
 seastar package
 ===============
 
-Subpackages
+**Top level package containing the source code.**
+   
+-----------
+subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
-   seastar.GMF
-   seastar.processing
+   seastar.gmfs
+   seastar.examples
    seastar.utils
+   seastar.retrieval
 
-Submodules
-----------
 
-seastar.master\_processor module
---------------------------------
-
-.. automodule:: seastar.master_processor
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: seastar
-   :members:
-   :undoc-members:
-   :show-inheritance:
+* :ref:`genindex`
