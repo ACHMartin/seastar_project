@@ -3,7 +3,6 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - cartopy
   - matplotlib=3.5.1
   - netcdf4=1.5.7
   - notebook=6.4.11
