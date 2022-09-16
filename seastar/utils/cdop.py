@@ -1,39 +1,36 @@
-# -*- coding: utf-8 -*-
-"""
-CDOP GMF based on Mouche et al., 2012, 
-IEEE TGRS "On the Use of Doppler Shift for Sea Surface 
-Wind Retrieval From SAR"
-
-Calculates the Doppler frequency shift of sea surface winds based on an empirical
-Geophysical Model Function. 
-
- Inputs
-   - inc : incidence angle in degree
-   - u10 : wind speed in m/s
-   - wdir : wind direction in degree (0=upwind,90=crosswind,180=downwind)
-   (wdir not in [0,180] are converted by the function, e.g. -45 becomes 45)
-   - pol : polarization name, 'vv' or 'hh' (case insensitive)
- Output
-   - dop : geophysical Doppler anomaly in Hz
- Neural network training limits :
-   - inc --> [17,42]
-   - u10 --> [1,17]
-   - wdir --> [0,180]
-
-
-Created on Wed Aug 10 09:22:12 2022
-
-@author: davidmccann
-"""
-
-import numpy as np
-
-# Get coefficients (W=weights and B=biases)
-# (coefficient names in mouche2012 are given)
-
 def cdop(inc,u10,wdir,pol):
+    """
+    CDOP GMF based on Mouche et al., 2012, 
+    IEEE TGRS "On the Use of Doppler Shift for Sea Surface 
+    Wind Retrieval From SAR"
+
+    Calculates the Doppler frequency shift of sea surface winds based on an empirical
+    Geophysical Model Function. 
+
+     Inputs
+       - inc : incidence angle in degree
+       - u10 : wind speed in m/s
+       - wdir : wind direction in degree (0=upwind,90=crosswind,180=downwind)
+       (wdir not in [0,180] are converted by the function, e.g. -45 becomes 45)
+       - pol : polarization name, 'vv' or 'hh' (case insensitive)
+     Output
+       - dop : geophysical Doppler anomaly in Hz
+     Neural network training limits :
+       - inc --> [17,42]
+       - u10 --> [1,17]
+       - wdir --> [0,180]
+
+
+    Created on Wed Aug 10 09:22:12 2022
+
+    @author: davidmccann
+    """
+    import numpy as np
     
-    Ns=np.array([inc.size,u10.size,wdir.size])
+    # Get coefficients (W=weights and B=biases)
+    # (coefficient names in mouche2012 are given)
+    
+    Ns=np.array([np.size(inc),np.size(u10),np.size(wdir)])
     N=max(Ns)
     
     
@@ -127,7 +124,13 @@ def cdop(inc,u10,wdir,pol):
         inputs[2,0:N] = (W1[2] * np.abs(np.reshape(wdir, (1,N)))) + B1[2]
     #------------------------------
     #Compute CDOP
-    dop = W4 * cdop_func(W3 * cdop_func(W2 * inputs + np.tile(B2,(N,1))) + B3) + B4
+    
+    
+#    dop = W4 * cdop_func(W3 * cdop_func(W2 * inputs + np.tile(B2,(N,1))) + B3) + B4
+
+    A=np.dot(W2, inputs) + np.transpose(np.tile(B2,(N,1)))
+    B=np.dot(W3,cdop_func(A))+B3
+    dop = np.dot(W4,cdop_func(B)) + B4
     
     if (Ns[0]>Ns[1]) and (Ns[0]>Ns[2]):
         dop = np.reshape(dop, inc.shape)
@@ -143,6 +146,7 @@ def cdop(inc,u10,wdir,pol):
 def cdop_func(x):
     """ Function to assist in CDOP calculation
     """
+    import numpy as np
     cdop_f = 1 / (1+np.exp(-x))
     return cdop_f
     
