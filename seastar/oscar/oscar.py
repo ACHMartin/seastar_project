@@ -91,25 +91,26 @@ def compute_multilooking_Master_Slave(ds, window=3):
     Returns
     -------
     ds : OSCAR SAR dataset in netCDF format.
-    ds.IAvg : Rolling average multilooking SLC image
-    ds.Amplitude : Absolute multilooking amplitude
+    ds.IntensityAvgComplexMasterSlave : Rolling average multilooking SLC image
+    ds.Intensity : Multilook image pixel intensity
     ds.Interferogram : Interferogram (radians)
-    ds.MasterAvg : rolling agerage Master SLC image
-    ds.SlaveAvg : rolling average Slave SLC image
+    ds.IntensityAvgMaster : rolling agerage Master SLC intensity image
+    ds.IntensityAvgSlave : rolling average Slave SLC intensity image
     ds.Coherence : Multilook image coherence
     """
-    ds['IAvg'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
+    ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['Amplitude'] = np.abs(ds.IAvg)
+    ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
     ds['Interferogram'] = (
         ['CrossRange', 'GroundRange'],
-        np.angle(ds.IAvg, deg=False)
+        np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
         )
-    ds['MasterAvg'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
+    ds['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['SlaveAvg'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
+    ds['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['Coherence'] = ds.Amplitude / np.sqrt(ds['MasterAvg'] * ds['SlaveAvg'])
+    ds['Coherence'] = ds.Intensity / np.sqrt(ds.IntensityAvgMaster
+                                             * ds.IntensityAvgSlave)
     return ds
 
 
@@ -125,12 +126,12 @@ def compute_incidence_angle(ds):
     Returns
     -------
     ds : OSCAR SAR dataset in netCDF format.
-    ds.IncidenceAngle : Incidence angle between radar beam and
-    sea surface (radians)
+    ds.IncidenceAngleImage : Incidence angle between radar beam and
+    nadir (radians) for each pixel
 
     """
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    ds['IncidenceAngle'] = np.arctan(ds.OrbHeightImage / Y)
+    ds['IncidenceAngleImage'] = np.arctan(Y / ds.OrbHeightImage)
 
     return ds
 
@@ -191,41 +192,84 @@ def compute_time_lag_Master_Slave(ds, options='from_SAR_time'):
     if options == 'from_SAR_time':
         ds['TimeLag'] = (ds.OrbTimeImage - ds.OrbTimeImageSlave)
     if options == 'from_aircraft_velocity':
-        ds['TimeLag'] = (ds.Baseline / ds.MeanForwardVelocity)
+        ds['TimeLag'] = (ds.Baseline / 2 * ds.MeanForwardVelocity)
     return ds
 
 
-def compute_radial_surface_velocity(ds, options='from_SAR_time'):
+def compute_radial_surface_velocity(ds):
     """
     Compute radial surface velocity from SAR interferogram and time lag
-    between antenna pairs, using either the time lag calculated directly from
-    timing information (option = 'from_SAR_time') or calculated using the
-    aircraft's velocity (option = 'from_aircraft_velocity)
+    between antenna pairs
 
     Parameters
     ----------
     ds : OSCAR SAR dataset in netCDF format.
-    options : Time lag computation method. The default is 'from_SAR_time'.
 
     Returns
     -------
     ds : OSCAR SAR dataset in netCDF format.
     ds.RadialSuraceVelocity : Surface velocity (m/s) along a radar beam radial
     """
-    if options == 'from_SAR_time':
-        ds['RadialSurfaceVelocity'] = ds.Interferogram /\
-            (ds.TimeLag * ds.CentralWavenumber * ds.Baseline)
-    if options == 'from_aircraft_velocity':
-        ds['RadialSurfaceVelocity'] = - (ds.MeanForwardVelocity /
-                                         (ds.CentralWavenumber * ds.Baseline))\
-            * (ds.Interferogram / np.sin(ds.IncidenceAngle))
+
+    ds['RadialSurfaceVelocity'] = ds.Interferogram /\
+        (ds.TimeLag * ds.CentralWavenumber
+         * np.sin(ds.IncidenceAngleImage))
+
     return ds
 
 
-#def init_level2(ds):
-    
-    
-    
-    
-    
-   # return level2
+def init_level2(dsa, dsf, dsm):
+    """
+    Initialise level2 dataset with
+
+    Parameters
+    ----------
+    dsa : TYPE
+        DESCRIPTION.
+    dsf : TYPE
+        DESCRIPTION.
+    dsm : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Fore antenna variables
+    dsf = add_central_electromagnetic_wavenumber(dsf)
+    dsf = compute_SLC_Master_Slave(dsf)
+    dsf = compute_multilooking_Master_Slave(dsf, window=7)
+    dsf = add_antenna_baseline(dsf)
+    dsf = compute_SLC_Master_Slave(dsf)
+    dsf = compute_multilooking_Master_Slave(dsf, window=7)
+    dsf = compute_incidence_angle(dsf)
+    dsf = compute_antenna_azimuth_direction(dsf, antenna='fore')
+    dsf = compute_time_lag_Master_Slave(dsf)
+    dsf = compute_radial_surface_velocity(dsf)
+
+    # Aft antenna variables
+    dsa = add_central_electromagnetic_wavenumber(dsa)
+    dsa = compute_SLC_Master_Slave(dsa)
+    dsa = compute_multilooking_Master_Slave(dsa, window=7)
+    dsa = add_antenna_baseline(dsa)
+    dsa = compute_SLC_Master_Slave(dsa)
+    dsa = compute_multilooking_Master_Slave(dsa, window=7)
+    dsa = compute_incidence_angle(dsa)
+    dsa = compute_antenna_azimuth_direction(dsa, antenna='aft')
+    dsa = compute_time_lag_Master_Slave(dsa)
+    dsa = compute_radial_surface_velocity(dsa)
+
+    level2 = xr.Dataset()
+
+    # Write level2 attributes
+    level2.attrs['Title'] = dsf.attrs['Title']
+    # Add data arrays to dataset
+    level2['RadialSurfaceVelocityFore'] = dsf.RadialSurfaceVelocity
+    level2['AntennaAzimuthImageFore'] = dsf.AntennaAzimuthImage
+    level2['IncidenceAngleImageFore'] = dsf.IncidenceAngleImage
+
+    level2['RadialSurfaceVelocityAft'] = dsa.RadialSurfaceVelocity
+    level2['AntennaAzimuthImageAft'] = dsa.AntennaAzimuthImage
+    level2['IncidenceAngleImageAft'] = dsa.IncidenceAngleImage
+    return level2
