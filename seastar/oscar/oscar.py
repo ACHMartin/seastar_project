@@ -243,7 +243,44 @@ def compute_radial_surface_velocity(ds):
     return ds
 
 
-def init_level2(dsa, dsf, dsm):
+def oscar_level2_preprocessing(dsf, dsa, dsm, level2):
+
+    # Fore antenna variables
+    dsf = add_central_electromagnetic_wavenumber(dsf)
+    dsf = compute_SLC_Master_Slave(dsf)
+    dsf = compute_multilooking_Master_Slave(dsf, window=7)
+    dsf = add_antenna_baseline(dsf)
+    dsf = compute_SLC_Master_Slave(dsf)
+    dsf = compute_multilooking_Master_Slave(dsf, window=7)
+    dsf = compute_incidence_angle(dsf)
+    dsf = compute_antenna_azimuth_direction(dsf, antenna='fore')
+    dsf = compute_time_lag_Master_Slave(dsf)
+
+
+    # Aft antenna variables
+    dsa = add_central_electromagnetic_wavenumber(dsa)
+    dsa = compute_SLC_Master_Slave(dsa)
+    dsa = compute_multilooking_Master_Slave(dsa, window=7)
+    dsa = add_antenna_baseline(dsa)
+    dsa = compute_SLC_Master_Slave(dsa)
+    dsa = compute_multilooking_Master_Slave(dsa, window=7)
+    dsa = compute_incidence_angle(dsa)
+    dsa = compute_antenna_azimuth_direction(dsa, antenna='aft')
+    dsa = compute_time_lag_Master_Slave(dsa)
+
+    # Should this be level2 rather than ds?
+#    dsf = compute_radial_surface_velocity(dsf)
+#    dsa = compute_radial_surface_velocity(dsa)
+    level2 = compute_radial_surface_velocity(dsf)
+    level2 = compute_radial_surface_velocity(dsa)
+    # Add data arrays to dataset
+    level2['RadialSurfaceVelocityFore'] = dsf.RadialSurfaceVelocity
+    level2['RadialSurfaceVelocityAft'] = dsa.RadialSurfaceVelocity
+
+    return dsf, dsa, dsm, level2
+
+
+def init_level2(dsf):
     """
     Initialise level2 dataset.
 
@@ -262,40 +299,13 @@ def init_level2(dsa, dsf, dsm):
         OSCAR SAR L2 processing dataset
 
     """
-    # Fore antenna variables
-    dsf = add_central_electromagnetic_wavenumber(dsf)
-    dsf = compute_SLC_Master_Slave(dsf)
-    dsf = compute_multilooking_Master_Slave(dsf, window=7)
-    dsf = add_antenna_baseline(dsf)
-    dsf = compute_SLC_Master_Slave(dsf)
-    dsf = compute_multilooking_Master_Slave(dsf, window=7)
-    dsf = compute_incidence_angle(dsf)
-    dsf = compute_antenna_azimuth_direction(dsf, antenna='fore')
-    dsf = compute_time_lag_Master_Slave(dsf)
-    dsf = compute_radial_surface_velocity(dsf)
 
-    # Aft antenna variables
-    dsa = add_central_electromagnetic_wavenumber(dsa)
-    dsa = compute_SLC_Master_Slave(dsa)
-    dsa = compute_multilooking_Master_Slave(dsa, window=7)
-    dsa = add_antenna_baseline(dsa)
-    dsa = compute_SLC_Master_Slave(dsa)
-    dsa = compute_multilooking_Master_Slave(dsa, window=7)
-    dsa = compute_incidence_angle(dsa)
-    dsa = compute_antenna_azimuth_direction(dsa, antenna='aft')
-    dsa = compute_time_lag_Master_Slave(dsa)
-    dsa = compute_radial_surface_velocity(dsa)
 
     level2 = xr.Dataset()
 
     # Write level2 attributes
     level2.attrs['Title'] = dsf.attrs['Title']
-    # Add data arrays to dataset
-    level2['RadialSurfaceVelocityFore'] = dsf.RadialSurfaceVelocity
-    level2['AntennaAzimuthImageFore'] = dsf.AntennaAzimuthImage
-    level2['IncidenceAngleImageFore'] = dsf.IncidenceAngleImage
 
-    level2['RadialSurfaceVelocityAft'] = dsa.RadialSurfaceVelocity
-    level2['AntennaAzimuthImageAft'] = dsa.AntennaAzimuthImage
-    level2['IncidenceAngleImageAft'] = dsa.IncidenceAngleImage
     return level2
+
+

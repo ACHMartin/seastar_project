@@ -9,140 +9,125 @@ import numpy as np
 import xarray as xr
 
 
-def compute_current_magnitude(level2):
+def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
     """
-    Compute surface current magnitude.
+    Compute radial surface current (RSC).
 
-    Compute surface current magnitude (m/s) from radial surface velocity
-    components measured from two orthogonal antennas
+    Compute radial surface current (RSC) from radial surface velocity (RSV)
+    and the wind artifact surface velocity (WASV) from:
+        RSC = RSV - WASV
 
     Parameters
     ----------
     level2 : xarray.Dataset
         L2 dataset
+    dsf : xarray.Dataset
+        Fore antenna ATI SAR dataset
+    dsa : xarray.Dataset
+        Aft antenna ATI SAR dataset
+    aux : xarray.Dataset
+        Dataset containing geophysical wind data
+    gmf : str, optional
+        Choice of geophysical model function to compute the WASV.
+        The default is 'mouche12'.
 
     Returns
     -------
     level2 : xarray.Dataset
         L2 dataset
-    level2.AntennaAngleImage : Angle between two orthogonal antennas (degrees)
-    level2.CurrentMagnitude : Magnitude of surface current vector (m/s)
 
     """
-    level2['AntennaAngleImage'] = np.mod(level2.AntennaAzimuthImageFore
-                                         - level2.AntennaAzimuthImageAft, 360)
-    level2['CurrentMagnitude'] = np.sqrt(level2.RadialSurfaceVelocityFore**2
-                                         + level2.RadialSurfaceVelocityAft**2)\
-        / np.sin(np.radians(level2.AntennaAngleImage))
+    if gmf == 'mouche12':
+        from gmfs.doppler import mouche12, convertDoppler2Velocity
+        level2['CDOPFore'] = xr.DataArray(
+            mouche12(aux.u10Image,
+                     aux.RelativeWindDirectionFore,
+                     np.degrees(dsf.IncidenceAngleImage),
+                     'VV'),
+            coords=[dsf.CrossRange, dsf.GroundRange],
+            dims=('CrossRange', 'GroundRange'))
+        level2['CDOPAft'] = xr.DataArray(
+            mouche12(aux.u10Image,
+                     aux.RelativeWindDirectionAft,
+                     np.degrees(dsa.IncidenceAngleImage),
+                     'VV'),
+            coords=[dsa.CrossRange, dsa.GroundRange],
+            dims=('CrossRange', 'GroundRange'))
+        level2['WindLineOfSightVelocityFore'], level2['WASVFore'] =\
+            convertDoppler2Velocity(5.5,
+                                    level2.CDOPFore,
+                                    np.degrees(dsf.IncidenceAngleImage))
+        level2['WindLineOfSightVelocityAft'], level2['WASVAft'] =\
+            convertDoppler2Velocity(5.5,
+                                    level2.CDOPAft,
+                                    np.degrees(dsa.IncidenceAngleImage))
+        level2['RadialSurfaceCurrentFore'] =\
+            level2.RadialSurfaceVelocityFore - level2.WASVFore
+        level2['RadialSurfaceCurrentAft'] =\
+            level2.RadialSurfaceVelocityAft - level2.WASVAft
 
     return level2
 
 
-def compute_current_direction(level2):
+def compute_current_magnitude_and_direction(level2, dsf, dsa):
     """
-    Compute surface current direction.
+    Compute surface current magnitude and direction.
 
-    Compute surface current direction from orthogonal radial surface current
-    components measured from two antennas.
+    Compute surface current magnitude (m/s) and direction (degrees N)
+    from radial surface current (RSC) components measured from two
+    orthogonal antennas
 
     Parameters
     ----------
     level2 : xarray.Dataset
         L2 dataset
+    dsf : xarray.Dataset
+        Fore antenna ATI SAR dataset
+    dsa : xarray.Dataset
+        Aft antenna ATI SAR dataset
 
     Returns
     -------
     level2 : xarray.Dataset
         L2 dataset
+    level2.CurrentMagnitude : xarray.DataArray
+        Magnitude of surface current vector (m/s)
     level2.CurrentDirection : xarray.DataArray
         Surface current direction (degrees N) in oceanographic convention
+
     """
-    ind_pos = (level2.RadialSurfaceVelocityFore >
-               level2.RadialSurfaceVelocityAft) *\
-        np.cos(np.radians(level2.AntennaAngleImage))
+    antenna_angle = np.mod(dsf.AntennaAzimuthImage - dsa.AntennaAzimuthImage,
+                           360)
+    level2['CurrentMagnitude'] = np.sqrt(
+        level2.RadialSurfaceCurrentFore ** 2
+        + level2.RadialSurfaceCurrentAft ** 2)\
+        / np.sin(np.radians(antenna_angle))
+    ind_pos = (level2.RadialSurfaceCurrentFore >
+               level2.RadialSurfaceCurrentAft) *\
+        np.cos(np.radians(antenna_angle))
     temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
                                        coords=[ind_pos.CrossRange,
                                                ind_pos.GroundRange],
                                        dims=('CrossRange', 'GroundRange'))
     temporary_direction = xr.where(ind_pos,
                                    np.degrees(np.arccos(
-                                       level2.RadialSurfaceVelocityFore /
+                                       level2.RadialSurfaceCurrentFore /
                                        level2.CurrentMagnitude)),
                                    - np.degrees(np.arccos(
-                                       level2.RadialSurfaceVelocityFore /
+                                       level2.RadialSurfaceCurrentFore /
                                        level2.CurrentMagnitude)))
-    level2['CurrentDirection'] = np.mod(level2.AntennaAzimuthImageFore
+    level2['CurrentDirection'] = np.mod(dsf.AntennaAzimuthImage
                                         + (-temporary_direction), 360)
+
     return level2
 
 
-def compute_current_vectors(level2):
+def generate_wind_field_from_single_measurement(ds, u10, wind_direction):
     """
-    Compute surface current vector components.
+    Generate 2D fields of wind velocity and direction.
 
-    Compute u (East) and v (North) surface velocity vector components (m/s)
-    from current magnitude and direction
-
-    Parameters
-    ----------
-    level2 : xarray.Dataset
-        L2 dataset
-
-    Returns
-    -------
-    level2 : xarray.Dataset
-        L2 dataset
-    level2.CurrentVectorUComponent : xarray.DataArray
-        u (East) surface current vector component field (m/s)
-    level2.CurrentVectorVComponent : xarray.DataArray
-        v (North) surface current vector component field (m/s)
-
-    """
-    z = level2.CurrentMagnitude * np.exp(-1j * (level2.CurrentDirection - 90)
-                                         / 180 * np.pi)
-    level2['CurrentVectorUComponent'] = np.real(z)  # toward East
-    level2['CurrentVectorVComponent'] = np.imag(z)  # toward North
-    return level2
-
-
-def compute_relative_wind_direction(radar_azimuth, wind_direction):
-    """
-    Compute relative wind direction.
-
-    Compute angle between radar beam and wind direction (degrees)
-    0 degrees = up-wind
-    180 degrees = down-wind
-    90, -90 degrees = cross-wind
-
-    Parameters
-    ----------
-    radar_azimuth : float, xarray.DataArray
-        Radar beam azimuth, either scalar value or array (radians).
-    wind_direction : float, xarray.DataArray
-        Wind direction in oceanographic convention (degrees N).
-
-    Returns
-    -------
-    relative_wind_direction : float, xarray.DataArray
-        Angle between radar beam and wind direction (degrees)
-
-    """
-    radar_beam_u_component = np.sin(radar_azimuth)
-    radar_beam_v_component = np.cos(radar_azimuth)
-    wind_u_component = np.sin(np.radians(wind_direction))
-    wind_v_component = np.cos(np.radians(wind_direction))
-    relative_wind_direction = np.degrees(np.arccos(
-        ((radar_beam_u_component * wind_u_component) +
-         (radar_beam_v_component * wind_v_component)) /
-        (np.sqrt(radar_beam_u_component ** 2 + radar_beam_v_component ** 2) *
-         np.sqrt(wind_u_component ** 2 + wind_v_component ** 2))))
-    return relative_wind_direction
-
-
-def generate_wind_field_from_single_measurement(level2, u10, wind_direction):
-    """
-    Generate 2D fields of wind velocity u10 (m/s) and direction (degrees N)
-    from single measurements
+    Generate 2D fields of wind velocity u10 (m/s) and direction (degrees) in
+    wind convention from single observations.
 
     Parameters
     ----------
@@ -160,7 +145,7 @@ def generate_wind_field_from_single_measurement(level2, u10, wind_direction):
 
     """
     wind_direction = np.mod(wind_direction - 180, 360)
-    level2['u10Image'] = xr.DataArray(
+    ds['u10Image'] = xr.DataArray(
         np.zeros(level2.RadialSurfaceVelocityFore.shape) + u10,
         coords=[level2.CrossRange, level2.GroundRange],
         dims=('CrossRange', 'GroundRange'))
@@ -168,25 +153,4 @@ def generate_wind_field_from_single_measurement(level2, u10, wind_direction):
         np.zeros(level2.RadialSurfaceVelocityFore.shape) + wind_direction,
         coords=[level2.CrossRange, level2.GroundRange],
         dims=('CrossRange', 'GroundRange'))
-    return level2
-
-
-def compute_surface_currents(level2):
-    """
-    Compute surface current magnitude, direction and vector components
-
-    Parameters
-    ----------
-    level2 : xarray.Dataset
-        L2 dataset
-
-    Returns
-    -------
-    level2 : xarray.Dataset
-        L2 dataset
-
-    """
-    level2 = compute_current_magnitude(level2)
-    level2 = compute_current_direction(level2)
-    level2 = compute_current_vectors(level2)
     return level2
