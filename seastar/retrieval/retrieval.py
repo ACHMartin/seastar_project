@@ -11,16 +11,20 @@ import xarray as xr
 
 def compute_current_magnitude(level2):
     """
+    Compute surface current magnitude.
+
     Compute surface current magnitude (m/s) from radial surface velocity
     components measured from two orthogonal antennas
 
     Parameters
     ----------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
 
     Returns
     -------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
     level2.AntennaAngleImage : Angle between two orthogonal antennas (degrees)
     level2.CurrentMagnitude : Magnitude of surface current vector (m/s)
 
@@ -36,21 +40,23 @@ def compute_current_magnitude(level2):
 
 def compute_current_direction(level2):
     """
+    Compute surface current direction.
+
     Compute surface current direction from orthogonal radial surface current
     components measured from two antennas.
 
     Parameters
     ----------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
 
     Returns
     -------
-    level2 : L2 dataset in netCDF format
-    level2.CurrentDirection : Surface current direction (degrees N) in
-    oceanographic convention
-
+    level2 : xarray.Dataset
+        L2 dataset
+    level2.CurrentDirection : xarray.DataArray
+        Surface current direction (degrees N) in oceanographic convention
     """
-
     ind_pos = (level2.RadialSurfaceVelocityFore >
                level2.RadialSurfaceVelocityAft) *\
         np.cos(np.radians(level2.AntennaAngleImage))
@@ -72,20 +78,24 @@ def compute_current_direction(level2):
 
 def compute_current_vectors(level2):
     """
+    Compute surface current vector components.
+
     Compute u (East) and v (North) surface velocity vector components (m/s)
     from current magnitude and direction
 
     Parameters
     ----------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
 
     Returns
     -------
-    level2 : L2 dataset in netCDF format
-    level2.CurrentVectorUComponent : u (East) surface current vector component
-    field (m/s)
-    level2.CurrentVectorVComponent : v (North) surface current vector component
-    field (m/s)
+    level2 : xarray.Dataset
+        L2 dataset
+    level2.CurrentVectorUComponent : xarray.DataArray
+        u (East) surface current vector component field (m/s)
+    level2.CurrentVectorVComponent : xarray.DataArray
+        v (North) surface current vector component field (m/s)
 
     """
     z = level2.CurrentMagnitude * np.exp(-1j * (level2.CurrentDirection - 90)
@@ -97,6 +107,8 @@ def compute_current_vectors(level2):
 
 def compute_relative_wind_direction(radar_azimuth, wind_direction):
     """
+    Compute relative wind direction.
+
     Compute angle between radar beam and wind direction (degrees)
     0 degrees = up-wind
     180 degrees = down-wind
@@ -104,13 +116,15 @@ def compute_relative_wind_direction(radar_azimuth, wind_direction):
 
     Parameters
     ----------
-    radar_azimuth : Radar beam azimuth, either scalar value or array (radians).
-    wind_direction : Wind direction in oceanographic convention (degrees N).
+    radar_azimuth : float, xarray.DataArray
+        Radar beam azimuth, either scalar value or array (radians).
+    wind_direction : float, xarray.DataArray
+        Wind direction in oceanographic convention (degrees N).
 
     Returns
     -------
-    relative_wind_direction : Angle between radar beam and wind direction
-    (degrees)
+    relative_wind_direction : float, xarray.DataArray
+        Angle between radar beam and wind direction (degrees)
 
     """
     radar_beam_u_component = np.sin(radar_azimuth)
@@ -132,13 +146,15 @@ def generate_wind_field_from_single_measurement(level2, u10, wind_direction):
 
     Parameters
     ----------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
     u10 : Wind velocity at 10m above sea surface (m/s)
     wind_direction : Wind direction (degrees N) in wind convention
 
     Returns
     -------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
     level2.u10Image: 2D field of u10 wind velocities (m/s)
     level2.WindDirectionImage : 2D field of wind directions (degrees N)
 
@@ -161,11 +177,13 @@ def compute_surface_currents(level2):
 
     Parameters
     ----------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
 
     Returns
     -------
-    level2 : L2 dataset in netCDF format
+    level2 : xarray.Dataset
+        L2 dataset
 
     """
     level2 = compute_current_magnitude(level2)

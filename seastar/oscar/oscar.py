@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Functions to calculate varirous L2 data products for the OSCAR 3-beam ATI
-SAR instrument.
+Functions to calculate varirous L2 data products for the OSCAR instrument.
 
 Created on Fri Sep 16 13:48:48 2022
 
@@ -15,19 +14,23 @@ import scipy as sp
 
 def add_antenna_baseline(ds, baseline=0.2):
     """
-    Add antenna baseline to dataset if not already present
+    Add antenna baseline to dataset if not already present.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format
-    baseline : Antenna baseline (m), default = 0.2m
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    baseline : float
+        Antenna baseline (m), default = 0.2m
+
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format
-    ds.Baseline : Antenna baseline distance (m)
+    ds : xarray.Dataset
+        OSCAR SAR dataset in netCDF format
+    ds.Baseline : float
+        Antenna baseline distance (m)
 
     """
-
     if 'Baseline' not in ds.data_vars:
         ds['Baseline'] = baseline
     return ds
@@ -35,19 +38,25 @@ def add_antenna_baseline(ds, baseline=0.2):
 
 def compute_SLC_Master_Slave(ds):
     """
-    Calculate SLC master/slave complex images and add to dataset
+    Calculate SLC master/slave complex images.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format
-    ds.SigmaImageSingleLookRealPart : Real part of SLC image
-    ds.SigmaImageSingleLookImaginaryPart: Imaginary part of SLC image
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    ds.SigmaImageSingleLookRealPart : xarray.DataArray
+        Real part of SLC image
+    ds.SigmaImageSingleLookImaginaryPart: xarray.DataArray
+        Imaginary part of SLC image
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format
-    ds.SigmaSLCMaster: Master SLC image
-    ds.SigmaSLCSlave: Slave SLC image
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    ds.SigmaSLCMaster: xarray.DataArray
+        Master SLC image
+    ds.SigmaSLCSlave: xarray.DataArray
+        Slave SLC image
 
     """
     ds['SigmaSLCMaster'] = (ds.SigmaImageSingleLookRealPart + 1j *
@@ -60,43 +69,54 @@ def compute_SLC_Master_Slave(ds):
 
 def add_central_electromagnetic_wavenumber(ds):
     """
-    Calculate wavenumber of central electromagnetic frequency and add to
-    dataset
+    Calculate wavenumber of central electromagnetic frequency.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format.
-    ds.CentralFreq : Central radar frequency (Hz)
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    ds.CentralFreq : xarray.DataArray
+        Central radar frequency (Hz)
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format.
-    ds.CentralWavenumber : Central radar wavenumber (rad / m)
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    ds.CentralWavenumber : xarray.DataArray
+        Central radar wavenumber (rad / m)
 
     """
-
     ds['CentralWavenumber'] = 2 * np.pi * ds.CentralFreq / sp.constants.c
     return ds
 
 
 def compute_multilooking_Master_Slave(ds, window=3):
     """
-    Calculate multilooking Master/Slave L2 image products and add to dataset
+    Calculate multilooking Master/Slave L2 image products.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format.
-    window : Integer averaging window size. The default is 3.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    window : int
+        Integer averaging window size. The default is 3.
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format.
-    ds.IntensityAvgComplexMasterSlave : Rolling average multilooking SLC image
-    ds.Intensity : Multilook image pixel intensity
-    ds.Interferogram : Interferogram (radians)
-    ds.IntensityAvgMaster : rolling agerage Master SLC intensity image
-    ds.IntensityAvgSlave : rolling average Slave SLC intensity image
-    ds.Coherence : Multilook image coherence
+    ds : xarray.Dataset
+        OSCAR SAR dataset
+    ds.IntensityAvgComplexMasterSlave : xarray.DataArray
+        Rolling average multilooking SLC image
+    ds.Intensity : xarray.DataArray
+        Multilook image pixel intensity
+    ds.Interferogram : xarray.DataArray
+        Interferogram (radians)
+    ds.IntensityAvgMaster : xarray.DataArray
+        rolling agerage Master SLC intensity image
+    ds.IntensityAvgSlave : xarray.DataArray
+        rolling average Slave SLC intensity image
+    ds.Coherence : xarray.DataArray
+        Multilook image coherence
     """
     ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
@@ -116,16 +136,17 @@ def compute_multilooking_Master_Slave(ds, window=3):
 
 def compute_incidence_angle(ds):
     """
-    Calculate incidence angle between radar beam and sea surface and add to
-    dataset
+    Calculate incidence angle between radar beam and sea surface.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
     ds.IncidenceAngleImage : Incidence angle between radar beam and
     nadir (radians) for each pixel
 
@@ -138,17 +159,19 @@ def compute_incidence_angle(ds):
 
 def compute_antenna_azimuth_direction(ds, antenna):
     """
-    Calculate antenna azimuth relative to North in degrees and add to dataset
+    Calculate antenna azimuth relative to North in degrees.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
     antenna : 'fore' Fore beam pair, 'aft' Aft beam pair
 
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
     ds.OrbitHeadingImage : Aircraft heading of each image pixel
     (degrees from North)
     ds.AntennaAzimuthImage : Antenna beam azimuth of each image pixel
@@ -176,16 +199,18 @@ def compute_antenna_azimuth_direction(ds, antenna):
 
 def compute_time_lag_Master_Slave(ds, options='from_SAR_time'):
     """
-    Compute time lag tau between Master/Slave images and add to dataset
+    Compute time lag tau between Master/Slave images.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
     options : Time lag computation method. The default is 'from_SAR_time'.
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
     ds.TimeLag : Time lag tau between Master/Slave images (s)
 
     """
@@ -198,19 +223,19 @@ def compute_time_lag_Master_Slave(ds, options='from_SAR_time'):
 
 def compute_radial_surface_velocity(ds):
     """
-    Compute radial surface velocity from SAR interferogram and time lag
-    between antenna pairs
+    Compute radial surface velocity from SAR interferogram.
 
     Parameters
     ----------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
 
     Returns
     -------
-    ds : OSCAR SAR dataset in netCDF format.
+    ds : xarray.Dataset
+        OSCAR SAR dataset
     ds.RadialSuraceVelocity : Surface velocity (m/s) along a radar beam radial
     """
-
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
          * np.sin(ds.IncidenceAngleImage))
@@ -220,20 +245,21 @@ def compute_radial_surface_velocity(ds):
 
 def init_level2(dsa, dsf, dsm):
     """
-    Initialise level2 dataset with
+    Initialise level2 dataset.
 
     Parameters
     ----------
-    dsa : TYPE
-        DESCRIPTION.
-    dsf : TYPE
-        DESCRIPTION.
-    dsm : TYPE
-        DESCRIPTION.
+    dsa : xarray.Dataset
+        OSCAR SAR dataset for the aft antenna pair
+    dsf : xarray.Dataset
+        OSCAR SAR dataset for the fore antenna pair
+    dsm : xarray.Dataset
+        OSCAR SAR dataset for the mid antenna
 
     Returns
     -------
-    None.
+    level2 : xarray.Dataset
+        OSCAR SAR L2 processing dataset
 
     """
     # Fore antenna variables
