@@ -5,65 +5,68 @@
 
 import numpy as np
 import xarray as xr
-import pdb
+# import pdb
 from scipy.constants import c  # speed of light in vacuum
 import seastar
 
-def compute_wasv(ds_env, gmf, **kwargs):
+def compute_wasv(L1, aux_geo, gmf, **kwargs):
     """
-    Compute the Wind-wave Artefact Surface Velocity (WASV)
-    as function of geophysical conditions defined in 'ds_env'.
-    :param ds_env: A Dataset containing WindSpeed, WindDirection,
-    IncidenceAngleImage, LookDirection, Polarization
+    Compute the Wind-wave Artefact Surface Velocity (WASV) for 'L1' data
+    as function of geophysical conditions defined in 'aux_geo'.
+    :param L1: A Dataset containing IncidenceAngleImage, LookDirection, Polarization
     All matrix should be the same size
     Polarization (1=VV; 2=HH)
+    :param aux_geo: A Dataset containing WindSpeed, WindDirection,
     :param gmf: mouche12, yurovsky19 with kwargs for options
-    :return: A Dataset with WASV in [m/s]
+    :return: A Dataset with WASV in [m/s] of the combined 'outer' L1 and aux_geo coordinates
     """
 
     # Initialisation
     central_wavelength = seastar.utils.tools.wavenumber2wavelength(
-        ds_env.CentralWavenumber
+        L1.CentralWavenumber
     )
 
-    if len(ds_env.LookDirection.shape) > 2:
-        raise Exception('ds_env.LookDirection need to be a 2D field. \n'
-                        'Use e.g. ds_env.sel(Antenna="Fore") to reduce to a 2D field.')
+    if len(L1.LookDirection.shape) > 2:
+        raise Exception('L1.LookDirection need to be a 2D field. \n'
+                        'Use e.g. L1.sel(Antenna="Fore") to reduce to a 2D field.')
+
+    # Aligned L1 and aux_geo dataset => 'outer' Union of the two indexes
+    L1, aux_geo = xr.align(L1, aux_geo, join="outer")
 
     relative_wind_direction = seastar.utils.tools.compute_relative_wind_direction(
-        ds_env.WindDirection, ds_env.LookDirection
+        aux_geo.WindDirection, L1.LookDirection
     )
 
     ind = dict()
     for pol_str, pol_val in [('VV', 1), ('HH', 2)]:
-        ind[pol_str] = (ds_env.Polarization == pol_val).values
+        ind[pol_str] = (L1.Polarization == pol_val).values
 
-    wasv_rsv = np.full(ds_env.WindSpeed.shape, np.nan)
+    wasv_rsv = np.full(L1.IncidenceAngleImage.shape, np.nan)
     if gmf == 'mouche12':
-        dop_c = np.full(ds_env.WindSpeed.shape, np.nan)
+        dop_c = np.full(L1.IncidenceAngleImage.shape, np.nan)
         for pol_str in ('VV', 'HH'):
             if ind[pol_str].any():
                 dop_c[ind[pol_str]] = mouche12(
-                    ds_env.WindSpeed.values[ind[pol_str]],
+                    aux_geo.WindSpeed.values[ind[pol_str]],
                     relative_wind_direction.values[ind[pol_str]],
-                    ds_env.IncidenceAngleImage.values[ind[pol_str]],
+                    L1.IncidenceAngleImage.values[ind[pol_str]],
                     pol_str,
                 )
 
         # Convert Doppler Shift of C-band (5.5 GHz) to CentralFrequency
         f_c = 5.5 * 10 ** 9
-        dop_Hz = dop_c * ds_env.CentralFreq / f_c
+        dop_Hz = dop_c * L1.CentralFreq / f_c
         [wasv_losv, wasv_rsv] = convertDoppler2Velocity(
-            ds_env.CentralFreq / 1e9,
+            L1.CentralFreq / 1e9,
             dop_Hz,
-            ds_env.IncidenceAngleImage
+            L1.IncidenceAngleImage
         )
     elif gmf == 'yurovsky19':
         dc = dict()
         [dc['VV'], dc['HH']] = yurovsky19(
-            ds_env.IncidenceAngleImage,
+            L1.IncidenceAngleImage,
             relative_wind_direction,
-            ds_env.WindSpeed,
+            aux_geo.WindSpeed,
             lambdar=central_wavelength,
             **kwargs
         )
@@ -72,7 +75,7 @@ def compute_wasv(ds_env, gmf, **kwargs):
             wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
 
     ds_wa = xr.Dataset()
-    ds_wa['WASV'] = (ds_env.dims, wasv_rsv)
+    ds_wa['WASV'] = (L1.dims, wasv_rsv)
     return ds_wa
 
 
