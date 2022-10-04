@@ -3,15 +3,35 @@
 
 import numpy as np
 
+
 def currentVelDir2UV(vel, cdir):
+    """
+    Compute current vector components from direction and magnitude.
+
+    Parameters
+    ----------
+    vel : array, float
+        Magnitude of current (m/s).
+    cdir : array, float
+        Direction of current (degrees N) in oceanographic convention.
+
+    Returns
+    -------
+    u : array, float
+        u component (positive East) of current vector.
+    v : array, float
+        v component (positive North) of current vector..
+
+    """
     z = vel * np.exp(-1j * (cdir - 90) / 180 * np.pi)
-    u = z.real  # toward East
-    v = z.imag  # toward North
+    u = z.real
+    v = z.imag
     return u, v
 
 
 def _currentUV2VelDir(u, v):
-    """Converts U and V currents to velocity and direction (in degrees).
+    """
+    Converts U and V currents to velocity and direction (in degrees).
 
     :param u: velocity
     :type u: ``float``
@@ -29,6 +49,24 @@ def _currentUV2VelDir(u, v):
 
 
 def windSpeedDir2UV(wspd, wdir):
+    """
+    Compute wind vector components from direction and magnitude.
+
+    Parameters
+    ----------
+    vel : array, float
+        Magnitude of wind (m/s).
+    cdir : array, float
+        Direction of wind (degrees N) in wind convention.
+
+    Returns
+    -------
+    u : array, float
+        u component (positive East) of wind vector.
+    v : array, float
+        v component (positive North) of wind vector..
+
+    """
     z = wspd * np.exp(-1j * (wdir + 90) / 180 * np.pi)
     u = z.real  # toward East
     v = z.imag  # toward North
@@ -55,6 +93,7 @@ def compute_relative_wind_direction(windDirection, lookDirection):
     facing the wind -> upwind
     :return: relative_wind_direction between 0° and 180°. 0° for upwind; 90° crosswind; 180° downwind
     """
+
     relative_wind_direction = \
         np.abs(
             np.mod(
@@ -63,3 +102,51 @@ def compute_relative_wind_direction(windDirection, lookDirection):
             ) - 180
         )
     return relative_wind_direction
+
+def cdop_func(x):
+    """ Function to assist in CDOP calculation
+    """
+
+    cdop_f = np.divide(1,(1+np.exp(-x)))
+    return cdop_f
+
+
+def compute_relative_wind_direction(antenna_look_direction, wind_direction):
+    """
+    Compute relative wind direction.
+
+    Compute angle between radar beam and wind direction (degrees)
+    0 degrees = up-wind
+    180 degrees = down-wind
+    90, -90 degrees = cross-wind
+
+    Parameters
+    ----------
+    antenna_look_direction : float, xarray.DataArray
+        Antenna look direction, either scalar value or array (degrees N).
+    wind_direction : float, xarray.DataArray
+        Wind direction in oceanographic convention (degrees N).
+
+    Returns
+    -------
+    relative_wind_direction : float, xarray.DataArray
+        Angle between radar beam and wind direction (degrees)
+
+    """
+#    Old code - to be deleted when new code working
+#    radar_beam_u_component = np.sin(radar_azimuth)
+#    radar_beam_v_component = np.cos(radar_azimuth)
+#    wind_u_component = np.sin(np.radians(wind_direction))
+#    wind_v_component = np.cos(np.radians(wind_direction))
+#    relative_wind_direction = np.degrees(np.arccos(
+#        ((radar_beam_u_component * wind_u_component) +
+#         (radar_beam_v_component * wind_v_component)) /
+#        (np.sqrt(radar_beam_u_component ** 2 + radar_beam_v_component ** 2) *
+#         np.sqrt(wind_u_component ** 2 + wind_v_component ** 2))))
+
+    relative_wind_direction = np.mod(wind_direction -
+                                     antenna_look_direction + 180,
+                                     360) - 180
+
+    return relative_wind_direction
+
