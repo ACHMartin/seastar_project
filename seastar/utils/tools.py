@@ -41,8 +41,25 @@ def windUV2SpeedDir(u, v):
     wdir = np.mod(-90 - np.angle(tmp) * 180 / np.pi, 360)
     return wspd, wdir
 
-def cdop_func(x):
-    """ Function to assist in CDOP calculation
+
+def wavenumber2wavelength(wavenumber):
+    wavelength = 2 * np.pi / wavenumber
+    return wavelength
+
+def compute_relative_wind_direction(windDirection, lookDirection):
     """
-    cdop_f = np.divide(1,(1+np.exp(-x)))
-    return cdop_f
+    Compute the relative wind direction between the antenna lookDirection and the windDirection.
+    Assuming the same meteorological convention for lookDir and windDir.
+    :param windDirection: Direction from where the wind is blowing. North wind -> 0°
+    :param lookDirection: Direction in which the radar is looking. Looking toward the North -> 0°, in this case
+    facing the wind -> upwind
+    :return: relative_wind_direction between 0° and 180°. 0° for upwind; 90° crosswind; 180° downwind
+    """
+    relative_wind_direction = \
+        np.abs(
+            np.mod(
+                windDirection - lookDirection + 180,
+                360
+            ) - 180
+        )
+    return relative_wind_direction
