@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 import pdb
 from scipy.constants import c  # speed of light in vacuum
-
+import seastar
 
 def compute_wasv(ds_env, gmf, **kwargs):
     """
@@ -22,19 +22,18 @@ def compute_wasv(ds_env, gmf, **kwargs):
     """
 
     # Initialisation
-    central_wavelength = wavenumber2wavelength(ds_env.CentralWavenumber)
+    central_wavelength = seastar.utils.tools.wavenumber2wavelength(
+        ds_env.CentralWavenumber
+    )
 
-    relative_wind_direction = \
-        np.abs(
-            np.mod(
-                ds_env.WindDirection - ds_env.LookDirection + 180,
-                360
-            ) - 180
-        )  # This function propably already exist TODO to check
-    # Alternative FROM MATLAB, should be the same results,
-    # rel_wdir = mod(D - A, 360);
-    # ind_180sup = rel_wdir > 180;
-    # rel_wdir(ind_180sup) = -(rel_wdir(ind_180sup) - 360);
+    if len(ds_env.LookDirection.shape) > 2:
+        raise Exception('ds_env.LookDirection need to be a 2D field. \n'
+                        'Use e.g. ds_env.sel(Antenna="Fore") to reduce to a 2D field.')
+
+    relative_wind_direction = seastar.utils.tools.compute_relative_wind_direction(
+        ds_env.WindDirection, ds_env.LookDirection
+    )
+
     ind = dict()
     for pol_str, pol_val in [('VV', 1), ('HH', 2)]:
         ind[pol_str] = (ds_env.Polarization == pol_val).values
@@ -76,11 +75,6 @@ def compute_wasv(ds_env, gmf, **kwargs):
     ds_wa['WASV'] = (ds_env.dims, wasv_rsv)
     return ds_wa
 
-
-# def convert_doppler_shift_freq_to_radial_surface_velocity()
-def wavenumber2wavelength(wavenumber):
-    wavelength = 2 * np.pi / wavenumber
-    return wavelength
 
 
 def convertDoppler2Velocity(freq_GHz, dop, inci):
