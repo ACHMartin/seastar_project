@@ -4,21 +4,109 @@
 """
 
 import numpy as np
+import xarray as xr
+import pdb
 from scipy.constants import c  # speed of light in vacuum
 
 
-# import pdb
+def compute_wasv(ds_env, gmf, **kwargs):
+    """
+    Compute the Wind-wave Artefact Surface Velocity (WASV)
+    as function of geophysical conditions defined in 'ds_env'.
+    :param ds_env: A Dataset containing WindSpeed, WindDirection,
+    IncidenceAngleImage, LookDirection, Polarization
+    All matrix should be the same size
+    Polarization (1=VV; 2=HH)
+    :param gmf: mouche12, yurovsky19 with kwargs for options
+    :return: A Dataset with WASV in [m/s]
+    """
+
+    # Initialisation
+    central_wavelength = wavenumber2wavelength(ds_env.CentralWavenumber)
+
+    relative_wind_direction = \
+        np.abs(
+            np.mod(
+                ds_env.WindDirection - ds_env.LookDirection + 180,
+                360
+            ) - 180
+        )  # This function propably already exist TODO to check
+    # Alternative FROM MATLAB, should be the same results,
+    # rel_wdir = mod(D - A, 360);
+    # ind_180sup = rel_wdir > 180;
+    # rel_wdir(ind_180sup) = -(rel_wdir(ind_180sup) - 360);
+    ind = dict()
+    for pol_str, pol_val in [('VV', 1), ('HH', 2)]:
+        ind[pol_str] = (ds_env.Polarization == pol_val).values
+
+    wasv_rsv = np.full(ds_env.WindSpeed.shape, np.nan)
+    if gmf == 'mouche12':
+        dop_c = np.full(ds_env.WindSpeed.shape, np.nan)
+        for pol_str in ('VV', 'HH'):
+            if ind[pol_str].any():
+                dop_c[ind[pol_str]] = mouche12(
+                    ds_env.WindSpeed.values[ind[pol_str]],
+                    relative_wind_direction.values[ind[pol_str]],
+                    ds_env.IncidenceAngleImage.values[ind[pol_str]],
+                    pol_str,
+                )
+
+        # Convert Doppler Shift of C-band (5.5 GHz) to CentralFrequency
+        f_c = 5.5 * 10 ** 9
+        dop_Hz = dop_c * ds_env.CentralFreq / f_c
+        [wasv_losv, wasv_rsv] = convertDoppler2Velocity(
+            ds_env.CentralFreq / 1e9,
+            dop_Hz,
+            ds_env.IncidenceAngleImage
+        )
+    elif gmf == 'yurovsky19':
+        dc = dict()
+        [dc['VV'], dc['HH']] = yurovsky19(
+            ds_env.IncidenceAngleImage,
+            relative_wind_direction,
+            ds_env.WindSpeed,
+            lambdar=central_wavelength,
+            **kwargs
+        )
+
+        for pol_str in ['VV', 'HH']:
+            wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
+
+    ds_wa = xr.Dataset()
+    ds_wa['WASV'] = (ds_env.dims, wasv_rsv)
+    return ds_wa
 
 
-def cdop_func(x):
+# def convert_doppler_shift_freq_to_radial_surface_velocity()
+def wavenumber2wavelength(wavenumber):
+    wavelength = 2 * np.pi / wavenumber
+    return wavelength
+
+
+def convertDoppler2Velocity(freq_GHz, dop, inci):
+    # Do not change, freq_GHz need to be in GHz ADMARTIN, used in CEASELESS 2022
     """
     """
-    return 1. / (1. + np.exp(-x))
+    if 100 < freq_GHz < 0.1:
+        raise Exception('Inputs freq_GHz should be in GHz, e.g. C-band: 5.5;\
+                X-band 9.55; Ku-band 13.6')
+    n = 1.000293
+    c_air = c / n
+    wavelength = c_air / freq_GHz / 1e9
+    los_vel = - dop * wavelength / 2
+    surf_vel = los_vel / np.sin(np.radians(inci))
+    return los_vel, surf_vel
 
 
 def mouche12(u10, phi, inc, pol):
     """
     """
+
+    def cdop_func(x):
+        """
+        """
+        return 1. / (1. + np.exp(-x))
+
     # Check inputs
     sizes = np.array([np.size(inc), np.size(u10), np.size(phi)])
     size = sizes.max()
@@ -126,20 +214,6 @@ def mouche12(u10, phi, inc, pol):
     shp = np.shape((inc, u10, phi)[ivar])
     dop = dop.reshape(shp)
     return dop
-
-
-def convertDoppler2Velocity(freq_GHz, dop, inci):
-    """
-    """
-    if 100 < freq_GHz < 0.1:
-        raise Exception('Inputs freq_GHz should be in GHz, e.g. C-band: 5.5;\
-                X-band 9.55; Ku-band 13.6')
-    n = 1.000293
-    c_air = c / n;
-    wavelength = c_air / freq_GHz / 1e9;
-    los_vel = -dop * wavelength / 2;
-    surf_vel = los_vel / np.sin(inci * np.pi / 180.);
-    return los_vel, surf_vel
 
 
 # =======================================================================
