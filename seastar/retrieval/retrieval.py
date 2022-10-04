@@ -39,6 +39,7 @@ def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
     """
     if gmf == 'mouche12':
         from gmfs.doppler import mouche12, convertDoppler2Velocity
+
         level2['CDOPFore'] = xr.DataArray(
             mouche12(aux.u10Image,
                      aux.RelativeWindDirectionFore,
@@ -46,6 +47,7 @@ def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
                      'VV'),
             coords=[dsf.CrossRange, dsf.GroundRange],
             dims=('CrossRange', 'GroundRange'))
+
         level2['CDOPAft'] = xr.DataArray(
             mouche12(aux.u10Image,
                      aux.RelativeWindDirectionAft,
@@ -53,14 +55,17 @@ def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
                      'VV'),
             coords=[dsa.CrossRange, dsa.GroundRange],
             dims=('CrossRange', 'GroundRange'))
+
         level2['WindLineOfSightVelocityFore'], level2['WASVFore'] =\
             convertDoppler2Velocity(5.5,
                                     level2.CDOPFore,
                                     np.degrees(dsf.IncidenceAngleImage))
+
         level2['WindLineOfSightVelocityAft'], level2['WASVAft'] =\
             convertDoppler2Velocity(5.5,
                                     level2.CDOPAft,
                                     np.degrees(dsa.IncidenceAngleImage))
+
         level2['RadialSurfaceCurrentFore'] =\
             level2.RadialSurfaceVelocityFore - level2.WASVFore
         level2['RadialSurfaceCurrentAft'] =\
@@ -102,12 +107,13 @@ def compute_current_magnitude_and_direction(level2, dsf, dsa):
         level2.RadialSurfaceCurrentFore ** 2
         + level2.RadialSurfaceCurrentAft ** 2)\
         / np.sin(np.radians(antenna_angle))
+
     ind_pos = (level2.RadialSurfaceCurrentFore >
                level2.RadialSurfaceCurrentAft) *\
         np.cos(np.radians(antenna_angle))
     temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
-                                       coords=[ind_pos.CrossRange,
-                                               ind_pos.GroundRange],
+                                       coords=[level2.CrossRange,
+                                               level2.GroundRange],
                                        dims=('CrossRange', 'GroundRange'))
     temporary_direction = xr.where(ind_pos,
                                    np.degrees(np.arccos(
@@ -122,7 +128,7 @@ def compute_current_magnitude_and_direction(level2, dsf, dsa):
     return level2
 
 
-def generate_wind_field_from_single_measurement(ds, u10, wind_direction):
+def generate_wind_field_from_single_measurement(aux, u10, wind_direction, ds):
     """
     Generate 2D fields of wind velocity and direction.
 
@@ -145,12 +151,14 @@ def generate_wind_field_from_single_measurement(ds, u10, wind_direction):
 
     """
     wind_direction = np.mod(wind_direction - 180, 360)
-    ds['u10Image'] = xr.DataArray(
-        np.zeros(level2.RadialSurfaceVelocityFore.shape) + u10,
-        coords=[level2.CrossRange, level2.GroundRange],
+    u10Image = xr.DataArray(
+        np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
+        + u10,
+        coords=[ds.CrossRange, ds.GroundRange],
         dims=('CrossRange', 'GroundRange'))
-    level2['WindDirectionImage'] = xr.DataArray(
-        np.zeros(level2.RadialSurfaceVelocityFore.shape) + wind_direction,
-        coords=[level2.CrossRange, level2.GroundRange],
+    WindDirectionImage = xr.DataArray(
+        np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
+        + wind_direction,
+        coords=[ds.CrossRange, ds.GroundRange],
         dims=('CrossRange', 'GroundRange'))
-    return level2
+    return u10Image, WindDirectionImage

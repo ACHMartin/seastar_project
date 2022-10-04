@@ -12,7 +12,7 @@ import xarray as xr
 import scipy as sp
 
 
-def add_antenna_baseline(ds, baseline=0.2):
+def add_antenna_baseline(ds, baseline):
     """
     Add antenna baseline to dataset if not already present.
 
@@ -21,7 +21,7 @@ def add_antenna_baseline(ds, baseline=0.2):
     ds : xarray.Dataset
         OSCAR SAR dataset
     baseline : float
-        Antenna baseline (m), default = 0.2m
+        Antenna baseline (m)
 
     Returns
     -------
@@ -118,6 +118,9 @@ def compute_multilooking_Master_Slave(ds, window=3):
     ds.Coherence : xarray.DataArray
         Multilook image coherence
     """
+    
+    if 'SigmaSLCMaster' not in ds.data_vars:
+        ds = compute_SLC_Master_Slave(ds)
     ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
     ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
@@ -197,7 +200,7 @@ def compute_antenna_azimuth_direction(ds, antenna):
     return ds
 
 
-def compute_time_lag_Master_Slave(ds, options='from_SAR_time'):
+def compute_time_lag_Master_Slave(ds, options):
     """
     Compute time lag tau between Master/Slave images.
 
@@ -214,6 +217,9 @@ def compute_time_lag_Master_Slave(ds, options='from_SAR_time'):
     ds.TimeLag : Time lag tau between Master/Slave images (s)
 
     """
+    if options not in ['from_SAR_time','from_aircraft_velocity']:
+        raise Exception('Unknown time lag computation method: Please refer to'
+                        'function documentation')
     if options == 'from_SAR_time':
         ds['TimeLag'] = (ds.OrbTimeImage - ds.OrbTimeImageSlave)
     if options == 'from_aircraft_velocity':
@@ -236,6 +242,10 @@ def compute_radial_surface_velocity(ds):
         OSCAR SAR dataset
     ds.RadialSuraceVelocity : Surface velocity (m/s) along a radar beam radial
     """
+    if 'CentralWavenumber' not in ds.data_vars:
+        ds = add_central_electromagnetic_wavenumber(ds)
+    
+    ds = compute_incidence_angle(ds)
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
          * np.sin(ds.IncidenceAngleImage))
@@ -243,44 +253,7 @@ def compute_radial_surface_velocity(ds):
     return ds
 
 
-def oscar_level2_preprocessing(dsf, dsa, dsm, level2):
-
-    # Fore antenna variables
-    dsf = add_central_electromagnetic_wavenumber(dsf)
-    dsf = compute_SLC_Master_Slave(dsf)
-    dsf = compute_multilooking_Master_Slave(dsf, window=7)
-    dsf = add_antenna_baseline(dsf)
-    dsf = compute_SLC_Master_Slave(dsf)
-    dsf = compute_multilooking_Master_Slave(dsf, window=7)
-    dsf = compute_incidence_angle(dsf)
-    dsf = compute_antenna_azimuth_direction(dsf, antenna='fore')
-    dsf = compute_time_lag_Master_Slave(dsf)
-
-
-    # Aft antenna variables
-    dsa = add_central_electromagnetic_wavenumber(dsa)
-    dsa = compute_SLC_Master_Slave(dsa)
-    dsa = compute_multilooking_Master_Slave(dsa, window=7)
-    dsa = add_antenna_baseline(dsa)
-    dsa = compute_SLC_Master_Slave(dsa)
-    dsa = compute_multilooking_Master_Slave(dsa, window=7)
-    dsa = compute_incidence_angle(dsa)
-    dsa = compute_antenna_azimuth_direction(dsa, antenna='aft')
-    dsa = compute_time_lag_Master_Slave(dsa)
-
-    # Should this be level2 rather than ds?
-#    dsf = compute_radial_surface_velocity(dsf)
-#    dsa = compute_radial_surface_velocity(dsa)
-    level2 = compute_radial_surface_velocity(dsf)
-    level2 = compute_radial_surface_velocity(dsa)
-    # Add data arrays to dataset
-    level2['RadialSurfaceVelocityFore'] = dsf.RadialSurfaceVelocity
-    level2['RadialSurfaceVelocityAft'] = dsa.RadialSurfaceVelocity
-
-    return dsf, dsa, dsm, level2
-
-
-def init_level2(dsf):
+def init_level2(dsf, dsa):
     """
     Initialise level2 dataset.
 
@@ -300,11 +273,15 @@ def init_level2(dsf):
 
     """
 
-
     level2 = xr.Dataset()
 
     # Write level2 attributes
     level2.attrs['Title'] = dsf.attrs['Title']
+    
+    level2['RadialSurfaceVelocityFore'] = dsf.RadialSurfaceVelocity
+    level2['RadialSurfaceVelocityAft'] = dsa.RadialSurfaceVelocity
+
+    
 
     return level2
 
