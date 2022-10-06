@@ -10,7 +10,7 @@ Created on Fri Sep 16 13:48:48 2022
 import numpy as np
 import xarray as xr
 import scipy as sp
-
+import seastar
 
 def add_antenna_baseline(ds, baseline):
     """
@@ -270,19 +270,105 @@ def init_level2(dsf, dsa):
     -------
     level2 : xarray.Dataset
         OSCAR SAR L2 processing dataset
+    level2.RadialSurfaceVelocity : xarray.DataArray
+        Radial surface velocities (m/s) for the Fore and Aft antennas
+        with corresponding dimension 'Antenna' and Coords ['Fore','Aft']
+    level2.LookDirection : xarray.DataArray
+        Antenna look direction (degrees N) for the Fore and Aft antennas
+        with corresponding dimension 'Antenna' and Coords ['Fore','Aft']
 
     """
-
     level2 = xr.Dataset()
 
     # Write level2 attributes
     level2.attrs['Title'] = dsf.attrs['Title']
-    
-    level2['RadialSurfaceVelocityFore'] = dsf.RadialSurfaceVelocity
-    level2['RadialSurfaceVelocityAft'] = dsa.RadialSurfaceVelocity
 
-    
-
+    level2['RadialSurfaceVelocity'] = xr.concat([dsf.RadialSurfaceVelocity,
+                                                 dsa.RadialSurfaceVelocity],
+                                                'Antenna', join='outer')
+    level2['RadialSurfaceVelocity'] = level2.RadialSurfaceVelocity.\
+        assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
+    level2['LookDirection'] = xr.concat([dsf.AntennaAzimuthImage,
+                                         dsa.AntennaAzimuthImage],
+                                        'Antenna', join='outer')
+    level2['LookDirection'] = level2.LookDirection.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
+    level2['IncidenceAngleImage'] = xr.concat([dsf.IncidenceAngleImage,
+                                               dsa.IncidenceAngleImage],
+                                              'Antenna', join='outer')
+    level2['IncidenceAngleImage'] = level2.IncidenceAngleImage.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
     return level2
+
+def init_auxiliary(level2, dsa, dsf, u10, wind_direction):
+    
+    "A Dataset containing WindSpeed, WindDirection,"
+    "IncidenceAngleImage, LookDirection, Polarization"
+    "All matrix should be the same size"
+    "Polarization (1=VV; 2=HH)"
+
+    WindSpeed, WindDirection =\
+        generate_wind_field_from_single_measurement(u10,
+                                                    wind_direction,
+                                                    level2)
+    aux = xr.Dataset()
+    aux['WindSpeed'] = WindSpeed
+    aux['WindDirection'] = WindDirection
+    aux['LookDirection'] = xr.concat([dsf.AntennaAzimuthImage,
+                                      dsa.AntennaAzimuthImage],
+                                     'Antenna', join='outer')
+    aux['LookDirection'] = aux.LookDirection.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
+    aux['IncidenceAngleImage'] = xr.concat([dsf.IncidenceAngleImage,
+                                            dsa.IncidenceAngleImage],
+                                           'Antenna', join='outer')
+    aux['IncidenceAngleImage'] = aux.IncidenceAngleImage.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
+    #Polarization (1=VV; 2=HH)
+    aux['Polarization'] = xr.DataArray(data=[np.zeros(WindSpeed.shape)+1,
+                                       np.zeros(WindSpeed.shape)+1],
+                                       dims=aux.LookDirection.dims,
+                                       coords=aux.LookDirection.coords,
+                                       )
+    aux['CentralWavenumber'] = dsf.CentralWavenumber.data
+    aux['CentralFreq'] = dsf.CentralFreq.data
+    
+    return aux
+    
+def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
+    """
+    Generate 2D fields of wind velocity and direction.
+
+    Generate 2D fields of wind velocity u10 (m/s) and direction (degrees) in
+    wind convention from single observations.
+
+    Parameters
+    ----------
+    level2 : xarray.Dataset
+        L2 dataset
+    u10 : Wind velocity at 10m above sea surface (m/s)
+    wind_direction : Wind direction (degrees N) in wind convention
+
+    Returns
+    -------
+    level2 : xarray.Dataset
+        L2 dataset
+    level2.u10Image: 2D field of u10 wind velocities (m/s)
+    level2.WindDirectionImage : 2D field of wind directions (degrees N)
+
+    """
+    wind_direction = np.mod(wind_direction - 180, 360)
+    u10Image = xr.DataArray(
+        np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
+        + u10,
+        coords=[ds.CrossRange, ds.GroundRange],
+        dims=('CrossRange', 'GroundRange'))
+    WindDirectionImage = xr.DataArray(
+        np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
+        + wind_direction,
+        coords=[ds.CrossRange, ds.GroundRange],
+        dims=('CrossRange', 'GroundRange'))
+    return u10Image, WindDirectionImage
+
 
 
