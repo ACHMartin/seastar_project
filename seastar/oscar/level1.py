@@ -12,6 +12,17 @@ import xarray as xr
 import scipy as sp
 import seastar
 
+
+def init_level1_dataset(dsf, dsa):
+    ds_level1 = xr.concat([dsf,
+                           dsa],
+                          'Antenna', join='outer',
+                          coords='all')
+    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
+    return ds_level1
+
+
+
 def add_antenna_baseline(ds, baseline):
     """
     Add antenna baseline to dataset if not already present.
@@ -299,6 +310,12 @@ def init_level2(dsf, dsa):
     level2['IncidenceAngleImage'] = level2.IncidenceAngleImage.assign_coords(
         Antenna=('Antenna', ['Fore', 'Aft']))
     return level2
+
+
+
+
+
+
 
 def init_auxiliary(level2, dsa, dsf, u10, wind_direction):
     
