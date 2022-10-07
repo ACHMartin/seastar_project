@@ -55,9 +55,9 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
         # Convert Doppler Shift of C-band (5.5 GHz) to CentralFrequency
         f_c = 5.5 * 10 ** 9
-        dop_Hz = dop_c * L1.CentralFreq / f_c
+        dop_Hz = dop_c * L1.CentralFreq.data / f_c
         [wasv_losv, wasv_rsv] = convertDoppler2Velocity(
-            L1.CentralFreq / 1e9,
+            L1.CentralFreq.data / 1e9,
             dop_Hz,
             L1.IncidenceAngleImage
         )
