@@ -7,9 +7,9 @@ Created on Fri Sep 16 16:48:48 2022
 
 import numpy as np
 import xarray as xr
+import seastar
 
-
-def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
+def compute_radial_surface_current(level2, aux, gmf='mouche12'):
     """
     Compute radial surface current (RSC).
 
@@ -21,10 +21,6 @@ def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
     ----------
     level2 : xarray.Dataset
         L2 dataset
-    dsf : xarray.Dataset
-        Fore antenna ATI SAR dataset
-    dsa : xarray.Dataset
-        Aft antenna ATI SAR dataset
     aux : xarray.Dataset
         Dataset containing geophysical wind data
     gmf : str, optional
@@ -37,41 +33,17 @@ def compute_radial_surface_current(level2, dsf, dsa, aux, gmf='mouche12'):
         L2 dataset
 
     """
-    if gmf == 'mouche12':
-        from gmfs.doppler import mouche12, convertDoppler2Velocity
-
-        level2['CDOPFore'] = xr.DataArray(
-            mouche12(aux.u10Image,
-                     aux.RelativeWindDirectionFore,
-                     np.degrees(dsf.IncidenceAngleImage),
-                     'VV'),
-            coords=[dsf.CrossRange, dsf.GroundRange],
-            dims=('CrossRange', 'GroundRange'))
-
-        level2['CDOPAft'] = xr.DataArray(
-            mouche12(aux.u10Image,
-                     aux.RelativeWindDirectionAft,
-                     np.degrees(dsa.IncidenceAngleImage),
-                     'VV'),
-            coords=[dsa.CrossRange, dsa.GroundRange],
-            dims=('CrossRange', 'GroundRange'))
-
-        level2['WindLineOfSightVelocityFore'], level2['WASVFore'] =\
-            convertDoppler2Velocity(5.5,
-                                    level2.CDOPFore,
-                                    np.degrees(dsf.IncidenceAngleImage))
-
-        level2['WindLineOfSightVelocityAft'], level2['WASVAft'] =\
-            convertDoppler2Velocity(5.5,
-                                    level2.CDOPAft,
-                                    np.degrees(dsa.IncidenceAngleImage))
-
-        level2['RadialSurfaceCurrentFore'] =\
-            level2.RadialSurfaceVelocityFore - level2.WASVFore
-        level2['RadialSurfaceCurrentAft'] =\
-            level2.RadialSurfaceVelocityAft - level2.WASVAft
+    dswasv_f = seastar.gmfs.doppler.compute_wasv(aux.sel(Antenna='Fore'), gmf)
+    dswasv_a = seastar.gmfs.doppler.compute_wasv(aux.sel(Antenna='Aft'), gmf)
+    level2['RadialSurfaceCurrent'] = xr.concat(
+        [level2.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
+         level2.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV],
+        'Antenna', join='inner')
+    level2['RadialSurfaceCurrent'] = level2.RadialSurfaceCurrent.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
 
     return level2
+
 
 
 def compute_current_magnitude_and_direction(level2, dsf, dsa):
