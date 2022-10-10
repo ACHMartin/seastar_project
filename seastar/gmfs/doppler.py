@@ -56,7 +56,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
     relative_wind_direction =\
         seastar.utils.tools.compute_relative_wind_direction(
-            aux_geo.WindDirection, L1.LookDirection
+            aux_geo.WindDirection, L1.AntennaAzimuthImage
             )
 
     ind = dict()
@@ -77,9 +77,9 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
         # Convert Doppler Shift of C-band (5.5 GHz) to CentralFrequency
         f_c = 5.5 * 10 ** 9
-        dop_Hz = dop_c * L1.CentralFreq / f_c
+        dop_Hz = dop_c * L1.CentralFreq.data / f_c
         [wasv_losv, wasv_rsv] = convertDoppler2Velocity(
-            L1.CentralFreq / 1e9,
+            L1.CentralFreq.data / 1e9,
             dop_Hz,
             L1.IncidenceAngleImage
         )
@@ -96,8 +96,11 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         for pol_str in ['VV', 'HH']:
             wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
 
-    ds_wa = xr.Dataset()
-    ds_wa['WASV'] = (L1.dims, wasv_rsv)
+#    ds_wa = xr.Dataset()
+#    ds_wa['WASV'] = (L1.dims, wasv_rsv.data)
+
+    ds_wa = xr.DataArray(wasv_rsv.data, coords=(L1.CrossRange, L1.GroundRange))
+
     return ds_wa
 
 

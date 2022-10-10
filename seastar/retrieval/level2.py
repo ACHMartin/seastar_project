@@ -9,7 +9,8 @@ import numpy as np
 import xarray as xr
 import seastar
 
-def compute_radial_surface_current(level2, aux, gmf='mouche12'):
+
+def compute_radial_surface_current(level1, level2, aux, gmf='mouche12'):
     """
     Compute radial surface current (RSC).
 
@@ -19,6 +20,8 @@ def compute_radial_surface_current(level2, aux, gmf='mouche12'):
 
     Parameters
     ----------
+    level1 : xarray.Dataset
+        L1 dataset
     level2 : xarray.Dataset
         L2 dataset
     aux : xarray.Dataset
@@ -33,11 +36,15 @@ def compute_radial_surface_current(level2, aux, gmf='mouche12'):
         L2 dataset
 
     """
-    dswasv_f = seastar.gmfs.doppler.compute_wasv(aux.sel(Antenna='Fore'), gmf)
-    dswasv_a = seastar.gmfs.doppler.compute_wasv(aux.sel(Antenna='Aft'), gmf)
+    dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
+                                                 aux,
+                                                 gmf)
+    dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
+                                                 aux,
+                                                 gmf)
     level2['RadialSurfaceCurrent'] = xr.concat(
-        [level2.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
-         level2.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV],
+        [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f,
+         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a],
         'Antenna', join='inner')
     level2['RadialSurfaceCurrent'] = level2.RadialSurfaceCurrent.assign_coords(
         Antenna=('Antenna', ['Fore', 'Aft']))

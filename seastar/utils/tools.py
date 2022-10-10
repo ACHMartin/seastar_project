@@ -84,33 +84,8 @@ def wavenumber2wavelength(wavenumber):
     wavelength = 2 * np.pi / wavenumber
     return wavelength
 
+
 def compute_relative_wind_direction(windDirection, lookDirection):
-    """
-    Compute the relative wind direction between the antenna lookDirection and the windDirection.
-    Assuming the same meteorological convention for lookDir and windDir.
-    :param windDirection: Direction from where the wind is blowing. North wind -> 0°
-    :param lookDirection: Direction in which the radar is looking. Looking toward the North -> 0°, in this case
-    facing the wind -> upwind
-    :return: relative_wind_direction between 0° and 180°. 0° for upwind; 90° crosswind; 180° downwind
-    """
-
-    relative_wind_direction = \
-        np.abs(
-            np.mod(
-                windDirection - lookDirection + 180,
-                360
-            ) - 180
-        )
-    return relative_wind_direction
-    
-def cdop_func(x):
-    """ Function to assist in CDOP calculation
-    """
-    cdop_f = np.divide(1,(1+np.exp(-x)))
-    return cdop_f
-
-
-def compute_relative_wind_direction(antenna_look_direction, wind_direction):
     """
     Compute relative wind direction.
 
@@ -121,10 +96,11 @@ def compute_relative_wind_direction(antenna_look_direction, wind_direction):
 
     Parameters
     ----------
-    antenna_look_direction : float, xarray.DataArray
-        Antenna look direction, either scalar value or array (degrees N).
-    wind_direction : float, xarray.DataArray
+    windDirection : float, xarray.DataArray
         Wind direction in oceanographic convention (degrees N).
+    lookDirection : float, xarray.DataArray
+        Antenna look direction, either scalar value or array (degrees N).
+
 
     Returns
     -------
@@ -132,20 +108,17 @@ def compute_relative_wind_direction(antenna_look_direction, wind_direction):
         Angle between radar beam and wind direction (degrees)
 
     """
-#    Old code - to be deleted when new code working
-#    radar_beam_u_component = np.sin(radar_azimuth)
-#    radar_beam_v_component = np.cos(radar_azimuth)
-#    wind_u_component = np.sin(np.radians(wind_direction))
-#    wind_v_component = np.cos(np.radians(wind_direction))
-#    relative_wind_direction = np.degrees(np.arccos(
-#        ((radar_beam_u_component * wind_u_component) +
-#         (radar_beam_v_component * wind_v_component)) /
-#        (np.sqrt(radar_beam_u_component ** 2 + radar_beam_v_component ** 2) *
-#         np.sqrt(wind_u_component ** 2 + wind_v_component ** 2))))
-
-    relative_wind_direction = np.mod(wind_direction -
-                                     antenna_look_direction + 180,
-                                     360) - 180
-
+    relative_wind_direction = \
+        np.abs(
+            np.mod(
+                windDirection - lookDirection + 180,
+                360
+            ) - 180
+        )
     return relative_wind_direction
 
+
+def cdop_func(x):
+    """Exponential function to assist in CDOP calculation."""
+    cdop_f = np.divide(1, (1+np.exp(-x)))
+    return cdop_f
