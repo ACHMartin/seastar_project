@@ -97,9 +97,14 @@ def compute_relative_wind_direction(windDirection, lookDirection):
     Parameters
     ----------
     windDirection : float, xarray.DataArray
-        Wind direction in oceanographic convention (degrees N).
+        Wind direction in oceanographic convention (degrees N), i.e. the
+        direction from where the wind is blowing: e.g., a wind direction of
+        0 degrees corresponds to a wind blowing from the North.
     lookDirection : float, xarray.DataArray
-        Antenna look direction, either scalar value or array (degrees N).
+        Antenna look direction, either scalar value or array in oceanographic
+        convention(degrees N), i.e., the direction to where the antenna is
+        looking: e.g., a look direction of 0 degrees is looking North and with
+        a wind direction of 0 degrees is looking Up-Wind.
 
 
     Returns
@@ -116,9 +121,3 @@ def compute_relative_wind_direction(windDirection, lookDirection):
             ) - 180
         )
     return relative_wind_direction
-
-
-def cdop_func(x):
-    """Exponential function to assist in CDOP calculation."""
-    cdop_f = np.divide(1, (1+np.exp(-x)))
-    return cdop_f
