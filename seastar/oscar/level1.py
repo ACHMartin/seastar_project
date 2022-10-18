@@ -226,7 +226,9 @@ def compute_incidence_angle(ds):
 
     """
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    ds['IncidenceAngleImage'] = np.arctan(Y / ds.OrbHeightImage)
+    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
+                                                     Y / ds.OrbHeightImage))
+    
 
     return ds
 
@@ -319,7 +321,7 @@ def compute_radial_surface_velocity(ds):
     ds = compute_incidence_angle(ds)
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
-         * np.sin(ds.IncidenceAngleImage))
+         * np.sin(np.radians(ds.IncidenceAngleImage)))
 
     return ds
 
