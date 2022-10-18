@@ -61,8 +61,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
     ind = dict()
     for pol_str, pol_val in [('VV', 1), ('HH', 2)]:
-        ind[pol_str] = (L1.Polarization == pol_val).values
-
+        ind[pol_str] = (L1.Polarization == pol_str).values
     wasv_rsv = np.full(L1.IncidenceAngleImage.shape, np.nan)
     if gmf == 'mouche12':
         dop_c = np.full(L1.IncidenceAngleImage.shape, np.nan)
@@ -96,8 +95,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         for pol_str in ['VV', 'HH']:
             wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
 
-#    ds_wa = xr.Dataset()
-#    ds_wa['WASV'] = (L1.dims, wasv_rsv.data)
+    #ds_wa = xr.Dataset()
+    #ds_wa['WASV'] = (L1.dims, wasv_rsv.data)
 
     ds_wa = xr.DataArray(wasv_rsv.data, coords=(L1.CrossRange, L1.GroundRange))
 
