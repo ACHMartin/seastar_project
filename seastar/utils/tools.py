@@ -121,3 +121,4 @@ def compute_relative_wind_direction(windDirection, lookDirection):
             ) - 180
         )
     return relative_wind_direction
+
