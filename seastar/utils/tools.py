@@ -29,7 +29,7 @@ def currentVelDir2UV(vel, cdir):
     return u, v
 
 
-def _currentUV2VelDir(u, v):
+def currentUV2VelDir(u, v):
     """
     Converts U and V currents to velocity and direction (in degrees).
 
