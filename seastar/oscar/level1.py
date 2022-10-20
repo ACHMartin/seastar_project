@@ -6,14 +6,15 @@ Created on Fri Sep 16 13:48:48 2022
 
 @author: admartin, dlmccann
 """
-import re
+
 import numpy as np
 import xarray as xr
 import scipy as sp
 import seastar
+import re
 
 
-def init_level1_dataset(dsf, dsa):
+def init_level1_dataset(dsf, dsa, dsm):
     """
     Initialise level1 dataset.
 
@@ -26,6 +27,8 @@ def init_level1_dataset(dsf, dsa):
         OSCAR dataset in the fore-beam look direction
     dsa : xarray.Dataset
         OSCAR dataset in the aft-beam look direction
+    dsm : xarray.Dataset
+        OSCAR dataset in the mid-beam look direction
 
     Returns
     -------
@@ -33,11 +36,24 @@ def init_level1_dataset(dsf, dsa):
         OSCAR dataset with combined look directions
 
     """
+    # Check antenna polarisation fields and re-format for 'HH', 'VV'
+    dsf = check_antenna_polarization(dsf)
+    dsa = check_antenna_polarization(dsa)
+    dsm = check_antenna_polarization(dsm)
+    # Find variables missing in dsm and build NaN filled variables in their
+    # place
+    ds_diff = dsf[[x for x in dsf.data_vars if x not in dsm.data_vars]]
+    ds_diff.where(ds_diff == np.nan, other=np.nan)
+    dsm = dsm.merge(ds_diff)
+
     ds_level1 = xr.concat([dsf,
-                           dsa],
+                           dsa,
+                           dsm],
                           'Antenna', join='outer',
                           coords='all')
-    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
+    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna',
+                                                 ['Fore', 'Aft', 'Mid']))
+
     return ds_level1
 
 
@@ -62,7 +78,7 @@ def check_antenna_polarization(ds):
     """
     polarization = [str(ds.TxPolarization.data), str(ds.RxPolarization.data)]
     polarization = ''.join(polarization)
-    ds['Polarization'] = polarization = re.sub('[^VH]', '', polarization)
+    ds['Polarization'] = re.sub('[^VH]', '', polarization)
 
     return ds
 
@@ -210,7 +226,9 @@ def compute_incidence_angle(ds):
 
     """
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    ds['IncidenceAngleImage'] = np.arctan(Y / ds.OrbHeightImage)
+    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
+                                                     Y / ds.OrbHeightImage))
+    
 
     return ds
 
@@ -303,12 +321,12 @@ def compute_radial_surface_velocity(ds):
     ds = compute_incidence_angle(ds)
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
-         * np.sin(ds.IncidenceAngleImage))
+         * np.sin(np.radians(ds.IncidenceAngleImage)))
 
     return ds
 
 
-def init_level2(dsf, dsa):
+def init_level2(level1, dsm):
     """
     Initialise level2 dataset.
 
@@ -335,28 +353,27 @@ def init_level2(dsf, dsa):
     """
     level2 = xr.Dataset()
 
-    # Write level2 attributes
-    level2.attrs['Title'] = dsf.attrs['Title']
-
-    level2['RadialSurfaceVelocity'] = xr.concat([dsf.RadialSurfaceVelocity,
-                                                 dsa.RadialSurfaceVelocity],
-                                                'Antenna', join='outer')
-    level2['RadialSurfaceVelocity'] = level2.RadialSurfaceVelocity.\
-        assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
-    level2['LookDirection'] = xr.concat([dsf.AntennaAzimuthImage,
-                                         dsa.AntennaAzimuthImage],
-                                        'Antenna', join='outer')
-    level2['LookDirection'] = level2.LookDirection.assign_coords(
-        Antenna=('Antenna', ['Fore', 'Aft']))
-    level2['IncidenceAngleImage'] = xr.concat([dsf.IncidenceAngleImage,
-                                               dsa.IncidenceAngleImage],
-                                              'Antenna', join='outer')
-    level2['IncidenceAngleImage'] = level2.IncidenceAngleImage.assign_coords(
-        Antenna=('Antenna', ['Fore', 'Aft']))
+#    level2['RadialSurfaceVelocity'] = xr.concat(
+#        [level1.RadialSuraceVelocity.sel(Antenna='Fore'),
+#         level1.RadialSuraceVelocity.sel(Antenna='Aft')],
+#        'Antenna', join='outer')
+#    level2['RadialSurfaceVelocity'] = level2.RadialSurfaceVelocity.\
+#        assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
+#    level2['LookDirection'] = xr.concat(
+#        [level1.AntennaAzimuthImage.sel(Antenna='Fore'),
+#         level1.AntennaAzimuthImage.sel(Antenna='Aft')],
+#        'Antenna', join='outer')
+#    level2['LookDirection'] = level2.LookDirection.assign_coords(
+#        Antenna=('Antenna', ['Fore', 'Aft']))
+#    level2['IncidenceAngleImage'] = xr.concat([level1.AntennaAzimuthImage.sel(Antenna='Fore'),
+#                                               dsa.IncidenceAngleImage],
+#                                              'Antenna', join='outer')
+#    level2['IncidenceAngleImage'] = level2.IncidenceAngleImage.assign_coords(
+#        Antenna=('Antenna', ['Fore', 'Aft']))
     return level2
 
 
-def init_auxiliary(level2, dsa, dsf, u10, wind_direction):
+def init_auxiliary(level1, dsa, dsf, u10, wind_direction):
     
     "A Dataset containing WindSpeed, WindDirection,"
     "IncidenceAngleImage, LookDirection, Polarization"
@@ -366,7 +383,7 @@ def init_auxiliary(level2, dsa, dsf, u10, wind_direction):
     WindSpeed, WindDirection =\
         generate_wind_field_from_single_measurement(u10,
                                                     wind_direction,
-                                                    level2)
+                                                    level1)
     aux = xr.Dataset()
     aux['WindSpeed'] = WindSpeed
     aux['WindDirection'] = WindDirection

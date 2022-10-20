@@ -9,7 +9,8 @@ import numpy as np
 import xarray as xr
 import seastar
 
-def compute_radial_surface_current(level2, aux, gmf='mouche12'):
+
+def compute_radial_surface_current(level1, level2, aux, gmf='mouche12'):
     """
     Compute radial surface current (RSC).
 
@@ -19,6 +20,8 @@ def compute_radial_surface_current(level2, aux, gmf='mouche12'):
 
     Parameters
     ----------
+    level1 : xarray.Dataset
+        L1 dataset
     level2 : xarray.Dataset
         L2 dataset
     aux : xarray.Dataset
@@ -33,11 +36,15 @@ def compute_radial_surface_current(level2, aux, gmf='mouche12'):
         L2 dataset
 
     """
-    dswasv_f = seastar.gmfs.doppler.compute_wasv(aux.sel(Antenna='Fore'), gmf)
-    dswasv_a = seastar.gmfs.doppler.compute_wasv(aux.sel(Antenna='Aft'), gmf)
+    dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
+                                                 aux,
+                                                 gmf)
+    dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
+                                                 aux,
+                                                 gmf)
     level2['RadialSurfaceCurrent'] = xr.concat(
-        [level2.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
-         level2.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV],
+        [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f,
+         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a],
         'Antenna', join='inner')
     level2['RadialSurfaceCurrent'] = level2.RadialSurfaceCurrent.assign_coords(
         Antenna=('Antenna', ['Fore', 'Aft']))
@@ -46,7 +53,7 @@ def compute_radial_surface_current(level2, aux, gmf='mouche12'):
 
 
 
-def compute_current_magnitude_and_direction(level2, dsf, dsa):
+def compute_current_magnitude_and_direction(level1, level2):
     """
     Compute surface current magnitude and direction.
 
@@ -73,15 +80,16 @@ def compute_current_magnitude_and_direction(level2, dsf, dsa):
         Surface current direction (degrees N) in oceanographic convention
 
     """
-    antenna_angle = np.mod(dsf.AntennaAzimuthImage - dsa.AntennaAzimuthImage,
+    antenna_angle = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage -
+                           level1.sel(Antenna='Aft').AntennaAzimuthImage,
                            360)
     level2['CurrentMagnitude'] = np.sqrt(
-        level2.RadialSurfaceCurrentFore ** 2
-        + level2.RadialSurfaceCurrentAft ** 2)\
+        level2.sel(Antenna='Fore').RadialSurfaceCurrent ** 2
+        + level2.sel(Antenna='Aft').RadialSurfaceCurrent ** 2)\
         / np.sin(np.radians(antenna_angle))
 
-    ind_pos = (level2.RadialSurfaceCurrentFore >
-               level2.RadialSurfaceCurrentAft) *\
+    ind_pos = (level2.sel(Antenna='Fore').RadialSurfaceCurrent >
+               level2.sel(Antenna='Aft').RadialSurfaceCurrent) *\
         np.cos(np.radians(antenna_angle))
     temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
                                        coords=[level2.CrossRange,
@@ -89,12 +97,12 @@ def compute_current_magnitude_and_direction(level2, dsf, dsa):
                                        dims=('CrossRange', 'GroundRange'))
     temporary_direction = xr.where(ind_pos,
                                    np.degrees(np.arccos(
-                                       level2.RadialSurfaceCurrentFore /
+                                       level2.sel(Antenna='Fore').RadialSurfaceCurrent /
                                        level2.CurrentMagnitude)),
                                    - np.degrees(np.arccos(
-                                       level2.RadialSurfaceCurrentFore /
+                                       level2.sel(Antenna='Fore').RadialSurfaceCurrent /
                                        level2.CurrentMagnitude)))
-    level2['CurrentDirection'] = np.mod(dsf.AntennaAzimuthImage
+    level2['CurrentDirection'] = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage
                                         + (-temporary_direction), 360)
 
     return level2
