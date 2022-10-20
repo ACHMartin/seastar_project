@@ -102,12 +102,7 @@ def compute_relative_wind_direction(windDirection, lookDirection):
             ) - 180
         )
     return relative_wind_direction
-    
-def cdop_func(x):
-    """ Function to assist in CDOP calculation
-    """
-    cdop_f = np.divide(1,(1+np.exp(-x)))
-    return cdop_f
+
 
 
 def compute_relative_wind_direction(antenna_look_direction, wind_direction):
