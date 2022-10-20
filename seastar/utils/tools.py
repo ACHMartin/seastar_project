@@ -142,3 +142,4 @@ def compute_relative_wind_direction(antenna_look_direction, wind_direction):
             ) - 180
         )
     return relative_wind_direction
+
