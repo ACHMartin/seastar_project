@@ -267,8 +267,10 @@ def compute_antenna_azimuth_direction(ds, antenna):
     # then change sign
     if antenna == 'fore':
         ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage - 45, 360)
-    if antenna == 'aft':
+    elif antenna == 'aft':
         ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage - 135, 360)
+    else:
+        raise 'Error unknown antennas str'
 
     return ds
 
