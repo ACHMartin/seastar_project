@@ -42,6 +42,13 @@ def compute_radial_surface_current(level1, level2, aux, gmf='mouche12'):
     dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
                                                  aux,
                                                  gmf)
+
+    level2['WASV'] = xr.concat(
+        [dswasv_f, dswasv_a],
+        'Antenna',
+        join='outer',
+    )
+
     level2['RadialSurfaceCurrent'] = xr.concat(
         [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f,
          level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a],
