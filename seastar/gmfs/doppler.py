@@ -56,8 +56,9 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
     relative_wind_direction =\
         seastar.utils.tools.compute_relative_wind_direction(
-            aux_geo.WindDirection, L1.AntennaAzimuthImage
-            )
+            aux_geo.WindDirection,
+            L1.AntennaAzimuthImage
+        )
 
     ind = dict()
     for pol_str, pol_val in [('VV', 1), ('HH', 2)]:
@@ -94,6 +95,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
         for pol_str in ['VV', 'HH']:
             wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
+    else:
+        raise Exception('Error, unknown gmf, should be yurovsky19 or mouche 12')
 
     #ds_wa = xr.Dataset()
     #ds_wa['WASV'] = (L1.dims, wasv_rsv.data)
