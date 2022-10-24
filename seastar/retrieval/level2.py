@@ -98,10 +98,10 @@ def compute_current_magnitude_and_direction(level1, level2):
     ind_pos = (level2.sel(Antenna='Fore').RadialSurfaceCurrent >
                level2.sel(Antenna='Aft').RadialSurfaceCurrent) *\
         np.cos(np.radians(antenna_angle))
-    temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
-                                       coords=[level2.CrossRange,
-                                               level2.GroundRange],
-                                       dims=('CrossRange', 'GroundRange'))
+    # temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
+    #                                    coords=[level2.CrossRange,
+    #                                            level2.GroundRange],
+    #                                    dims=('CrossRange', 'GroundRange'))
     temporary_direction = xr.where(ind_pos,
                                    np.degrees(np.arccos(
                                        level2.sel(Antenna='Fore').RadialSurfaceCurrent /
