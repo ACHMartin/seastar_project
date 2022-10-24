@@ -439,7 +439,7 @@ def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
     level2.WindDirectionImage : 2D field of wind directions (degrees N)
 
     """
-    wind_direction = np.mod(wind_direction - 180, 360)
+    wind_direction = np.mod(wind_direction, 360)
     u10Image = xr.DataArray(
         np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
         + u10,
