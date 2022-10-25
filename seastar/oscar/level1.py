@@ -267,8 +267,10 @@ def compute_antenna_azimuth_direction(ds, antenna):
     # then change sign
     if antenna == 'fore':
         ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage - 45, 360)
-    if antenna == 'aft':
+    elif antenna == 'aft':
         ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage - 135, 360)
+    else:
+        raise 'Error unknown antennas str'
 
     return ds
 
@@ -430,7 +432,7 @@ def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
     level2.WindDirectionImage : 2D field of wind directions (degrees N)
 
     """
-    wind_direction = np.mod(wind_direction - 180, 360)
+    wind_direction = np.mod(wind_direction, 360)
     u10Image = xr.DataArray(
         np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
         + u10,
