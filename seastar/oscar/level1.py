@@ -192,19 +192,24 @@ def compute_multilooking_Master_Slave(ds, window=3):
     
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
-    ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
-        .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
-    ds['Interferogram'] = (
-        ['CrossRange', 'GroundRange'],
-        np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
-        )
-    ds['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
-        .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
-        .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['Coherence'] = ds.Intensity / np.sqrt(ds.IntensityAvgMaster
-                                             * ds.IntensityAvgSlave)
+    if 'SigmaSLCSlave' in ds.data_vars:
+        ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
+            .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
+        ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
+        ds['Interferogram'] = (
+            ['CrossRange', 'GroundRange'],
+            np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
+            )
+        ds['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
+            .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
+        ds['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
+            .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
+        ds['Coherence'] = ds.Intensity / np.sqrt(ds.IntensityAvgMaster
+                                                 * ds.IntensityAvgSlave)
+    else:
+        ds['Intensity'] = np.abs((ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCMaster)) \
+            .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean())
+
     return ds
 
 
