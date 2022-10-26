@@ -14,7 +14,7 @@ import seastar
 import re
 
 
-def init_level1_dataset(dsf, dsa, dsm):
+def merge_beams(dsf, dsa, dsm):
     """
     Initialise level1 dataset.
 
@@ -40,16 +40,15 @@ def init_level1_dataset(dsf, dsa, dsm):
     dsf = check_antenna_polarization(dsf)
     dsa = check_antenna_polarization(dsa)
     dsm = check_antenna_polarization(dsm)
-    # Find variables missing in dsm and build NaN filled variables in their
-    # place
     ds_diff = dsf[[x for x in dsf.data_vars if x not in dsm.data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
     dsm = dsm.merge(ds_diff)
-
+    # Find variables missing in dsm and build NaN filled variables in their
+    # place
     ds_level1 = xr.concat([dsf,
                            dsa,
                            dsm],
-                          'Antenna', join='outer',
+                          'Antenna', join='inner',
                           coords='all')
     ds_level1 = ds_level1.assign_coords(Antenna=('Antenna',
                                                  ['Fore', 'Aft', 'Mid']))
@@ -327,8 +326,48 @@ def compute_radial_surface_velocity(ds):
 
     return ds
 
+def compute_radial_surface_current(level1, aux, gmf='mouche12'):
+    """
+    Compute radial surface current (RSC).
 
-def init_level2(level1, dsm):
+    Compute radial surface current (RSC) from radial surface velocity (RSV)
+    and the wind artifact surface velocity (WASV) from:
+        RSC = RSV - WASV
+
+    Parameters
+    ----------
+    level1 : xarray.Dataset
+        L1 dataset
+    aux : xarray.Dataset
+        Dataset containing geophysical wind data
+    gmf : str, optional
+        Choice of geophysical model function to compute the WASV.
+        The default is 'mouche12'.
+
+    Returns
+    -------
+    level2 : xarray.Dataset
+        L2 dataset
+
+    """
+    
+    dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
+                                                 aux,
+                                                 gmf)
+    dswasv_a  = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
+                                                 aux,
+                                                 gmf)
+    level1['RadialSurfaceCurrent'] = xr.concat(
+        [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
+         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV],
+        'Antenna', join='inner')
+    level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
+
+    return level1
+
+
+def init_level2(level1):
     """
     Initialise level2 dataset.
 
@@ -354,28 +393,14 @@ def init_level2(level1, dsm):
 
     """
     level2 = xr.Dataset()
+    level2.coords['longitude']=level1.sel(Antenna='Fore').LonImage
+    level2.coords['latitude']=level1.sel(Antenna='Fore').LatImage
+    level2=level2.drop('Antenna')
 
-#    level2['RadialSurfaceVelocity'] = xr.concat(
-#        [level1.RadialSuraceVelocity.sel(Antenna='Fore'),
-#         level1.RadialSuraceVelocity.sel(Antenna='Aft')],
-#        'Antenna', join='outer')
-#    level2['RadialSurfaceVelocity'] = level2.RadialSurfaceVelocity.\
-#        assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
-#    level2['LookDirection'] = xr.concat(
-#        [level1.AntennaAzimuthImage.sel(Antenna='Fore'),
-#         level1.AntennaAzimuthImage.sel(Antenna='Aft')],
-#        'Antenna', join='outer')
-#    level2['LookDirection'] = level2.LookDirection.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
-#    level2['IncidenceAngleImage'] = xr.concat([level1.AntennaAzimuthImage.sel(Antenna='Fore'),
-#                                               dsa.IncidenceAngleImage],
-#                                              'Antenna', join='outer')
-#    level2['IncidenceAngleImage'] = level2.IncidenceAngleImage.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
     return level2
 
 
-def init_auxiliary(level1, dsa, dsf, u10, wind_direction):
+def init_auxiliary(level1, u10, wind_direction):
     
     "A Dataset containing WindSpeed, WindDirection,"
     "IncidenceAngleImage, LookDirection, Polarization"
@@ -389,25 +414,7 @@ def init_auxiliary(level1, dsa, dsf, u10, wind_direction):
     aux = xr.Dataset()
     aux['WindSpeed'] = WindSpeed
     aux['WindDirection'] = WindDirection
-#    aux['LookDirection'] = xr.concat([dsf.AntennaAzimuthImage,
-#                                      dsa.AntennaAzimuthImage],
-#                                     'Antenna', join='outer')
-#    aux['LookDirection'] = aux.LookDirection.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
-#    aux['IncidenceAngleImage'] = xr.concat([dsf.IncidenceAngleImage,
-#                                            dsa.IncidenceAngleImage],
-#                                           'Antenna', join='outer')
-#    aux['IncidenceAngleImage'] = aux.IncidenceAngleImage.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
-#    #Polarization (1=VV; 2=HH)
-#    aux['Polarization'] = xr.DataArray(data=[np.zeros(WindSpeed.shape)+1,
-#                                       np.zeros(WindSpeed.shape)+1],
-#                                       dims=aux.LookDirection.dims,
-#                                       coords=aux.LookDirection.coords,
-#                                       )
-#    aux['CentralWavenumber'] = dsf.CentralWavenumber.data
-#    aux['CentralFreq'] = dsf.CentralFreq.data
-    
+  
     return aux
     
 def generate_wind_field_from_single_measurement(u10, wind_direction, ds):

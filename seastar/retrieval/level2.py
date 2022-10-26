@@ -10,56 +10,6 @@ import xarray as xr
 import seastar
 
 
-def compute_radial_surface_current(level1, level2, aux, gmf='mouche12'):
-    """
-    Compute radial surface current (RSC).
-
-    Compute radial surface current (RSC) from radial surface velocity (RSV)
-    and the wind artifact surface velocity (WASV) from:
-        RSC = RSV - WASV
-
-    Parameters
-    ----------
-    level1 : xarray.Dataset
-        L1 dataset
-    level2 : xarray.Dataset
-        L2 dataset
-    aux : xarray.Dataset
-        Dataset containing geophysical wind data
-    gmf : str, optional
-        Choice of geophysical model function to compute the WASV.
-        The default is 'mouche12'.
-
-    Returns
-    -------
-    level2 : xarray.Dataset
-        L2 dataset
-
-    """
-    dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
-                                                 aux,
-                                                 gmf)
-    dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
-                                                 aux,
-                                                 gmf)
-
-    level2['WASV'] = xr.concat(
-        [dswasv_f, dswasv_a],
-        'Antenna',
-        join='outer',
-    )
-
-    level2['RadialSurfaceCurrent'] = xr.concat(
-        [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f,
-         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a],
-        'Antenna', join='inner')
-    level2['RadialSurfaceCurrent'] = level2.RadialSurfaceCurrent.assign_coords(
-        Antenna=('Antenna', ['Fore', 'Aft']))
-
-    return level2
-
-
-
 def compute_current_magnitude_and_direction(level1, level2):
     """
     Compute surface current magnitude and direction.
@@ -91,12 +41,12 @@ def compute_current_magnitude_and_direction(level1, level2):
                            level1.sel(Antenna='Aft').AntennaAzimuthImage,
                            360)
     level2['CurrentMagnitude'] = np.sqrt(
-        level2.sel(Antenna='Fore').RadialSurfaceCurrent ** 2
-        + level2.sel(Antenna='Aft').RadialSurfaceCurrent ** 2)\
+        level1.sel(Antenna='Fore').RadialSurfaceCurrent ** 2
+        + level1.sel(Antenna='Aft').RadialSurfaceCurrent ** 2)\
         / np.sin(np.radians(antenna_angle))
 
-    ind_pos = (level2.sel(Antenna='Fore').RadialSurfaceCurrent >
-               level2.sel(Antenna='Aft').RadialSurfaceCurrent) *\
+    ind_pos = (level1.sel(Antenna='Fore').RadialSurfaceCurrent >
+               level1.sel(Antenna='Aft').RadialSurfaceCurrent) *\
         np.cos(np.radians(antenna_angle))
     # temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
     #                                    coords=[level2.CrossRange,
@@ -104,13 +54,14 @@ def compute_current_magnitude_and_direction(level1, level2):
     #                                    dims=('CrossRange', 'GroundRange'))
     temporary_direction = xr.where(ind_pos,
                                    np.degrees(np.arccos(
-                                       level2.sel(Antenna='Fore').RadialSurfaceCurrent /
+                                       level1.sel(Antenna='Fore').RadialSurfaceCurrent /
                                        level2.CurrentMagnitude)),
                                    - np.degrees(np.arccos(
-                                       level2.sel(Antenna='Fore').RadialSurfaceCurrent /
+                                       level1.sel(Antenna='Fore').RadialSurfaceCurrent /
                                        level2.CurrentMagnitude)))
     level2['CurrentDirection'] = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage
                                         + (-temporary_direction), 360)
+    level2 = level2.drop('Antenna')
 
     return level2
 

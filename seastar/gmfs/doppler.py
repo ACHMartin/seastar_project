@@ -98,10 +98,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     else:
         raise Exception('Error, unknown gmf, should be yurovsky19 or mouche 12')
 
-    #ds_wa = xr.Dataset()
-    #ds_wa['WASV'] = (L1.dims, wasv_rsv.data)
-
-    ds_wa = xr.DataArray(wasv_rsv.data, coords=(L1.CrossRange, L1.GroundRange))
+    ds_wa = xr.Dataset()
+    ds_wa['WASV'] = (L1.AntennaAzimuthImage.dims, wasv_rsv.data)
 
     return ds_wa
 
