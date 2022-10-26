@@ -45,7 +45,7 @@ def compute_radial_surface_current(level1, level2, aux, gmf='mouche12'):
     level2['RadialSurfaceCurrent'] = xr.concat(
         [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f,
          level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a],
-        'Antenna', join='inner')
+        'Antenna', join='outer')
     level2['RadialSurfaceCurrent'] = level2.RadialSurfaceCurrent.assign_coords(
         Antenna=('Antenna', ['Fore', 'Aft']))
 
