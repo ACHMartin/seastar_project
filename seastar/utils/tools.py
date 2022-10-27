@@ -157,8 +157,6 @@ def colocate_xband_data(filename, dsl2):
                 ds_out.attrs[var_name] = var_data
             if isinstance(var_data, np.ndarray):
                 if var_data.shape == data['longitude'].shape:
-                    print(var_name)
-                    print(var_data.shape)
                     ds_out[var_name] = xr.DataArray(
                         data=interpolate.griddata(
                             points=(np.ravel(data['longitude']),
