@@ -2,7 +2,9 @@
 # coding=utf-8
 
 import numpy as np
-
+import xarray as xr
+from scipy.io import loadmat
+from scipy import interpolate
 
 def currentVelDir2UV(vel, cdir):
     """
@@ -122,3 +124,57 @@ def compute_relative_wind_direction(windDirection, lookDirection):
         )
     return relative_wind_direction
 
+
+def colocate_xband_data(filename, dsl2):
+    """
+    Colocate xband data from matlab to SAR lat/long.
+
+    Parameters
+    ----------
+    filename : str
+        DESCRIPTION.
+    dsl2 : xarray.Dataset
+        DESCRIPTION.
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    ds_out : xarray.Dataset
+        DESCRIPTION.
+
+    """
+    ds_out = xr.Dataset()
+    data = loadmat(filename)
+    data_vars = list(data.keys())
+    if 'longitude' in data_vars and 'latitude' in data_vars:
+        for var_name in data_vars:
+            var_data = data[var_name]
+            if var_name in ['__header__', '__version__', '__globals__']:
+                ds_out.attrs[var_name] = var_data
+            if isinstance(var_data, np.ndarray):
+                if var_data.shape == data['longitude'].shape:
+                    print(var_name)
+                    print(var_data.shape)
+                    ds_out[var_name] = xr.DataArray(
+                        data=interpolate.griddata(
+                            points=(np.ravel(data['longitude']),
+                                    np.ravel(data['latitude'])),
+                            values=(np.ravel(var_data)),
+                            xi=(dsl2.longitude.values,
+                                dsl2.latitude.values)
+                            ),
+                        dims=dsl2.dims,
+                        coords=dsl2.coords
+                        )
+                elif var_data.shape == (1, 1):
+                    ds_out[var_name] = float(var_data)
+    else:
+        raise Exception(
+            'longitude and latitude not present in Xband .mat file'
+            )
+
+    return ds_out
