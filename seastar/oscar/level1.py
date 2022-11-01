@@ -12,7 +12,7 @@ import xarray as xr
 import scipy as sp
 import seastar
 import re
-
+import warnings
 
 def merge_beams(dsf, dsa, dsm):
     """
@@ -224,10 +224,160 @@ def compute_incidence_angle(ds):
     nadir (radians) for each pixel
 
     """
-    X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
-                                                     Y / ds.OrbHeightImage))
     
+    #old code:--------------------------------------------------------------
+    #X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
+    #ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
+    #                                                 Y / ds.OrbHeightImage))
+    #-----------------------------------------------------------------------
+    z_axis = ds.DEMImage
+    x_axis = ds.CrossRange.data
+    y_axis = ds.GroundRange.data
+    lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
+    if lookdirec == 'R':
+        y_axis = np.abs(y_axis)
+
+    utmzone = int(ds.UTMZone)
+    utmhemi = dict({0: 'N', 1: 'S'})[int(ds.Hemisphere)]
+    E, N = seastar.utils.tools.wgs2utm_v3(ds.OrbLatImage,
+                                          ds.OrbLonImage,
+                                          utmzone,
+                                          utmhemi
+                                          )
+    gridinfo = ds.GBPGridInfo.data
+    if lookdirec == 'R':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N-gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = (E - gridinfo[0]) * np.cos(gridinfo[8])\
+            - (N - gridinfo[1]) * np.sin(gridinfo[8])
+    if lookdirec == 'L':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N - gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = -(E - gridinfo[0]) * np.cos(gridinfo[8])\
+            + (N - gridinfo[1]) * np.sin(gridinfo[8])
+    orb_z = ds.OrbHeightImage
+    xlen = len(x_axis)
+    ylen = len(y_axis)
+
+#speedup_factor_x = 50
+#speedup_factor_y = 50
+    speedup_factor_x = 48
+    speedup_factor_y = 40
+    orbx = xr.DataArray(data=orb_x,
+                        coords=[ds.CrossRange, ds.GroundRange],
+                        dims=('CrossRange', 'GroundRange')
+                        )
+    orbx = orbx.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    xaxis = orbx.CrossRange
+    yaxis = orbx.GroundRange
+    orbx = orbx.data
+
+    orby = xr.DataArray(data=orb_y,
+                        coords=[ds.CrossRange, ds.GroundRange],
+                        dims=('CrossRange', 'GroundRange')
+                        )
+    orby = orby.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    orby = orby.data
+
+    orbz = xr.DataArray(data=orb_z,
+                        coords=[ds.CrossRange, ds.GroundRange],
+                        dims=('CrossRange', 'GroundRange')
+                        )
+    orbz = orbz.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    orbz = orbz.data
+
+    zaxis = xr.DataArray(data=z_axis,
+                         coords=[ds.CrossRange, ds.GroundRange],
+                         dims=('CrossRange', 'GroundRange')
+                         )
+    zaxis = zaxis.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    zaxis = zaxis.data
+
+    xaxis2, yaxis2 = np.meshgrid(xaxis, yaxis, indexing='ij')
+    x_axis2, y_axis2 = np.meshgrid(x_axis, y_axis, indexing='ij')
+    yaxis22 = yaxis2
+
+    tamimg = zaxis.shape
+    look_angle = np.empty(zaxis.shape)
+    inc_angle = np.empty(zaxis.shape)
+    for l in range(tamimg[0]):
+        for k in range(tamimg[1]):
+            lm1 = l - 1
+            lp1 = l + 2
+            km1 = k - 1
+            kp1 = k + 2
+            if lm1 == -1:
+                lm1 = 0
+            if lp1 > tamimg[0]:
+                lp1 = tamimg[0]
+            if km1 == -1:
+                km1 = 0
+            if kp1 > tamimg[1]:
+                kp1 = tamimg[1]
+            zaxis1 = zaxis[lm1:lp1, km1:kp1]
+            rim = np.sqrt(
+                (orbx[lm1:lp1, km1:kp1] - xaxis2[lm1:lp1, km1:kp1]) ** 2
+                + (orby[lm1:lp1, km1:kp1] - yaxis22[lm1:lp1, km1:kp1]) ** 2
+                + (orbz[lm1:lp1, km1:kp1] - zaxis[lm1:lp1, km1:kp1]) ** 2
+                )
+            rgr = np.sqrt(
+                (orbx[lm1:lp1, km1:kp1] - xaxis2[lm1:lp1, km1:kp1]) ** 2
+                + (orby[lm1:lp1, km1:kp1] - yaxis22[lm1:lp1, km1:kp1]) ** 2
+                )
+            vetorp = np.array([xaxis2[l, k], yaxis22[l, k], zaxis[l, k]])
+            vetoro = np.array([orbx[l, k].T, orby[l, k].T, orbz[l, k].T])
+            vetor = vetorp - vetoro
+            vetoru = np.zeros(vetor.shape)
+            vetoruuu = np.zeros(vetor.shape)
+            vetoruuu[2] = 1  # look angle suplement
+            vetoru[1] = 1
+            escalarprod = sum(vetor * vetoru)
+            magvetor = np.sqrt(vetor[0] ** 2 + vetor[1] ** 2 + vetor[2] ** 2)
+            theta = np.arccos(escalarprod / magvetor) - np.pi / 2
+            escalarprod = sum(vetor * vetoruuu)
+            magvetor = np.sqrt(vetor[0] ** 2 + vetor[1] ** 2 + vetor[2] ** 2)
+            look_angle[l, k] = np.pi-np.arccos(escalarprod / magvetor)
+            tamrgr = rgr.shape
+            # Expect to see RunTimeWarnings in this block, due to
+            # unsatisfactory behaviour of np.nanmean. It is considered safe to
+            # ignore these warnings as no simple workaround exists.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                deltarggroundx = rgr - np.roll(rgr, (0, 1), axis=(0, 1))
+                deltarggroundx[:, 0] = np.nan
+                deltarggroundx = np.nanmean(deltarggroundx)
+                deltarggroundy = rgr - np.roll(rgr, (1, 0), axis=(0, 1))
+                deltarggroundy[0, :] = np.nan
+                deltarggroundy = np.nanmean(deltarggroundy)
+                deltazaxisx = zaxis1 - np.roll(zaxis1, (0, 1), axis=(0, 1))
+                deltazaxisx[:, 0] = np.nan
+                deltazaxisx = np.nanmean(deltazaxisx)
+                deltazaxisy = zaxis1 - np.roll(zaxis1, (1, 0), axis=(0, 1))
+                deltazaxisy[0, :] = np.nan
+                deltazaxisy = np.nanmean(deltazaxisy)
+                deltargground = deltarggroundy * np.cos(theta)\
+                    + deltarggroundx * np.sin(theta)
+                deltazaxis = deltazaxisy * np.cos(theta)\
+                    + deltazaxisx * np.sin(theta)
+
+        alpha_s = np.arctan(deltazaxis / deltargground)
+        inc_angle[l, k] = look_angle[l, k] - alpha_s
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=FutureWarning)
+        inc_angle = xr.DataArray(data=inc_angle,
+                                 coords=[xaxis, yaxis],
+                                 dims=('CrossRange', 'GroundRange')
+                                 )
+        look_angle = xr.DataArray(data=look_angle,
+                                  coords=[xaxis, yaxis],
+                                  dims=('CrossRange', 'GroundRange')
+                                  )
+
+    ds['IncidenceAngleImage'] = inc_angle.interp_like(ds.CrossRange)
 
     return ds
 
