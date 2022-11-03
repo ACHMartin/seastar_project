@@ -40,6 +40,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         A Dataset containing the Wind Artefact Surface Velocity (WASV) for
         the given geophysical and geometric conditions.
 
+
+
     """
     # Initialisation
     central_wavelength = seastar.utils.tools.wavenumber2wavelength(
@@ -175,6 +177,7 @@ def mouche12(u10, phi, inc, pol):
     -------
     dop : float, numpy.array, xarray.DataArray
         Doppler shift (GHz) due to geophysical and geometric conditions.
+
     """
     def cdop_func(x):
         """Exponential function for mouche12."""

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Functions to calculate varirous L2 data products for the OSCAR instrument.
+Functions to calculate L1 data products for the OSCAR airborne SAR instrument.
 
-Created on Fri Sep 16 13:48:48 2022
-
-@author: admartin, dlmccann
 """
 
 import numpy as np
@@ -14,25 +11,26 @@ import seastar
 import re
 import warnings
 
+
 def merge_beams(dsf, dsa, dsm):
     """
-    Initialise level1 dataset.
+    Merge three beams into single dataset.
 
-    Initialise a combined-look-direction level1 OSCAR dataset from separate
-    look directions and add a corresponding 'Antenna' dim and coord.
+    Generate a combined-look-direction OSCAR L1 dataset from separate
+    look directions and add a corresponding 'Antenna' dimension and coordinate.
 
     Parameters
     ----------
-    dsf : xarray.Dataset
+    dsf : ``xarray.Dataset``
         OSCAR dataset in the fore-beam look direction
-    dsa : xarray.Dataset
+    dsa : ``xarray.Dataset``
         OSCAR dataset in the aft-beam look direction
-    dsm : xarray.Dataset
+    dsm : ``xarray.Dataset``
         OSCAR dataset in the mid-beam look direction
 
     Returns
     -------
-    ds_level1 : xarray.Dataset
+    ds_level1 : ``xarray.Dataset``
         OSCAR dataset with combined look directions
 
     """
@@ -66,12 +64,14 @@ def check_antenna_polarization(ds):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
 
     Returns
     -------
-    ds : xarray.Dataset
+    Polarization : ``str``
+        Antenna polarization in 'HH', 'VV' format
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
 
     """
@@ -88,16 +88,16 @@ def add_antenna_baseline(ds, baseline):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    baseline : float
+    baseline : ``float``
         Antenna baseline (m)
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset in netCDF format
-    ds.Baseline : float
+    ds.Baseline : ``float``
         Antenna baseline distance (m)
 
     """
@@ -108,24 +108,20 @@ def add_antenna_baseline(ds, baseline):
 
 def compute_SLC_Master_Slave(ds):
     """
-    Calculate SLC master/slave complex images.
+    Compute SLC master/slave complex images.
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.SigmaImageSingleLookRealPart : xarray.DataArray
-        Real part of SLC image
-    ds.SigmaImageSingleLookImaginaryPart: xarray.DataArray
-        Imaginary part of SLC image
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.SigmaSLCMaster: xarray.DataArray
+    ds.SigmaSLCMaster: ``xarray.DataArray``
         Master SLC image
-    ds.SigmaSLCSlave: xarray.DataArray
+    ds.SigmaSLCSlave: ``xarray.DataArray``
         Slave SLC image
 
     """
@@ -139,20 +135,20 @@ def compute_SLC_Master_Slave(ds):
 
 def add_central_electromagnetic_wavenumber(ds):
     """
-    Calculate wavenumber of central electromagnetic frequency.
+    Calculate wavenumber of the central electromagnetic frequency.
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.CentralFreq : xarray.DataArray
+    ds.CentralFreq : ``float``, ``xarray.DataArray``
         Central radar frequency (Hz)
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.CentralWavenumber : xarray.DataArray
+    ds.CentralWavenumber : ``float``, ``xarray.DataArray``
         Central radar wavenumber (rad / m)
 
     """
@@ -166,9 +162,9 @@ def compute_multilooking_Master_Slave(ds, window=3):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    window : int
+    window : ``int``
         Integer averaging window size. The default is 3.
 
     Returns
@@ -188,7 +184,6 @@ def compute_multilooking_Master_Slave(ds, window=3):
     ds.Coherence : xarray.DataArray
         Multilook image coherence
     """
-    
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
     ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
@@ -206,7 +201,29 @@ def compute_multilooking_Master_Slave(ds, window=3):
                                              * ds.IntensityAvgSlave)
     return ds
 
-
+def compute_local_coordinates(ds):
+    lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
+    utmzone = int(ds.UTMZone)
+    utmhemi = dict({0: 'N', 1: 'S'})[int(ds.Hemisphere)]
+    E, N = seastar.utils.tools.wgs2utm_v3(ds.OrbLatImage,
+                                          ds.OrbLonImage,
+                                          utmzone,
+                                          utmhemi
+                                          )
+    gridinfo = ds.GBPGridInfo.data
+    if lookdirec == 'R':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N-gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = (E - gridinfo[0]) * np.cos(gridinfo[8])\
+            - (N - gridinfo[1]) * np.sin(gridinfo[8])
+    if lookdirec == 'L':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N - gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = -(E - gridinfo[0]) * np.cos(gridinfo[8])\
+            + (N - gridinfo[1]) * np.sin(gridinfo[8])
+    
+    return orb_x, orb_y
+    
 def compute_incidence_angle(ds):
     """
     Calculate incidence angle between radar beam and sea surface.

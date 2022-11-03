@@ -20,12 +20,10 @@ def compute_current_magnitude_and_direction(level1, level2):
 
     Parameters
     ----------
-    level2 : xarray.Dataset
+    level1 : ``xarray.Dataset``
+        L1 dataset
+    level2 : ``xarray.Dataset``
         L2 dataset
-    dsf : xarray.Dataset
-        Fore antenna ATI SAR dataset
-    dsa : xarray.Dataset
-        Aft antenna ATI SAR dataset
 
     Returns
     -------

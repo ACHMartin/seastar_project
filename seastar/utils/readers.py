@@ -67,15 +67,3 @@ def readNetCDFFile(netCFD_path):
         print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
 
     return data_xr
-
-
-def doSomethingElse(data_xr):
-    """Performs some examples on the data in the xarray.
-
-    :param data_xr: the data to be processed
-    :type data_xr: ``xarray``
-    """
-
-    attributes = data_xr.attrs
-    for key in attributes.keys():
-        print(f'\t{key}, {attributes[key]}')
