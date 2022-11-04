@@ -180,7 +180,7 @@ def compute_relative_wind_direction(windDirection, lookDirection):
     return relative_wind_direction
 
 
-def colocate_xband_data(filename, dsl2):
+def colocate_xband_marine_radar_data(filename, dsl2):
     """
     Colocate X-band data from matlab to SAR lat/long.
 

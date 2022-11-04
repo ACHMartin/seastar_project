@@ -223,8 +223,17 @@ def compute_local_coordinates(ds):
             + (N - gridinfo[1]) * np.sin(gridinfo[8])
     
     return orb_x, orb_y
-    
-def compute_incidence_angle(ds):
+
+
+def compute_incidence_angle_from_simple_geometry(ds):
+
+    X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
+    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
+                                                     Y / ds.OrbHeightImage))
+
+    return ds
+ 
+def compute_incidence_angle_from_GBPGridInfo(ds):
     """
     Calculate incidence angle between radar beam and sea surface.
 
@@ -241,12 +250,7 @@ def compute_incidence_angle(ds):
     nadir (radians) for each pixel
 
     """
-    
-    #old code:--------------------------------------------------------------
-    #X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    #ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
-    #                                                 Y / ds.OrbHeightImage))
-    #-----------------------------------------------------------------------
+
     z_axis = ds.DEMImage
     x_axis = ds.CrossRange.data
     y_axis = ds.GroundRange.data
