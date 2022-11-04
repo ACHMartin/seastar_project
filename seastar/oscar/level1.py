@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Functions to calculate varirous L2 data products for the OSCAR instrument.
+Functions to calculate L1 data products for the OSCAR airborne SAR instrument.
 
-Created on Fri Sep 16 13:48:48 2022
-
-@author: admartin, dlmccann
 """
 
 import numpy as np
@@ -12,27 +9,28 @@ import xarray as xr
 import scipy as sp
 import seastar
 import re
+import warnings
 
 
-def init_level1_dataset(dsf, dsa, dsm):
+def merge_beams(dsf, dsa, dsm):
     """
-    Initialise level1 dataset.
+    Merge three beams into single dataset.
 
-    Initialise a combined-look-direction level1 OSCAR dataset from separate
-    look directions and add a corresponding 'Antenna' dim and coord.
+    Generate a combined-look-direction OSCAR L1 dataset from separate
+    look directions and add a corresponding 'Antenna' dimension and coordinate.
 
     Parameters
     ----------
-    dsf : xarray.Dataset
+    dsf : ``xarray.Dataset``
         OSCAR dataset in the fore-beam look direction
-    dsa : xarray.Dataset
+    dsa : ``xarray.Dataset``
         OSCAR dataset in the aft-beam look direction
-    dsm : xarray.Dataset
+    dsm : ``xarray.Dataset``
         OSCAR dataset in the mid-beam look direction
 
     Returns
     -------
-    ds_level1 : xarray.Dataset
+    ds_level1 : ``xarray.Dataset``
         OSCAR dataset with combined look directions
 
     """
@@ -40,16 +38,15 @@ def init_level1_dataset(dsf, dsa, dsm):
     dsf = check_antenna_polarization(dsf)
     dsa = check_antenna_polarization(dsa)
     dsm = check_antenna_polarization(dsm)
-    # Find variables missing in dsm and build NaN filled variables in their
-    # place
     ds_diff = dsf[[x for x in dsf.data_vars if x not in dsm.data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
     dsm = dsm.merge(ds_diff)
-
+    # Find variables missing in dsm and build NaN filled variables in their
+    # place
     ds_level1 = xr.concat([dsf,
                            dsa,
                            dsm],
-                          'Antenna', join='outer',
+                          'Antenna', join='inner',
                           coords='all')
     ds_level1 = ds_level1.assign_coords(Antenna=('Antenna',
                                                  ['Fore', 'Aft', 'Mid']))
@@ -67,12 +64,14 @@ def check_antenna_polarization(ds):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
 
     Returns
     -------
-    ds : xarray.Dataset
+    Polarization : ``str``
+        Antenna polarization in 'HH', 'VV' format
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
 
     """
@@ -89,16 +88,16 @@ def add_antenna_baseline(ds, baseline):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    baseline : float
+    baseline : ``float``
         Antenna baseline (m)
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset in netCDF format
-    ds.Baseline : float
+    ds.Baseline : ``float``
         Antenna baseline distance (m)
 
     """
@@ -109,24 +108,20 @@ def add_antenna_baseline(ds, baseline):
 
 def compute_SLC_Master_Slave(ds):
     """
-    Calculate SLC master/slave complex images.
+    Compute SLC master/slave complex images.
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.SigmaImageSingleLookRealPart : xarray.DataArray
-        Real part of SLC image
-    ds.SigmaImageSingleLookImaginaryPart: xarray.DataArray
-        Imaginary part of SLC image
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.SigmaSLCMaster: xarray.DataArray
+    ds.SigmaSLCMaster: ``xarray.DataArray``
         Master SLC image
-    ds.SigmaSLCSlave: xarray.DataArray
+    ds.SigmaSLCSlave: ``xarray.DataArray``
         Slave SLC image
 
     """
@@ -140,20 +135,20 @@ def compute_SLC_Master_Slave(ds):
 
 def add_central_electromagnetic_wavenumber(ds):
     """
-    Calculate wavenumber of central electromagnetic frequency.
+    Calculate wavenumber of the central electromagnetic frequency.
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.CentralFreq : xarray.DataArray
+    ds.CentralFreq : ``float``, ``xarray.DataArray``
         Central radar frequency (Hz)
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    ds.CentralWavenumber : xarray.DataArray
+    ds.CentralWavenumber : ``float``, ``xarray.DataArray``
         Central radar wavenumber (rad / m)
 
     """
@@ -167,9 +162,9 @@ def compute_multilooking_Master_Slave(ds, window=3):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    window : int
+    window : ``int``
         Integer averaging window size. The default is 3.
 
     Returns
@@ -189,7 +184,6 @@ def compute_multilooking_Master_Slave(ds, window=3):
     ds.Coherence : xarray.DataArray
         Multilook image coherence
     """
-    
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
     ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
@@ -207,8 +201,39 @@ def compute_multilooking_Master_Slave(ds, window=3):
                                              * ds.IntensityAvgSlave)
     return ds
 
+def compute_local_coordinates(ds):
+    lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
+    utmzone = int(ds.UTMZone)
+    utmhemi = dict({0: 'N', 1: 'S'})[int(ds.Hemisphere)]
+    E, N = seastar.utils.tools.wgs2utm_v3(ds.OrbLatImage,
+                                          ds.OrbLonImage,
+                                          utmzone,
+                                          utmhemi
+                                          )
+    gridinfo = ds.GBPGridInfo.data
+    if lookdirec == 'R':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N-gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = (E - gridinfo[0]) * np.cos(gridinfo[8])\
+            - (N - gridinfo[1]) * np.sin(gridinfo[8])
+    if lookdirec == 'L':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N - gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = -(E - gridinfo[0]) * np.cos(gridinfo[8])\
+            + (N - gridinfo[1]) * np.sin(gridinfo[8])
+    
+    return orb_x, orb_y
 
-def compute_incidence_angle(ds):
+
+def compute_incidence_angle_from_simple_geometry(ds):
+
+    X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
+    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
+                                                     Y / ds.OrbHeightImage))
+
+    return ds
+ 
+def compute_incidence_angle_from_GBPGridInfo(ds):
     """
     Calculate incidence angle between radar beam and sea surface.
 
@@ -225,10 +250,155 @@ def compute_incidence_angle(ds):
     nadir (radians) for each pixel
 
     """
-    X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
-                                                     Y / ds.OrbHeightImage))
-    
+
+    z_axis = ds.DEMImage
+    x_axis = ds.CrossRange.data
+    y_axis = ds.GroundRange.data
+    lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
+    if lookdirec == 'R':
+        y_axis = np.abs(y_axis)
+
+    utmzone = int(ds.UTMZone)
+    utmhemi = dict({0: 'N', 1: 'S'})[int(ds.Hemisphere)]
+    E, N = seastar.utils.tools.wgs2utm_v3(ds.OrbLatImage,
+                                          ds.OrbLonImage,
+                                          utmzone,
+                                          utmhemi
+                                          )
+    gridinfo = ds.GBPGridInfo.data
+    if lookdirec == 'R':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N-gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = (E - gridinfo[0]) * np.cos(gridinfo[8])\
+            - (N - gridinfo[1]) * np.sin(gridinfo[8])
+    if lookdirec == 'L':
+        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
+            + (N - gridinfo[1]) * np.cos(gridinfo[8])
+        orb_y = -(E - gridinfo[0]) * np.cos(gridinfo[8])\
+            + (N - gridinfo[1]) * np.sin(gridinfo[8])
+    orb_z = ds.OrbHeightImage
+    xlen = len(x_axis)
+    ylen = len(y_axis)
+
+#speedup_factor_x = 50
+#speedup_factor_y = 50
+    speedup_factor_x = 48
+    speedup_factor_y = 40
+    orbx = xr.DataArray(data=orb_x,
+                        coords=[ds.CrossRange, ds.GroundRange],
+                        dims=('CrossRange', 'GroundRange')
+                        )
+    orbx = orbx.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    xaxis = orbx.CrossRange
+    yaxis = orbx.GroundRange
+    orbx = orbx.data
+
+    orby = xr.DataArray(data=orb_y,
+                        coords=[ds.CrossRange, ds.GroundRange],
+                        dims=('CrossRange', 'GroundRange')
+                        )
+    orby = orby.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    orby = orby.data
+
+    orbz = xr.DataArray(data=orb_z,
+                        coords=[ds.CrossRange, ds.GroundRange],
+                        dims=('CrossRange', 'GroundRange')
+                        )
+    orbz = orbz.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    orbz = orbz.data
+
+    zaxis = xr.DataArray(data=z_axis,
+                         coords=[ds.CrossRange, ds.GroundRange],
+                         dims=('CrossRange', 'GroundRange')
+                         )
+    zaxis = zaxis.coarsen(CrossRange=speedup_factor_x, boundary='trim').mean()\
+        .coarsen(GroundRange=speedup_factor_y, boundary='trim').mean()
+    zaxis = zaxis.data
+
+    xaxis2, yaxis2 = np.meshgrid(xaxis, yaxis, indexing='ij')
+    x_axis2, y_axis2 = np.meshgrid(x_axis, y_axis, indexing='ij')
+    yaxis22 = yaxis2
+
+    tamimg = zaxis.shape
+    look_angle = np.empty(zaxis.shape)
+    inc_angle = np.empty(zaxis.shape)
+    for l in range(tamimg[0]):
+        for k in range(tamimg[1]):
+            lm1 = l - 1
+            lp1 = l + 2
+            km1 = k - 1
+            kp1 = k + 2
+            if lm1 == -1:
+                lm1 = 0
+            if lp1 > tamimg[0]:
+                lp1 = tamimg[0]
+            if km1 == -1:
+                km1 = 0
+            if kp1 > tamimg[1]:
+                kp1 = tamimg[1]
+            zaxis1 = zaxis[lm1:lp1, km1:kp1]
+            rim = np.sqrt(
+                (orbx[lm1:lp1, km1:kp1] - xaxis2[lm1:lp1, km1:kp1]) ** 2
+                + (orby[lm1:lp1, km1:kp1] - yaxis22[lm1:lp1, km1:kp1]) ** 2
+                + (orbz[lm1:lp1, km1:kp1] - zaxis[lm1:lp1, km1:kp1]) ** 2
+                )
+            rgr = np.sqrt(
+                (orbx[lm1:lp1, km1:kp1] - xaxis2[lm1:lp1, km1:kp1]) ** 2
+                + (orby[lm1:lp1, km1:kp1] - yaxis22[lm1:lp1, km1:kp1]) ** 2
+                )
+            vetorp = np.array([xaxis2[l, k], yaxis22[l, k], zaxis[l, k]])
+            vetoro = np.array([orbx[l, k].T, orby[l, k].T, orbz[l, k].T])
+            vetor = vetorp - vetoro
+            vetoru = np.zeros(vetor.shape)
+            vetoruuu = np.zeros(vetor.shape)
+            vetoruuu[2] = 1  # look angle suplement
+            vetoru[1] = 1
+            escalarprod = sum(vetor * vetoru)
+            magvetor = np.sqrt(vetor[0] ** 2 + vetor[1] ** 2 + vetor[2] ** 2)
+            theta = np.arccos(escalarprod / magvetor) - np.pi / 2
+            escalarprod = sum(vetor * vetoruuu)
+            magvetor = np.sqrt(vetor[0] ** 2 + vetor[1] ** 2 + vetor[2] ** 2)
+            look_angle[l, k] = np.pi-np.arccos(escalarprod / magvetor)
+            tamrgr = rgr.shape
+            # Expect to see RunTimeWarnings in this block, due to
+            # unsatisfactory behaviour of np.nanmean. It is considered safe to
+            # ignore these warnings as no simple workaround exists.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                deltarggroundx = rgr - np.roll(rgr, (0, 1), axis=(0, 1))
+                deltarggroundx[:, 0] = np.nan
+                deltarggroundx = np.nanmean(deltarggroundx)
+                deltarggroundy = rgr - np.roll(rgr, (1, 0), axis=(0, 1))
+                deltarggroundy[0, :] = np.nan
+                deltarggroundy = np.nanmean(deltarggroundy)
+                deltazaxisx = zaxis1 - np.roll(zaxis1, (0, 1), axis=(0, 1))
+                deltazaxisx[:, 0] = np.nan
+                deltazaxisx = np.nanmean(deltazaxisx)
+                deltazaxisy = zaxis1 - np.roll(zaxis1, (1, 0), axis=(0, 1))
+                deltazaxisy[0, :] = np.nan
+                deltazaxisy = np.nanmean(deltazaxisy)
+                deltargground = deltarggroundy * np.cos(theta)\
+                    + deltarggroundx * np.sin(theta)
+                deltazaxis = deltazaxisy * np.cos(theta)\
+                    + deltazaxisx * np.sin(theta)
+
+        alpha_s = np.arctan(deltazaxis / deltargground)
+        inc_angle[l, k] = look_angle[l, k] - alpha_s
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=FutureWarning)
+        inc_angle = xr.DataArray(data=inc_angle,
+                                 coords=[xaxis, yaxis],
+                                 dims=('CrossRange', 'GroundRange')
+                                 )
+        look_angle = xr.DataArray(data=look_angle,
+                                  coords=[xaxis, yaxis],
+                                  dims=('CrossRange', 'GroundRange')
+                                  )
+
+    ds['IncidenceAngleImage'] = inc_angle.interp_like(ds.CrossRange)
 
     return ds
 
@@ -327,8 +497,48 @@ def compute_radial_surface_velocity(ds):
 
     return ds
 
+def compute_radial_surface_current(level1, aux, gmf='mouche12'):
+    """
+    Compute radial surface current (RSC).
 
-def init_level2(level1, dsm):
+    Compute radial surface current (RSC) from radial surface velocity (RSV)
+    and the wind artifact surface velocity (WASV) from:
+        RSC = RSV - WASV
+
+    Parameters
+    ----------
+    level1 : xarray.Dataset
+        L1 dataset
+    aux : xarray.Dataset
+        Dataset containing geophysical wind data
+    gmf : str, optional
+        Choice of geophysical model function to compute the WASV.
+        The default is 'mouche12'.
+
+    Returns
+    -------
+    level2 : xarray.Dataset
+        L2 dataset
+
+    """
+    
+    dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
+                                                 aux,
+                                                 gmf)
+    dswasv_a  = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
+                                                 aux,
+                                                 gmf)
+    level1['RadialSurfaceCurrent'] = xr.concat(
+        [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
+         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV],
+        'Antenna', join='inner')
+    level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent.assign_coords(
+        Antenna=('Antenna', ['Fore', 'Aft']))
+
+    return level1
+
+
+def init_level2(level1):
     """
     Initialise level2 dataset.
 
@@ -354,28 +564,14 @@ def init_level2(level1, dsm):
 
     """
     level2 = xr.Dataset()
+    level2.coords['longitude']=level1.sel(Antenna='Fore').LonImage
+    level2.coords['latitude']=level1.sel(Antenna='Fore').LatImage
+    level2=level2.drop('Antenna')
 
-#    level2['RadialSurfaceVelocity'] = xr.concat(
-#        [level1.RadialSuraceVelocity.sel(Antenna='Fore'),
-#         level1.RadialSuraceVelocity.sel(Antenna='Aft')],
-#        'Antenna', join='outer')
-#    level2['RadialSurfaceVelocity'] = level2.RadialSurfaceVelocity.\
-#        assign_coords(Antenna=('Antenna', ['Fore', 'Aft']))
-#    level2['LookDirection'] = xr.concat(
-#        [level1.AntennaAzimuthImage.sel(Antenna='Fore'),
-#         level1.AntennaAzimuthImage.sel(Antenna='Aft')],
-#        'Antenna', join='outer')
-#    level2['LookDirection'] = level2.LookDirection.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
-#    level2['IncidenceAngleImage'] = xr.concat([level1.AntennaAzimuthImage.sel(Antenna='Fore'),
-#                                               dsa.IncidenceAngleImage],
-#                                              'Antenna', join='outer')
-#    level2['IncidenceAngleImage'] = level2.IncidenceAngleImage.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
     return level2
 
 
-def init_auxiliary(level1, dsa, dsf, u10, wind_direction):
+def init_auxiliary(level1, u10, wind_direction):
     
     "A Dataset containing WindSpeed, WindDirection,"
     "IncidenceAngleImage, LookDirection, Polarization"
@@ -389,25 +585,7 @@ def init_auxiliary(level1, dsa, dsf, u10, wind_direction):
     aux = xr.Dataset()
     aux['WindSpeed'] = WindSpeed
     aux['WindDirection'] = WindDirection
-#    aux['LookDirection'] = xr.concat([dsf.AntennaAzimuthImage,
-#                                      dsa.AntennaAzimuthImage],
-#                                     'Antenna', join='outer')
-#    aux['LookDirection'] = aux.LookDirection.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
-#    aux['IncidenceAngleImage'] = xr.concat([dsf.IncidenceAngleImage,
-#                                            dsa.IncidenceAngleImage],
-#                                           'Antenna', join='outer')
-#    aux['IncidenceAngleImage'] = aux.IncidenceAngleImage.assign_coords(
-#        Antenna=('Antenna', ['Fore', 'Aft']))
-#    #Polarization (1=VV; 2=HH)
-#    aux['Polarization'] = xr.DataArray(data=[np.zeros(WindSpeed.shape)+1,
-#                                       np.zeros(WindSpeed.shape)+1],
-#                                       dims=aux.LookDirection.dims,
-#                                       coords=aux.LookDirection.coords,
-#                                       )
-#    aux['CentralWavenumber'] = dsf.CentralWavenumber.data
-#    aux['CentralFreq'] = dsf.CentralFreq.data
-    
+  
     return aux
     
 def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
