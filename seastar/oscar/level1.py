@@ -433,14 +433,47 @@ def compute_antenna_azimuth_direction(ds, antenna):
         'Heading (degrees N) of the airfraft for each pixel in the image'
     ds.OrbitHeadingImage.attrs['units'] = '[degrees]'
 
-    # Assuming antennas pointing to port. If pointing to starboard
-    # then change sign
-    if antenna == 'fore':
-        ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage - 45, 360)
-    elif antenna == 'aft':
-        ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage - 135, 360)
-    else:
-        raise 'Error unknown antennas str'
+    lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
+    if lookdirec == 'L':
+        if 'SquintImage' in ds:
+            if antenna == 'fore':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
+                                                   - ds.SquintImage,
+                                                   360)
+            elif antenna == 'aft':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage -
+                                                   (np.abs(90 -
+                                                           ds.SquintImage)),
+                                                   360)
+        elif 'SquintImage' not in ds:
+            if antenna == 'fore':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
+                                                   - 45,
+                                                   360)
+            elif antenna == 'aft':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage -
+                                                   135,
+                                                   360)
+    elif lookdirec == 'R':
+        if 'SquintImage' in ds:
+            if antenna == 'fore':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
+                                                   + ds.SquintImage,
+                                                   360)
+            elif antenna == 'aft':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage +
+                                                   (90
+                                                    + np.abs(ds.SquintImage)),
+                                                   360)
+        elif 'SquintImage' not in ds:
+            if antenna == 'fore':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
+                                                   + 45,
+                                                   360)
+            elif antenna == 'aft':
+                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
+                                                   + 135,
+                                                   360)
 
     return ds
 
