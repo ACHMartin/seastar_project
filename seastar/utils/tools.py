@@ -179,6 +179,21 @@ def compute_relative_wind_direction(windDirection, lookDirection):
         )
     return relative_wind_direction
 
+def import_incidence_angle_and_squint_to_dataset(filename,ds):
+    data = loadmat(filename)
+    data_vars = list(data.keys())
+    for var_name in data_vars:
+        var_data = data[var_name]
+        if isinstance(var_data, np.ndarray):
+            ds[var_name] = xr.DataArray(
+                data=np.degrees(var_data),
+                coords={'GroundRange': ds.GroundRange,
+                        'CrossRange': ds.CrossRange},
+                dims=('GroundRange', 'CrossRange')
+                ).T
+
+
+    return ds
 
 def colocate_xband_marine_radar_data(filename, dsl2):
     """

@@ -489,8 +489,8 @@ def compute_radial_surface_velocity(ds):
     """
     if 'CentralWavenumber' not in ds.data_vars:
         ds = add_central_electromagnetic_wavenumber(ds)
-    
-    ds = compute_incidence_angle(ds)
+    if 'IncidenceAngleImage' not in ds:
+        ds = compute_incidence_angle_from_simple_geometry(ds)
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
          * np.sin(np.radians(ds.IncidenceAngleImage)))
