@@ -93,6 +93,10 @@ def compute_current_magnitude_and_direction(level1, level2):
         ' for each pixel in the image'
     level2.CurrentDirection.attrs['units'] = '[degrees]'
 
+    level2['CurrentMagnitude'] = level2.CurrentMagnitude.assign_coords(
+        coords={'longitude': level2.longitude, 'latitude': level2.latitude})
+    level2['CurrentDirection'] = level2.CurrentDirection.assign_coords(
+        coords={'longitude': level2.longitude, 'latitude': level2.latitude})
     return level2
 
 
