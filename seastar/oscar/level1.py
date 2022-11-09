@@ -78,7 +78,6 @@ def check_antenna_polarization(ds):
     polarization = [str(ds.TxPolarization.data), str(ds.RxPolarization.data)]
     polarization = ''.join(polarization)
     ds['Polarization'] = re.sub('[^VH]', '', polarization)
-
     return ds
 
 
@@ -221,18 +220,34 @@ def compute_local_coordinates(ds):
             + (N - gridinfo[1]) * np.cos(gridinfo[8])
         orb_y = -(E - gridinfo[0]) * np.cos(gridinfo[8])\
             + (N - gridinfo[1]) * np.sin(gridinfo[8])
-    
+
     return orb_x, orb_y
 
 
 def compute_incidence_angle_from_simple_geometry(ds):
 
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
-    ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2) *
-                                                     Y / ds.OrbHeightImage))
+    if 'SquintImage' in ds:
+        ds['IncidenceAngleImage'] = np.degrees(
+            np.arctan(
+                np.abs(ds.SquintImage)
+                * Y
+                / ds.OrbHeightImage
+                )
+            )
+    elif 'SquintImage' not in ds:
+        warnings.warn(
+            "WARNING: No computed antenna squint present,"
+            "continuing with 45 degree assumption"
+            )
+        ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2)
+                                                         * Y
+                                                         / ds.OrbHeightImage
+                                                         )
+                                               )
 
     return ds
- 
+
 def compute_incidence_angle_from_GBPGridInfo(ds):
     """
     Calculate incidence angle between radar beam and sea surface.
@@ -424,14 +439,15 @@ def compute_antenna_azimuth_direction(ds, antenna):
     (degrees from North)
 
     """
-    m, n = ds.OrbTimeImage.shape
-    head = np.interp(np.reshape(ds.OrbTimeImage, (1, m * n)), ds.GPSTime,
-                     ds.OrbitHeading)
-    head = np.reshape(head, (m, n))
-    ds['OrbitHeadingImage'] = xr.DataArray.copy(ds.OrbTimeImage, data=head)
-    ds.OrbitHeadingImage.attrs['long_name'] =\
-        'Heading (degrees N) of the airfraft for each pixel in the image'
-    ds.OrbitHeadingImage.attrs['units'] = '[degrees]'
+    if 'OrbitHeadingImage' not in ds:
+        m, n = ds.OrbTimeImage.shape
+        head = np.interp(np.reshape(ds.OrbTimeImage, (1, m * n)), ds.GPSTime,
+                         ds.OrbitHeading)
+        head = np.reshape(head, (m, n))
+        ds['OrbitHeadingImage'] = xr.DataArray.copy(ds.OrbTimeImage, data=head)
+        ds.OrbitHeadingImage.attrs['long_name'] =\
+            'Heading (degrees N) of the airfraft for each pixel in the image'
+        ds.OrbitHeadingImage.attrs['units'] = '[degrees]'
 
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
     if lookdirec == 'L':
@@ -446,6 +462,10 @@ def compute_antenna_azimuth_direction(ds, antenna):
                                                            ds.SquintImage)),
                                                    360)
         elif 'SquintImage' not in ds:
+            warnings.warn(
+                "WARNING: No computed antenna squint present,"
+                "continuing with 45 degree squint assumption"
+                )
             if antenna == 'fore':
                 ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
                                                    - 45,
@@ -466,6 +486,10 @@ def compute_antenna_azimuth_direction(ds, antenna):
                                                     + np.abs(ds.SquintImage)),
                                                    360)
         elif 'SquintImage' not in ds:
+            warnings.warn(
+                "WARNING: No computed antenna squint present,"
+                "continuing with 45 degree squint assumption"
+                )
             if antenna == 'fore':
                 ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
                                                    + 45,
@@ -474,7 +498,9 @@ def compute_antenna_azimuth_direction(ds, antenna):
                 ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
                                                    + 135,
                                                    360)
-
+    ds.AntennaAzimuthImage.attrs['long_name'] =\
+        'Antenna azimuth direction for each pixel in the image'
+    ds.AntennaAzimuthImage.attrs['units'] = '[degrees North]'
     return ds
 
 
@@ -495,7 +521,7 @@ def compute_time_lag_Master_Slave(ds, options):
     ds.TimeLag : Time lag tau between Master/Slave images (s)
 
     """
-    if options not in ['from_SAR_time','from_aircraft_velocity']:
+    if options not in ['from_SAR_time', 'from_aircraft_velocity']:
         raise Exception('Unknown time lag computation method: Please refer to'
                         'function documentation')
     if options == 'from_SAR_time':
@@ -523,12 +549,17 @@ def compute_radial_surface_velocity(ds):
     if 'CentralWavenumber' not in ds.data_vars:
         ds = add_central_electromagnetic_wavenumber(ds)
     if 'IncidenceAngleImage' not in ds:
+        warnings.warn(
+            "WARNING: Incidence Angle not present in dataset,"
+            "computing incidence angle using simple geometry."
+            )
         ds = compute_incidence_angle_from_simple_geometry(ds)
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
          * np.sin(np.radians(ds.IncidenceAngleImage)))
 
     return ds
+
 
 def compute_radial_surface_current(level1, aux, gmf='mouche12'):
     """
@@ -554,11 +585,10 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
         L2 dataset
 
     """
-    
     dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
                                                  aux,
                                                  gmf)
-    dswasv_a  = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
+    dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
                                                  aux,
                                                  gmf)
     level1['RadialSurfaceCurrent'] = xr.concat(
@@ -597,9 +627,9 @@ def init_level2(level1):
 
     """
     level2 = xr.Dataset()
-    level2.coords['longitude']=level1.sel(Antenna='Fore').LonImage
-    level2.coords['latitude']=level1.sel(Antenna='Fore').LatImage
-    level2=level2.drop('Antenna')
+    level2.coords['longitude'] = level1.sel(Antenna='Fore').LonImage
+    level2.coords['latitude'] = level1.sel(Antenna='Fore').LatImage
+    level2 = level2.drop('Antenna')
 
     return level2
 
