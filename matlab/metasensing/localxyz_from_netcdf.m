@@ -75,17 +75,17 @@ end
 [orbX1,orbY1]    = UTMEN2SARXY(orb_Ex,orb_Nx, xheading,  [UTM_x0, UTM_y0], look_direction);
 
 
-[orb_Ex, orb_Nx] = wgs2utm_v3(orb_Lat,orb_Lon, Zone_UTM, Emisphere_UTMs);
-[navX1, navY1]    = UTMEN2SARXY(orb_Ex,orb_Nx, xheading,  [UTM_x0, UTM_y0], look_direction, 1);
+% [orb_Ex, orb_Nx] = wgs2utm_v3(orb_Lat,orb_Lon, Zone_UTM, Emisphere_UTMs);
+% [navX1, navY1]    = UTMEN2SARXY(orb_Ex,orb_Nx, xheading,  [UTM_x0, UTM_y0], look_direction, 1);
 
 if systype=='B'
 
 [orb_Ex2, orb_Nx2] = wgs2utm_v3(orb_img_Lat2, orb_img_Lon2, Zone_UTM, Emisphere_UTMs);
 [orbX2,orbY2]    = UTMEN2SARXY(orb_Ex2,orb_Nx2, xheading,  [UTM_x0, UTM_y0], look_direction);
 
-
-[orb_Ex2, orb_Nx2] = wgs2utm_v3(orb_Lat2,orb_Lon2, Zone_UTM, Emisphere_UTMs);
-[navX2, navY2]    = UTMEN2SARXY(orb_Ex2,orb_Nx2, xheading,  [UTM_x0, UTM_y0], look_direction, 1);
+% 
+% [orb_Ex2, orb_Nx2] = wgs2utm_v3(orb_Lat2,orb_Lon2, Zone_UTM, Emisphere_UTMs);
+% [navX2, navY2]    = UTMEN2SARXY(orb_Ex2,orb_Nx2, xheading,  [UTM_x0, UTM_y0], look_direction, 1);
 
 
 end

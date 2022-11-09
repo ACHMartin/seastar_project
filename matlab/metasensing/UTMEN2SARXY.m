@@ -2,9 +2,9 @@ function [X,Y] = UTMEN2SARXY(E,N,head, offset, LOOKDIR, diag)
 %rotation and offset depending on the SAR look direction
 %heading
 %offset
-disp(' ')
-disp('BEGIN UTMEN2SARXY.m')
-disp(' ')
+% disp(' ')
+% disp('BEGIN UTMEN2SARXY.m')
+% disp(' ')
 
 tamen=size(E);
 if exist('diag', 'var')
@@ -83,7 +83,7 @@ else
 
 end
 
-disp(' ')
-disp('END UTMEN2SARXY.m')
-disp(' ')
+% disp(' ')
+% disp('END UTMEN2SARXY.m')
+% disp(' ')
 end
