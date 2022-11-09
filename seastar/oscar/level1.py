@@ -78,6 +78,9 @@ def check_antenna_polarization(ds):
     polarization = [str(ds.TxPolarization.data), str(ds.RxPolarization.data)]
     polarization = ''.join(polarization)
     ds['Polarization'] = re.sub('[^VH]', '', polarization)
+    ds.Polarization.attrs['long_name'] =\
+        'Antenna polarization, Transmit / Recieve.'
+    ds.Polarization.attrs['units'] = '[none]'
     return ds
 
 
@@ -89,7 +92,7 @@ def add_antenna_baseline(ds, baseline):
     ----------
     ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    baseline : ``float``
+iat    baseline : ``float``
         Antenna baseline (m)
 
     Returns
@@ -102,6 +105,9 @@ def add_antenna_baseline(ds, baseline):
     """
     if 'Baseline' not in ds.data_vars:
         ds['Baseline'] = baseline
+        ds.Baseline.attrs['long_name'] =\
+            'Antenna ATI baseline'
+        ds.Baseline.attrs['units'] = '[m]'
     return ds
 
 
@@ -126,9 +132,15 @@ def compute_SLC_Master_Slave(ds):
     """
     ds['SigmaSLCMaster'] = (ds.SigmaImageSingleLookRealPart + 1j *
                             ds.SigmaImageSingleLookImaginaryPart)
+    ds.SigmaSLCMaster.attrs['long_name'] =\
+        'Single Look Complex image, Master antenna'
+    ds.SigmaSLCMaster.attrs['units'] = '[radians]'
     if 'SigmaImageSingleLookRealPartSlave' in ds.data_vars:
         ds['SigmaSLCSlave'] = (ds.SigmaImageSingleLookRealPartSlave + 1j *
                                ds.SigmaImageSingleLookImaginaryPartSlave)
+        ds.SigmaSLCSlave.attrs['long_name'] =\
+            'Single Look Complex image, Slave antenna'
+        ds.SigmaSLCSlave.attrs['units'] = '[radians]'
     return ds
 
 
@@ -152,6 +164,9 @@ def add_central_electromagnetic_wavenumber(ds):
 
     """
     ds['CentralWavenumber'] = 2 * np.pi * ds.CentralFreq / sp.constants.c
+    ds.CentralWavenumber.attrs['long_name'] =\
+        'Central electromagnetic wavenumber'
+    ds.CentralWavenumber.attrs['units'] = '[radians / m]'
     return ds
 
 
@@ -187,17 +202,29 @@ def compute_multilooking_Master_Slave(ds, window=3):
         ds = compute_SLC_Master_Slave(ds)
     ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
+    ds.IntensityAvgComplexMasterSlave.attrs['long_name'] =\
+        'Average intensity of Master/Slave single looc complex images'
+    ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[radians]'
     ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
+    ds.Intensity.attrs['long_name'] =\
+        'Absolute single look complex image intensity'
+    ds.Intensity.attrs['units'] = '[radians]'
     ds['Interferogram'] = (
         ['CrossRange', 'GroundRange'],
         np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
         )
+    ds.Interferogram.attrs['long_name'] =\
+        'Interferogram between master/slave antenna pair'
+    ds.Interferogram.attrs['units'] = '[radians]'
     ds['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
     ds['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
     ds['Coherence'] = ds.Intensity / np.sqrt(ds.IntensityAvgMaster
                                              * ds.IntensityAvgSlave)
+    ds.Coherence.attrs['long_name'] =\
+        'Coherence between master/slave antenna pair'
+    ds.Coherence.attrs['units'] = '[]'
     return ds
 
 def compute_local_coordinates(ds):
@@ -245,6 +272,9 @@ def compute_incidence_angle_from_simple_geometry(ds):
                                                          / ds.OrbHeightImage
                                                          )
                                                )
+        ds.IncidenceAngleImage.attrs['long_name'] =\
+            'Incidence angle of beam from nadir'
+        ds.IncidenceAngleImage.attrs['units'] = '[degrees]'
 
     return ds
 
@@ -528,6 +558,8 @@ def compute_time_lag_Master_Slave(ds, options):
         ds['TimeLag'] = (ds.OrbTimeImage - ds.OrbTimeImageSlave)
     if options == 'from_aircraft_velocity':
         ds['TimeLag'] = (ds.Baseline / 2 * ds.MeanForwardVelocity)
+    ds.TimeLag.attrs['long_name'] = 'Time difference between antenna pair'
+    ds.TimeLag.attrs['units'] = '[s]'
     return ds
 
 
@@ -557,7 +589,9 @@ def compute_radial_surface_velocity(ds):
     ds['RadialSurfaceVelocity'] = ds.Interferogram /\
         (ds.TimeLag * ds.CentralWavenumber
          * np.sin(np.radians(ds.IncidenceAngleImage)))
-
+    ds.RadialSurfaceVelocity.attrs['long_name'] =\
+        'Radial Surface Velocity (RSV) along antenna beam direction'
+    ds.RadialSurfaceVelocity.attrs['units'] = '[m/s]'
     return ds
 
 
@@ -597,6 +631,10 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
         'Antenna', join='inner')
     level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent.assign_coords(
         Antenna=('Antenna', ['Fore', 'Aft']))
+    level1.RadialSurfaceCurrent.attrs['long_name'] =\
+        'Radial Surface Current (RSC) along antenna beam direction, corrected'\
+        'for Wind Artifact Surface Velocity (WASV)'
+    level1.RadialSurfaceCurrent.attrs['units'] = '[m/s]'
 
     return level1
 
