@@ -256,12 +256,9 @@ def compute_incidence_angle_from_simple_geometry(ds):
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
     if 'SquintImage' in ds:
         ds['IncidenceAngleImage'] = np.degrees(
-            np.arctan(
-                np.abs(ds.SquintImage)
-                * Y
-                / ds.OrbHeightImage
-                )
+            Y / (np.cos(ds.SquintImage) / ds.OrbHeightImage)
             )
+
     elif 'SquintImage' not in ds:
         warnings.warn(
             "WARNING: No computed antenna squint present,"
