@@ -5,6 +5,7 @@ import numpy as np
 import xarray as xr
 from scipy.io import loadmat
 from scipy import interpolate
+from collections import defaultdict
 
 def currentVelDir2UV(vel, cdir):
     """
@@ -322,3 +323,62 @@ def  wgs2utm_v3(lat, lon, utmzone, utmhemi):
                                               (61 - 58 * T + T ** 2 + 600 * C -
                                                330 * eps) * A ** 6/720)
     return x, y
+
+
+def indentify_antenna_location(ds):
+    """
+    Identify ATI antenna location.
+
+    Identifies the antenna direction in an OSCAR dataset by interrogating the
+    minimum and maximum processed Doppler values.
+
+    Parameters
+    ----------
+    ds : ``xarray.Dataset``
+        OSCAR dataset containing MinProcessedDoppler and MaxProcessedDoppler
+        variables
+
+    Returns
+    -------
+    antenna_location : ``str``
+        Antenna location ('Fore', 'Aft', 'Mid')
+
+    """
+    doppler_mean = np.mean([ds.MinProcessedDoppler, ds.MaxProcessedDoppler])
+    if np.abs(doppler_mean) < 100:
+        antenna_location = 'Mid'
+    elif doppler_mean < 0:
+        antenna_location = 'Aft'
+    elif doppler_mean > 0:
+        antenna_location = 'Fore'
+
+    return antenna_location
+
+
+def list_duplicates(seq):
+    """
+    Find indices of duplicate entries in list.
+
+    Finds the indicies of duplicate list entries and returns a generator object
+    that can be sorted to create a list of [(seq, index)].
+
+    Suggested use: sorted(list_duplicates(seq))
+
+    Parameters
+    ----------
+    seq : ``list``
+        DESCRIPTION.
+
+    Returns
+    -------
+    key : same as in `seq`
+        List of entries in `seq`
+    locs : ``list`` of ``int``
+        List of indexes of duplicate entries of `key` in `seq`
+
+    """
+    tally = defaultdict(list)
+    for i, item in enumerate(seq):
+        tally[item].append(i)
+    return ((key, locs) for key, locs in tally.items()
+            if len(locs) > 1)
