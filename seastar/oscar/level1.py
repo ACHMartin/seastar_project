@@ -79,12 +79,12 @@ def check_antenna_polarization(ds):
     polarization = ''.join(polarization)
     ds['Polarization'] = re.sub('[^VH]', '', polarization)
     ds.Polarization.attrs['long_name'] =\
-        'Antenna polarization, Transmit / Recieve.'
+        'Antenna polarization, Transmit / Receive.'
     ds.Polarization.attrs['units'] = '[none]'
     return ds
 
 
-def add_antenna_baseline(baseline):
+def compute_antenna_baseline(antenna_baseline):
     """
     Add antenna baseline to dataset if not already present.
 
@@ -92,7 +92,7 @@ def add_antenna_baseline(baseline):
     ----------
     ds : ``xarray.Dataset``
         OSCAR SAR dataset
-iat    baseline : ``float``
+    baseline : ``float``
         Antenna baseline (m)
 
     Returns
@@ -103,11 +103,11 @@ iat    baseline : ``float``
         Antenna baseline distance (m)
 
     """
-    Baseline = xr.DataArray(data=baseline)
-    Baseline.attrs['long_name'] =\
+    baseline = xr.DataArray(data=antenna_baseline)
+    baseline.attrs['long_name'] =\
         'Antenna ATI baseline'
-    Baseline.attrs['units'] = '[m]'
-    return Baseline
+    baseline.attrs['units'] = '[m]'
+    return baseline
 
 
 def compute_SLC_Master_Slave(ds):
@@ -133,13 +133,13 @@ def compute_SLC_Master_Slave(ds):
                             ds.SigmaImageSingleLookImaginaryPart)
     ds.SigmaSLCMaster.attrs['long_name'] =\
         'Single Look Complex image, Master antenna'
-    ds.SigmaSLCMaster.attrs['units'] = '[radians]'
+    ds.SigmaSLCMaster.attrs['units'] = '[none]'
     if 'SigmaImageSingleLookRealPartSlave' in ds.data_vars:
         ds['SigmaSLCSlave'] = (ds.SigmaImageSingleLookRealPartSlave + 1j *
                                ds.SigmaImageSingleLookImaginaryPartSlave)
         ds.SigmaSLCSlave.attrs['long_name'] =\
             'Single Look Complex image, Slave antenna'
-        ds.SigmaSLCSlave.attrs['units'] = '[radians]'
+        ds.SigmaSLCSlave.attrs['units'] = '[none]'
     return ds
 
 
@@ -203,11 +203,11 @@ def compute_multilooking_Master_Slave(ds, window=3):
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
     ds.IntensityAvgComplexMasterSlave.attrs['long_name'] =\
         'Average intensity of Master/Slave single looc complex images'
-    ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[radians]'
+    ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[none]'
     ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
     ds.Intensity.attrs['long_name'] =\
         'Absolute single look complex image intensity'
-    ds.Intensity.attrs['units'] = '[radians]'
+    ds.Intensity.attrs['units'] = '[none]'
     ds['Interferogram'] = (
         ['CrossRange', 'GroundRange'],
         np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
@@ -223,7 +223,7 @@ def compute_multilooking_Master_Slave(ds, window=3):
                                              * ds.IntensityAvgSlave)
     ds.Coherence.attrs['long_name'] =\
         'Coherence between master/slave antenna pair'
-    ds.Coherence.attrs['units'] = '[]'
+    ds.Coherence.attrs['units'] = '[none]'
     return ds
 
 def compute_local_coordinates(ds):
@@ -255,7 +255,7 @@ def compute_incidence_angle_from_simple_geometry(ds):
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
     if 'SquintImage' in ds:
         ds['IncidenceAngleImage'] = np.degrees(
-            Y / (np.cos(ds.SquintImage) / ds.OrbHeightImage)
+            np.arctan(Y / (np.cos(ds.SquintImage) / ds.OrbHeightImage))
             )
 
     elif 'SquintImage' not in ds:
@@ -646,7 +646,7 @@ def init_level2(level1):
 
 
 def init_auxiliary(level1, u10, wind_direction):
-    
+
     "A Dataset containing WindSpeed, WindDirection,"
     "IncidenceAngleImage, LookDirection, Polarization"
     "All matrix should be the same size"
@@ -659,9 +659,10 @@ def init_auxiliary(level1, u10, wind_direction):
     aux = xr.Dataset()
     aux['WindSpeed'] = WindSpeed
     aux['WindDirection'] = WindDirection
-  
+
     return aux
-    
+
+
 def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
     """
     Generate 2D fields of wind velocity and direction.
