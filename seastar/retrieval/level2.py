@@ -71,21 +71,22 @@ def compute_current_magnitude_and_direction(level1, level2):
 
     level2.CurrentMagnitude.attrs['units'] = '[m/s]'
     u_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
-        * np.cos(np.radians(level1.sel(Antenna='Fore').AntennaAzimuthImage))
-    v_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
         * np.sin(np.radians(level1.sel(Antenna='Fore').AntennaAzimuthImage))
+    v_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
+        * np.cos(np.radians(level1.sel(Antenna='Fore').AntennaAzimuthImage))
     u_2 = level1.sel(Antenna='Aft').RadialSurfaceCurrent\
-        * np.cos(np.radians(level1.sel(Antenna='Aft').AntennaAzimuthImage))
-    v_2 = level1.sel(Antenna='Aft').RadialSurfaceCurrent\
         * np.sin(np.radians(level1.sel(Antenna='Aft').AntennaAzimuthImage))
+    v_2 = level1.sel(Antenna='Aft').RadialSurfaceCurrent\
+        * np.cos(np.radians(level1.sel(Antenna='Aft').AntennaAzimuthImage))
 
     direction = np.degrees(np.arctan2((u_1 + u_2), (v_1 + v_2)))
     ind_pos = direction < 0
-
-    direction_corrected = xr.where(ind_pos,
-                                   180 + (180 - np.abs(direction)),
-                                   direction
-                                   )
+    direction_corrected = np.mod(-xr.where(ind_pos,
+                                 180 + (180 - np.abs(direction)),
+                                 direction
+                                 )
+                                 + 90,
+                                 360)
 
     level2['CurrentDirection'] = direction_corrected
     level2.CurrentDirection.attrs['long_name'] =\

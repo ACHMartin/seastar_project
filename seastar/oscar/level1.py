@@ -79,12 +79,12 @@ def check_antenna_polarization(ds):
     polarization = ''.join(polarization)
     ds['Polarization'] = re.sub('[^VH]', '', polarization)
     ds.Polarization.attrs['long_name'] =\
-        'Antenna polarization, Transmit / Recieve.'
+        'Antenna polarization, Transmit / Receive.'
     ds.Polarization.attrs['units'] = '[none]'
     return ds
 
 
-def add_antenna_baseline(ds, baseline):
+def compute_antenna_baseline(antenna_baseline):
     """
     Add antenna baseline to dataset if not already present.
 
@@ -92,7 +92,7 @@ def add_antenna_baseline(ds, baseline):
     ----------
     ds : ``xarray.Dataset``
         OSCAR SAR dataset
-iat    baseline : ``float``
+    baseline : ``float``
         Antenna baseline (m)
 
     Returns
@@ -103,12 +103,11 @@ iat    baseline : ``float``
         Antenna baseline distance (m)
 
     """
-    if 'Baseline' not in ds.data_vars:
-        ds['Baseline'] = baseline
-        ds.Baseline.attrs['long_name'] =\
-            'Antenna ATI baseline'
-        ds.Baseline.attrs['units'] = '[m]'
-    return ds
+    baseline = xr.DataArray(data=antenna_baseline)
+    baseline.attrs['long_name'] =\
+        'Antenna ATI baseline'
+    baseline.attrs['units'] = '[m]'
+    return baseline
 
 
 def compute_SLC_Master_Slave(ds):
@@ -134,13 +133,13 @@ def compute_SLC_Master_Slave(ds):
                             ds.SigmaImageSingleLookImaginaryPart)
     ds.SigmaSLCMaster.attrs['long_name'] =\
         'Single Look Complex image, Master antenna'
-    ds.SigmaSLCMaster.attrs['units'] = '[radians]'
+    ds.SigmaSLCMaster.attrs['units'] = '[none]'
     if 'SigmaImageSingleLookRealPartSlave' in ds.data_vars:
         ds['SigmaSLCSlave'] = (ds.SigmaImageSingleLookRealPartSlave + 1j *
                                ds.SigmaImageSingleLookImaginaryPartSlave)
         ds.SigmaSLCSlave.attrs['long_name'] =\
             'Single Look Complex image, Slave antenna'
-        ds.SigmaSLCSlave.attrs['units'] = '[radians]'
+        ds.SigmaSLCSlave.attrs['units'] = '[none]'
     return ds
 
 
@@ -204,11 +203,11 @@ def compute_multilooking_Master_Slave(ds, window=3):
         .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
     ds.IntensityAvgComplexMasterSlave.attrs['long_name'] =\
         'Average intensity of Master/Slave single looc complex images'
-    ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[radians]'
+    ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[none]'
     ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
     ds.Intensity.attrs['long_name'] =\
         'Absolute single look complex image intensity'
-    ds.Intensity.attrs['units'] = '[radians]'
+    ds.Intensity.attrs['units'] = '[none]'
     ds['Interferogram'] = (
         ['CrossRange', 'GroundRange'],
         np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
@@ -224,7 +223,7 @@ def compute_multilooking_Master_Slave(ds, window=3):
                                              * ds.IntensityAvgSlave)
     ds.Coherence.attrs['long_name'] =\
         'Coherence between master/slave antenna pair'
-    ds.Coherence.attrs['units'] = '[]'
+    ds.Coherence.attrs['units'] = '[none]'
     return ds
 
 def compute_local_coordinates(ds):
@@ -256,7 +255,7 @@ def compute_incidence_angle_from_simple_geometry(ds):
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
     if 'SquintImage' in ds:
         ds['IncidenceAngleImage'] = np.degrees(
-            Y / (np.cos(ds.SquintImage) / ds.OrbHeightImage)
+            np.arctan(Y / (np.cos(ds.SquintImage) / ds.OrbHeightImage))
             )
 
     elif 'SquintImage' not in ds:
@@ -451,14 +450,15 @@ def compute_antenna_azimuth_direction(ds, antenna):
 
     Parameters
     ----------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
-    antenna : 'fore' Fore beam pair, 'aft' Aft beam pair
+    antenna : ``str``
+        'Fore' Fore beam pair, 'Aft' Aft beam pair
 
 
     Returns
     -------
-    ds : xarray.Dataset
+    ds : ``xarray.Dataset``
         OSCAR SAR dataset
     ds.OrbitHeadingImage : Aircraft heading of each image pixel
     (degrees from North)
@@ -466,6 +466,9 @@ def compute_antenna_azimuth_direction(ds, antenna):
     (degrees from North)
 
     """
+    if antenna not in ['Fore', 'Aft', 'Mid']:
+        raise Exception('Unknown or missing Antenna direction format. Ensure'
+                        'antenna variable either Fore, Aft or Mid')
     if 'OrbitHeadingImage' not in ds:
         m, n = ds.OrbTimeImage.shape
         head = np.interp(np.reshape(ds.OrbTimeImage, (1, m * n)), ds.GPSTime,
@@ -476,55 +479,26 @@ def compute_antenna_azimuth_direction(ds, antenna):
             'Heading (degrees N) of the airfraft for each pixel in the image'
         ds.OrbitHeadingImage.attrs['units'] = '[degrees]'
 
+    antenna_direc = {'Fore': 45, 'Aft': 135, 'Mid': 90}
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
-    if lookdirec == 'L':
-        if 'SquintImage' in ds:
-            if antenna == 'fore':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
-                                                   - ds.SquintImage,
-                                                   360)
-            elif antenna == 'aft':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage -
-                                                   (np.abs(90 -
-                                                           ds.SquintImage)),
-                                                   360)
-        elif 'SquintImage' not in ds:
-            warnings.warn(
-                "WARNING: No computed antenna squint present,"
-                "continuing with 45 degree squint assumption"
-                )
-            if antenna == 'fore':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
-                                                   - 45,
-                                                   360)
-            elif antenna == 'aft':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage -
-                                                   135,
-                                                   360)
-    elif lookdirec == 'R':
-        if 'SquintImage' in ds:
-            if antenna == 'fore':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
-                                                   + ds.SquintImage,
-                                                   360)
-            elif antenna == 'aft':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage +
-                                                   (90
-                                                    + np.abs(ds.SquintImage)),
-                                                   360)
-        elif 'SquintImage' not in ds:
-            warnings.warn(
-                "WARNING: No computed antenna squint present,"
-                "continuing with 45 degree squint assumption"
-                )
-            if antenna == 'fore':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
-                                                   + 45,
-                                                   360)
-            elif antenna == 'aft':
-                ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
-                                                   + 135,
-                                                   360)
+    look_direc_angle = {'L': -90, 'R': 90}
+
+    if 'SquintImage' in ds:
+        ds['AntennaAzimuthImage'] = (np.mod(
+            ds.OrbitHeadingImage
+            + look_direc_angle[lookdirec],
+            360)
+            + ds.SquintImage)
+    elif 'SquintImage' not in ds:
+        warnings.warn(
+            "WARNING: No computed antenna squint present,"
+            "continuing with 45 degree Fore/Aft squint assumption"
+        )
+        ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
+                                           + (np.sign(
+                                               look_direc_angle[lookdirec])
+                                               * antenna_direc[antenna]),
+                                           360)
     ds.AntennaAzimuthImage.attrs['long_name'] =\
         'Antenna azimuth direction for each pixel in the image'
     ds.AntennaAzimuthImage.attrs['units'] = '[degrees North]'
@@ -632,6 +606,8 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
         'Radial Surface Current (RSC) along antenna beam direction, corrected'\
         'for Wind Artifact Surface Velocity (WASV)'
     level1.RadialSurfaceCurrent.attrs['units'] = '[m/s]'
+    
+
 
     return level1
 
@@ -670,7 +646,7 @@ def init_level2(level1):
 
 
 def init_auxiliary(level1, u10, wind_direction):
-    
+
     "A Dataset containing WindSpeed, WindDirection,"
     "IncidenceAngleImage, LookDirection, Polarization"
     "All matrix should be the same size"
@@ -683,9 +659,10 @@ def init_auxiliary(level1, u10, wind_direction):
     aux = xr.Dataset()
     aux['WindSpeed'] = WindSpeed
     aux['WindDirection'] = WindDirection
-  
+
     return aux
-    
+
+
 def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
     """
     Generate 2D fields of wind velocity and direction.
