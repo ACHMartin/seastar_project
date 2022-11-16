@@ -36,26 +36,27 @@ def fill_missing_variables(ds, antenna_ident):
         data in ``xarray.Dataset`` format as values
 
     """
-    ds_diff = ds[antenna_ident.index('Fore')]\
-        [[x for x in ds[antenna_ident.index('Fore')].data_vars
-          if x not in ds[antenna_ident.index('Mid')].data_vars]]
+    fore_id = list(ds.keys())[antenna_ident.index('Fore')]
+    mid_id = list(ds.keys())[antenna_ident.index('Mid')]
+    aft_id = list(ds.keys())[antenna_ident.index('Aft')]
+    
+    ds_diff = ds[fore_id]\
+        [[x for x in ds[fore_id].data_vars
+          if x not in ds[mid_id].data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds[antenna_ident.index('Mid')] = ds[antenna_ident.index('Mid')]\
-        .merge(ds_diff)
+    ds[mid_id] = ds[mid_id].merge(ds_diff)
 
-    ds_diff = ds[antenna_ident.index('Mid')]\
-        [[x for x in ds[antenna_ident.index('Mid')].data_vars
-          if x not in ds[antenna_ident.index('Fore')].data_vars]]
+    ds_diff = ds[mid_id]\
+        [[x for x in ds[mid_id].data_vars
+          if x not in ds[fore_id].data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds[antenna_ident.index('Fore')] = ds[antenna_ident.index('Fore')]\
-        .merge(ds_diff)
+    ds[fore_id] = ds[fore_id].merge(ds_diff)
 
-    ds_diff = ds[antenna_ident.index('Mid')]\
-        [[x for x in ds[antenna_ident.index('Mid')].data_vars
-          if x not in ds[antenna_ident.index('Aft')].data_vars]]
+    ds_diff = ds[mid_id]\
+        [[x for x in ds[mid_id].data_vars
+          if x not in ds[aft_id].data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds[antenna_ident.index('Aft')] = ds[antenna_ident.index('Aft')]\
-        .merge(ds_diff)
+    ds[aft_id] = ds[aft_id].merge(ds_diff)
 
     return ds
 
@@ -83,7 +84,7 @@ def merge_beams(ds, antenna_ident):
 
     """
     dsl1 = xr.concat(list(ds.values()),
-                     'Antenna', join='inner',
+                     'Antenna', join='outer',
                      coords='all')
     dsl1 = dsl1.assign_coords(Antenna=('Antenna', antenna_ident))
 
