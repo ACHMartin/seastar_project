@@ -138,27 +138,6 @@ def wavenumber2wavelength(wavenumber):
 
 def compute_relative_wind_direction(windDirection, lookDirection):
     """
-    Compute the relative wind direction between the antenna lookDirection and the windDirection.
-    Assuming the same meteorological convention for lookDir and windDir.
-    :param windDirection: Direction from where the wind is blowing. North wind -> 0°
-    :param lookDirection: Direction in which the radar is looking. Looking toward the North -> 0°, in this case
-    facing the wind -> upwind
-    :return: relative_wind_direction between 0° and 180°. 0° for upwind; 90° crosswind; 180° downwind
-    """
-
-    relative_wind_direction = \
-        np.abs(
-            np.mod(
-                windDirection - lookDirection + 180,
-                360
-            ) - 180
-        )
-    return relative_wind_direction
-
-
-
-def compute_relative_wind_direction(antenna_look_direction, wind_direction):
-    """
     Compute relative wind direction.
 
     Compute angle between radar beam and wind direction (degrees)
