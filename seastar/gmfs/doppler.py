@@ -40,6 +40,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         A Dataset containing the Wind Artefact Surface Velocity (WASV) for
         the given geophysical and geometric conditions.
 
+
+
     """
     # Initialisation
     central_wavelength = seastar.utils.tools.wavenumber2wavelength(
@@ -98,10 +100,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     else:
         raise Exception('Error, unknown gmf, should be yurovsky19 or mouche 12')
 
-    #ds_wa = xr.Dataset()
-    #ds_wa['WASV'] = (L1.dims, wasv_rsv.data)
-
-    ds_wa = xr.DataArray(wasv_rsv.data, coords=(L1.CrossRange, L1.GroundRange))
+    ds_wa = xr.Dataset()
+    ds_wa['WASV'] = (L1.AntennaAzimuthImage.dims, wasv_rsv.data)
 
     return ds_wa
 
@@ -177,6 +177,7 @@ def mouche12(u10, phi, inc, pol):
     -------
     dop : float, numpy.array, xarray.DataArray
         Doppler shift (GHz) due to geophysical and geometric conditions.
+
     """
     def cdop_func(x):
         """Exponential function for mouche12."""
