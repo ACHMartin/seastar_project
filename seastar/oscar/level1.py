@@ -87,7 +87,17 @@ def merge_beams(ds, antenna_ident):
                      'Antenna', join='outer',
                      coords='all')
     dsl1 = dsl1.assign_coords(Antenna=('Antenna', antenna_ident))
-
+    key_list = list(ds.keys()).index
+    dsl1.coords['latitude'] = xr.merge(
+        [ds[key_list(0)].LatImage.dropna(dim='CrossRange'),
+         ds[key_list(1)].LatImage.dropna(dim='CrossRange'),
+         ds[key_list(2)].LatImage.dropna(dim='CrossRange')],
+        ).LatImage
+    dsl1.coords['longitude'] = xr.merge(
+        [ds[key_list(0)].LonImage.dropna(dim='CrossRange'),
+         ds[key_list(1)].LonImage.dropna(dim='CrossRange'),
+         ds[key_list(2)].LonImage.dropna(dim='CrossRange')],
+        ).LonImage
 
     
     # ------------------------------------
@@ -697,9 +707,11 @@ def init_level2(level1):
 
     """
     level2 = xr.Dataset()
-    level2.coords['longitude'] = level1.sel(Antenna='Fore').LonImage
-    level2.coords['latitude'] = level1.sel(Antenna='Fore').LatImage
-    level2 = level2.drop('Antenna')
+#    level2.coords['longitude'] = level1.sel(Antenna='Fore').LonImage
+#    level2.coords['latitude'] = level1.sel(Antenna='Fore').LatImage
+    level2.coords['longitude'] = level1.longitude
+    level2.coords['latitude'] = level1.latitude
+#    level2 = level2.drop('Antenna')
 
     return level2
 
