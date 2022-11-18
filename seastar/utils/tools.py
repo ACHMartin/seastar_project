@@ -3,7 +3,7 @@
 
 import numpy as np
 import xarray as xr
-from scipy.io import loadmat
+
 from scipy import interpolate
 from collections import defaultdict
 from os import listdir
@@ -198,66 +198,6 @@ def import_incidence_angle_and_squint_to_dataset(filename,ds):
 
     return ds
 
-def colocate_xband_marine_radar_data(filename, dsl2):
-    """
-    Colocate X-band data from matlab to SAR lat/long.
-
-    Parameters
-    ----------
-    filename : ``str``
-        Filename of the X-band matlab .mat data file
-    dsl2 : ``xarray.Dataset``
-        Dataset containing coordinates and dimensions to colocate to
-
-    Raises
-    ------
-    Exception
-        Exeption raised if ``latitude`` and ``longitude`` variables are not
-        present in the radar .mat file
-
-    Returns
-    -------
-    ds_out : ``xarray.Dataset``
-        Dataset containing colocated X-band radar data
-
-    Notes
-    -----
-    This function written to be as agnostic as possible but is designed
-    primarily to colocate X-band radar data as supplied for the SEASTARex
-    project.
-
-    """
-    ds_out = xr.Dataset()
-    data = loadmat(filename)
-    data_vars = list(data.keys())
-    if 'longitude' in data_vars and 'latitude' in data_vars:
-        for var_name in data_vars:
-            var_data = data[var_name]
-            if var_name in ['__header__', '__version__', '__globals__']:
-                ds_out.attrs[var_name] = var_data
-            if isinstance(var_data, np.ndarray):
-                if var_data.shape == data['longitude'].shape:
-                    ds_out[var_name] = xr.DataArray(
-                        data=interpolate.griddata(
-                            points=(np.ravel(data['longitude']),
-                                    np.ravel(data['latitude'])),
-                            values=(np.ravel(var_data)),
-                            xi=(dsl2.longitude.values,
-                                dsl2.latitude.values)
-                            ),
-                        dims=dsl2.dims,
-                        coords=dsl2.coords
-                        )
-                elif var_data.shape == (1, 1):
-                    ds_out[var_name] = float(var_data)
-    else:
-        raise Exception(
-            'longitude and latitude not present in Xband .mat file'
-            )
-    ds_out.coords['longitude'] = dsl2.longitude
-    ds_out.coords['latitude'] = dsl2.latitude
-    return ds_out
-
 
 def  wgs2utm_v3(lat, lon, utmzone, utmhemi):
     """
@@ -347,7 +287,7 @@ def identify_antenna_location(ds):
 
     """
     doppler_mean = np.mean([ds.MinProcessedDoppler, ds.MaxProcessedDoppler])
-    if np.abs(doppler_mean) < 100:
+    if np.abs(doppler_mean) < 500:
         antenna_location = 'Mid'
     elif doppler_mean < 0:
         antenna_location = 'Aft'
@@ -439,6 +379,6 @@ def antenna_idents(ds):
 
     """
     antenna_ident = list()
-    for i in range(len(ds)):
+    for i in list(ds.keys()):
         antenna_ident.append(identify_antenna_location(ds[i]))
     return antenna_ident
