@@ -116,9 +116,9 @@ def convertDoppler2Velocity(freq_GHz, dop, inci):
     ----------
     freq_GHz : float
         Central electromagnetic frequency (GHz).
-    dop : xarray.DataArray
+    dop : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Doppler shift (Hz).
-    inci : xarray.DataArray
+    inci : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Incidence angle (degrees from nadir).
 
     Raises
@@ -128,9 +128,9 @@ def convertDoppler2Velocity(freq_GHz, dop, inci):
 
     Returns
     -------
-    los_vel : xarray.DataArray
+    los_vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Line-of-sight velocity (m/s).
-    surf_vel : xarray.DataArray
+    surf_vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Surface velocity (m/s).
 
     """
@@ -157,12 +157,12 @@ def mouche12(u10, phi, inc, pol):
 
     Parameters
     ----------
-    u10 : float, numpy.array, xarray.DataArray
+    u10 : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Wind speed (m/s) at 10m above sea surface.
-    phi : float, numpy.array, xarray.DataArray
+    phi : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Angle between wind and look directions (degrees) in range 0 (upwind) :
             90 (crosswind) : 180 (downwind).
-    inc : float, numpy.array, xarray.DataArray
+    inc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Incidence angle of radar beam (degrees from nadir).
     pol : str
         Polarisation of radar beam (HH or VV).
@@ -175,7 +175,7 @@ def mouche12(u10, phi, inc, pol):
 
     Returns
     -------
-    dop : float, numpy.array, xarray.DataArray
+    dop : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Doppler shift (GHz) due to geophysical and geometric conditions.
 
     """
@@ -290,6 +290,13 @@ def mouche12(u10, phi, inc, pol):
     ivar = tmp[ndims[tmp].argmax()]
     shp = np.shape((inc, u10, phi)[ivar])
     dop = dop.reshape(shp)
+
+    if isinstance(u10, xr.core.dataarray.DataArray):
+        dop = xr.DataArray(
+            data=dop,
+            dims=u10.dims,
+        )
+
     return dop
 
 
