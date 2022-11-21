@@ -378,7 +378,7 @@ def antenna_idents(ds):
         corresponding to the data and keys stored in `ds`
 
     """
-    antenna_ident = list()
+    antenna_id = list()
     for i in list(ds.keys()):
-        antenna_ident.append(identify_antenna_location(ds[i]))
-    return antenna_ident
+        antenna_id.append(identify_antenna_location(ds[i]))
+    return antenna_id

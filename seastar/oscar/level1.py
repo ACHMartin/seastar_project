@@ -12,7 +12,7 @@ import re
 import warnings
 
 
-def fill_missing_variables(ds, antenna_ident):
+def fill_missing_variables(ds_dict, antenna_id):
     """
     Fill missing variables in OSCAR datasets.
 
@@ -36,32 +36,32 @@ def fill_missing_variables(ds, antenna_ident):
         data in ``xarray.Dataset`` format as values
 
     """
-    fore_id = list(ds.keys())[antenna_ident.index('Fore')]
-    mid_id = list(ds.keys())[antenna_ident.index('Mid')]
-    aft_id = list(ds.keys())[antenna_ident.index('Aft')]
+    fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
+    mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
+    aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
+
+    # Find vars that dont exist in Mid, but exist in Fore
+    ds_diff = ds_dict[fore_id]\
+        [[x for x in ds_dict[fore_id].data_vars if x not in ds_dict[mid_id].data_vars]]
+    ds_diff.where(ds_diff == np.nan, other=np.nan)
+    ds_dict[mid_id] = ds_dict[mid_id].merge(ds_diff)
     
-    ds_diff = ds[fore_id]\
-        [[x for x in ds[fore_id].data_vars
-          if x not in ds[mid_id].data_vars]]
+    # Find vars that dont exist in Fore, but exist in Mid
+    ds_diff = ds_dict[mid_id]\
+        [[x for x in ds_dict[mid_id].data_vars if x not in ds_dict[fore_id].data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds[mid_id] = ds[mid_id].merge(ds_diff)
+    ds_dict[fore_id] = ds_dict[fore_id].merge(ds_diff)
 
-    ds_diff = ds[mid_id]\
-        [[x for x in ds[mid_id].data_vars
-          if x not in ds[fore_id].data_vars]]
+    # Find vars that dont exist in Aft, but exist in Mid
+    ds_diff = ds_dict[mid_id]\
+        [[x for x in ds_dict[mid_id].data_vars if x not in ds_dict[aft_id].data_vars]]
     ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds[fore_id] = ds[fore_id].merge(ds_diff)
+    ds_dict[aft_id] = ds_dict[aft_id].merge(ds_diff)
 
-    ds_diff = ds[mid_id]\
-        [[x for x in ds[mid_id].data_vars
-          if x not in ds[aft_id].data_vars]]
-    ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds[aft_id] = ds[aft_id].merge(ds_diff)
-
-    return ds
+    return ds_dict
 
 
-def merge_beams(ds, antenna_ident):
+def merge_beams(ds_dict, antenna_id):
     """
     Merge three beams into single dataset.
 
@@ -79,48 +79,27 @@ def merge_beams(ds, antenna_ident):
 
     Returns
     -------
-    dsl1 : ``xarray.Dataset``
+    ds_level1 : ``xarray.Dataset``
         OSCAR dataset with combined look directions
 
     """
-    dsl1 = xr.concat(list(ds.values()),
-                     'Antenna', join='outer',
-                     coords='all')
-    dsl1 = dsl1.assign_coords(Antenna=('Antenna', antenna_ident))
-    key_list = list(ds.keys()).index
-    dsl1.coords['latitude'] = xr.merge(
-        [ds[key_list(0)].LatImage.dropna(dim='CrossRange'),
-         ds[key_list(1)].LatImage.dropna(dim='CrossRange'),
-         ds[key_list(2)].LatImage.dropna(dim='CrossRange')],
-        ).LatImage
-    dsl1.coords['longitude'] = xr.merge(
-        [ds[key_list(0)].LonImage.dropna(dim='CrossRange'),
-         ds[key_list(1)].LonImage.dropna(dim='CrossRange'),
-         ds[key_list(2)].LonImage.dropna(dim='CrossRange')],
-        ).LonImage
+    ds_level1 = xr.concat(list(ds_dict.values()),
+                          'Antenna', join='outer',
+                          coords='all')
+    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_id))
+    key_list = list(ds_dict.keys()).index
+    ds_level1.coords['latitude'] = xr.merge(
+            [ds_dict[key_list(0)].LatImage.dropna(dim='CrossRange'),
+             ds_dict[key_list(1)].LatImage.dropna(dim='CrossRange'),
+             ds_dict[key_list(2)].LatImage.dropna(dim='CrossRange')],
+            ).LatImage
+    ds_level1.coords['longitude'] = xr.merge(
+            [ds_dict[key_list(0)].LonImage.dropna(dim='CrossRange'),
+             ds_dict[key_list(1)].LonImage.dropna(dim='CrossRange'),
+             ds_dict[key_list(2)].LonImage.dropna(dim='CrossRange')],
+            ).LonImage
 
-    
-    # ------------------------------------
-    # Old code to be deleted after testing
-    #-------------------------------------
-    # Check antenna polarisation fields and re-format for 'HH', 'VV'
-    #dsf = check_antenna_polarization(dsf)
-    #dsa = check_antenna_polarization(dsa)
-    #dsm = check_antenna_polarization(dsm)
-    #ds_diff = dsf[[x for x in dsf.data_vars if x not in dsm.data_vars]]
-    #ds_diff.where(ds_diff == np.nan, other=np.nan)
-    #dsm = dsm.merge(ds_diff)
-    # Find variables missing in dsm and build NaN filled variables in their
-    # place
-    #ds_level1 = xr.concat([dsf,
-    #                       dsa,
-    #                       dsm],
-    #                      'Antenna', join='inner',
-    #                      coords='all')
-    #ds_level1 = ds_level1.assign_coords(Antenna=('Antenna',
-    #                                             ['Fore', 'Aft', 'Mid']))
-
-    return dsl1
+    return ds_level1
 
 
 def check_antenna_polarization(ds):
