@@ -116,9 +116,9 @@ def convertDoppler2Velocity(freq_GHz, dop, inci):
     ----------
     freq_GHz : float
         Central electromagnetic frequency (GHz).
-    dop : xarray.DataArray
+    dop : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Doppler shift (Hz).
-    inci : xarray.DataArray
+    inci : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Incidence angle (degrees from nadir).
 
     Raises
@@ -128,9 +128,9 @@ def convertDoppler2Velocity(freq_GHz, dop, inci):
 
     Returns
     -------
-    los_vel : xarray.DataArray
+    los_vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Line-of-sight velocity (m/s).
-    surf_vel : xarray.DataArray
+    surf_vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Surface velocity (m/s).
 
     """
@@ -157,12 +157,12 @@ def mouche12(u10, phi, inc, pol):
 
     Parameters
     ----------
-    u10 : float, numpy.array, xarray.DataArray
+    u10 : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Wind speed (m/s) at 10m above sea surface.
-    phi : float, numpy.array, xarray.DataArray
+    phi : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Angle between wind and look directions (degrees) in range 0 (upwind) :
             90 (crosswind) : 180 (downwind).
-    inc : float, numpy.array, xarray.DataArray
+    inc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Incidence angle of radar beam (degrees from nadir).
     pol : str
         Polarisation of radar beam (HH or VV).
@@ -175,7 +175,7 @@ def mouche12(u10, phi, inc, pol):
 
     Returns
     -------
-    dop : float, numpy.array, xarray.DataArray
+    dop : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Doppler shift (GHz) due to geophysical and geometric conditions.
 
     """
@@ -290,6 +290,13 @@ def mouche12(u10, phi, inc, pol):
     ivar = tmp[ndims[tmp].argmax()]
     shp = np.shape((inc, u10, phi)[ivar])
     dop = dop.reshape(shp)
+
+    if isinstance(u10, xr.core.dataarray.DataArray):
+        dop = xr.DataArray(
+            data=dop,
+            dims=u10.dims,
+        )
+
     return dop
 
 
@@ -315,12 +322,12 @@ def yurovsky19(theta, phi, u, swh_sw=0, omega_sw=0, phi_sw=0, drift=0.015,
 
     Parameters
     ----------
-    theta : float, numpy.array, xarray.DataArray
+    theta : ``float``, ``numpy.ndarray``, ``xarray.DataArray``
         Incidence angle (degrees from nadir) in the range (0:60).
-    phi : float, numpy.array, xarray.DataArray
+    phi : ``float``, ``numpy.ndarray``, ``xarray.DataArray``
         Angle between wind and look directions (degrees) in range 0 (upwind) :
             90 (crosswind) : 180 (downwind).
-    u : float, numpy.array, xarray.DataArray
+    u : ``float``, ``numpy.ndarray``, ``xarray.DataArray``
         Wind speed (m/s) at 10m above sea surface.
     swh_sw : TYPE, optional
         Swell significant wave hight (m). The default is 0.
@@ -345,10 +352,11 @@ def yurovsky19(theta, phi, u, swh_sw=0, omega_sw=0, phi_sw=0, drift=0.015,
 
     Returns
     -------
-    HH : float, numpy.array, xarray.DataArray
-        Sea syrface Doppler spectrum centroid for HH polarization
-    VV : float, numpy.array, xarray.DataArray
-        Sea syrface Doppler spectrum centroid for VV polarization
+    VV : ``float``, ``numpy.ndarray``, ``xarray.DataArray``
+        Sea surface Doppler Velocity for VV polarization
+    HH : ``float``, ``numpy.ndarray``, ``xarray.DataArray``
+        Sea surface Doppler Velocity centroid for HH polarization
+
 
     """
     cosd = lambda x: np.cos(x * np.pi / 180)
@@ -590,5 +598,15 @@ def yurovsky19(theta, phi, u, swh_sw=0, omega_sw=0, phi_sw=0, drift=0.015,
         beta_sw * np.real(G(THETA, PHI_sw) *
                           MTF(THETA, PHI_sw, U, coefs.get("HHsw"))) / g * \
         SWH_sw ** 2 * OMEGA_sw ** 3
+
+    if isinstance(theta, xr.core.dataarray.DataArray):
+        VV = xr.DataArray(
+            data=VV,
+            dims=theta.dims,
+        )
+        HH = xr.DataArray(
+            data=HH,
+            dims=theta.dims,
+        )
 
     return [-VV, -HH]  # convention different ADMARTIN 24/03/2021
