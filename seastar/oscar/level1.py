@@ -87,16 +87,16 @@ def merge_beams(ds_dict, antenna_id):
                           'Antenna', join='outer',
                           coords='all')
     ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_id))
-    key_list = list(ds_dict.keys()).index
+    key_list = list(ds_dict.keys())
     ds_level1.coords['latitude'] = xr.merge(
-            [ds_dict[key_list(0)].LatImage.dropna(dim='CrossRange'),
-             ds_dict[key_list(1)].LatImage.dropna(dim='CrossRange'),
-             ds_dict[key_list(2)].LatImage.dropna(dim='CrossRange')],
+            [ds_dict[key_list[0]].LatImage.dropna(dim='CrossRange'),
+             ds_dict[key_list[1]].LatImage.dropna(dim='CrossRange'),
+             ds_dict[key_list[2]].LatImage.dropna(dim='CrossRange')],
             ).LatImage
     ds_level1.coords['longitude'] = xr.merge(
-            [ds_dict[key_list(0)].LonImage.dropna(dim='CrossRange'),
-             ds_dict[key_list(1)].LonImage.dropna(dim='CrossRange'),
-             ds_dict[key_list(2)].LonImage.dropna(dim='CrossRange')],
+            [ds_dict[key_list[0]].LonImage.dropna(dim='CrossRange'),
+             ds_dict[key_list[1]].LonImage.dropna(dim='CrossRange'),
+             ds_dict[key_list[2]].LonImage.dropna(dim='CrossRange')],
             ).LonImage
 
     return ds_level1

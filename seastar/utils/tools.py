@@ -380,5 +380,15 @@ def antenna_idents(ds):
     """
     antenna_id = list()
     for i in list(ds.keys()):
+        
         antenna_id.append(identify_antenna_location(ds[i]))
+    return antenna_id
+
+def identify_antenna_location_from_filename(file_path, file_time_triplets):
+    antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
+    file_list = listdir(file_path)
+    antenna_id = list()
+    for i in range(len(file_time_triplets)):
+        file_name = file_list[file_time_triplets[i]]
+        antenna_id.append(antenna_identifiers[file_name.split('_')[5][0]])
     return antenna_id
