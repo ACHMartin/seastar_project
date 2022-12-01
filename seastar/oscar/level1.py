@@ -532,11 +532,13 @@ def compute_antenna_azimuth_direction(ds, antenna):
     look_direc_angle = {'L': -90, 'R': 90}
 
     if 'SquintImage' in ds:
-        ds['AntennaAzimuthImage'] = (np.mod(
-            ds.OrbitHeadingImage
-            + look_direc_angle[lookdirec],
+        ds['AntennaAzimuthImage'] = np.mod(
+            np.mod(
+                ds.OrbitHeadingImage
+                + look_direc_angle[lookdirec],
+                360)
+            + ds.SquintImage,
             360)
-            + ds.SquintImage)
     elif 'SquintImage' not in ds:
         warnings.warn(
             "WARNING: No computed antenna squint present,"
@@ -644,12 +646,18 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
     dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
                                                  aux,
                                                  gmf)
+    dswasv_m = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Mid'),
+                                                 aux,
+                                                 gmf)
+    
+    
     level1['RadialSurfaceCurrent'] = xr.concat(
         [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
-         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV],
-        'Antenna', join='inner')
+         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV,
+         level1.RadialSurfaceVelocity.sel(Antenna='Mid') - dswasv_m.WASV],
+        'Antenna', join='outer')
     level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent.assign_coords(
-        Antenna=('Antenna', ['Fore', 'Aft']))
+        Antenna=('Antenna', ['Fore', 'Aft', 'Mid']))
     level1.RadialSurfaceCurrent.attrs['long_name'] =\
         'Radial Surface Current (RSC) along antenna beam direction, corrected'\
         'for Wind Artifact Surface Velocity (WASV)'

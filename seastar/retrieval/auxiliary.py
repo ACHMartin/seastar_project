@@ -79,3 +79,19 @@ def compute_Xband_current_magnitude_and_direction(ds):
                                  direction
                                  )
     return current_magnitude, current_direction
+
+def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
+    new_data = interpolate.griddata(
+                            points=(np.ravel(longitude),
+                                    np.ravel(latitude)),
+                            values=(np.ravel(data_in)),
+                            xi=(ds_out.longitude.values,
+                                ds_out.latitude.values),
+                            
+                            )  
+    colocated_var = xr.DataArray(
+                        data=new_data,
+                        dims=ds_out.dims,
+                        coords=ds_out.coords
+                        )
+    return colocated_var
