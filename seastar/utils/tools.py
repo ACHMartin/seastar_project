@@ -409,9 +409,6 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
         Dictionary of antenna L1 datasets.
     star_pattern_tracks : ``dict``
         Dictionary of track names and their associated file indices
-    file_time_triplets : ``list``
-        List of aquisition times and the file numbers of the matcing triplets
-        of fore, mid, aft antenna datasets
     rounding : ``int``, optional
         Look direction rounding number in degrees. The default is 10.
     d_precision : ``int``, optional
@@ -420,10 +417,11 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
     Returns
     -------
     look_files : ``dict``
-        Dictionary of look direction in the star pattern as keys and
-        matching antenna file numbers as values
+        Dictionary of look direction (degrees) in the star pattern as keys and
+        matching tuples of (Track, Antenna)
 
     """
+    antennas = {'Fore': 0, 'Mid': 1, 'Aft': 2}
     looks = np.zeros((len(star_pattern_tracks.keys()), 3))
     for track in star_pattern_tracks.keys():
         look_fore = np.round(
@@ -441,20 +439,20 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
                     .sel(Antenna='Aft')
                     .AntennaAzimuthImage)
             .data / rounding) * rounding
-        looks[list(
-            star_pattern_tracks.values())
-            .index(star_pattern_tracks[track]),
-            :] = [look_fore, look_mid, look_aft]
+        looks[list(star_pattern_tracks.values())
+              .index(star_pattern_tracks[track]),
+              :] = [look_fore, look_mid, look_aft]
     look_files = dict()
     for d in range(rounding, 360 + rounding, rounding):
         look_range = np.abs(looks - d) <= d_precision
         if np.any(look_range) and np.count_nonzero(look_range) > 1:
-            file_numbers = list()
+            antenna_info = list()
             for i in range(len(np.where(look_range)[0])):
                 ii = np.where(look_range)[0][i]
                 jj = np.where(look_range)[1][i]
-                file_numbers.append(
-                    file_time_triplets[
-                        list(star_pattern_tracks.values())[ii]][1][jj])
-            look_files[d] = file_numbers
+                antenna_info.append(
+                    (list(star_pattern_tracks.keys())[ii],
+                     list(antennas.keys())[jj])
+                    )
+            look_files[d] = antenna_info
     return look_files
