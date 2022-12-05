@@ -532,11 +532,13 @@ def compute_antenna_azimuth_direction(ds, antenna):
     look_direc_angle = {'L': -90, 'R': 90}
 
     if 'SquintImage' in ds:
-        ds['AntennaAzimuthImage'] = (np.mod(
-            ds.OrbitHeadingImage
-            + look_direc_angle[lookdirec],
+        ds['AntennaAzimuthImage'] = np.mod(
+            np.mod(
+                ds.OrbitHeadingImage
+                + look_direc_angle[lookdirec],
+                360)
+            + ds.SquintImage,
             360)
-            + ds.SquintImage)
     elif 'SquintImage' not in ds:
         warnings.warn(
             "WARNING: No computed antenna squint present,"
@@ -654,7 +656,9 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
          level1.RadialSurfaceVelocity.sel(Antenna='Mid') - dswasv_m.WASV],
         'Antenna', join='outer')
     level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent.assign_coords(
-        Antenna=('Antenna', list(level1.Antenna.data)))
+
+    Antenna=('Antenna', list(level1.Antenna.data)))
+
     level1.RadialSurfaceCurrent.attrs['long_name'] =\
         'Radial Surface Current (RSC) along antenna beam direction, corrected'\
         'for Wind Artifact Surface Velocity (WASV)'

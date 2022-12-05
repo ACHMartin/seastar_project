@@ -84,8 +84,7 @@ def compute_current_magnitude_and_direction(level1, level2):
     direction_corrected = np.mod(-xr.where(ind_pos,
                                  180 + (180 - np.abs(direction)),
                                  direction
-                                 )
-                                 + 90,
+                                 ),
                                  360)
 
     level2['CurrentDirection'] = direction_corrected

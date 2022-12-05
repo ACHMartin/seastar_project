@@ -392,3 +392,67 @@ def identify_antenna_location_from_filename(file_path, file_time_triplets):
         file_name = file_list[file_time_triplets[i]]
         antenna_id.append(antenna_identifiers[file_name.split('_')[5][0]])
     return antenna_id
+
+
+def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
+                          rounding=10, d_precision=5):
+    """
+    Find coincident looks in star pattern.
+
+    Function to find the file list indices of antenna datasets containing
+    data in coincident look directions within the SEASTARex star pattern
+    on May 22nd 2022.
+
+    Parameters
+    ----------
+    ds_l1_star : ``dict``
+        Dictionary of antenna L1 datasets.
+    star_pattern_tracks : ``dict``
+        Dictionary of track names and their associated file indices
+    rounding : ``int``, optional
+        Look direction rounding number in degrees. The default is 10.
+    d_precision : ``int``, optional
+        Precision of look direction comparison in degrees. The default is 5.
+
+    Returns
+    -------
+    look_files : ``dict``
+        Dictionary of look direction (degrees) in the star pattern as keys and
+        matching tuples of (Track, Antenna)
+
+    """
+    antennas = {'Fore': 0, 'Mid': 1, 'Aft': 2}
+    looks = np.zeros((len(star_pattern_tracks.keys()), 3))
+    for track in star_pattern_tracks.keys():
+        look_fore = np.round(
+            np.mean(ds_l1_star[track]
+                    .sel(Antenna='Fore')
+                    .AntennaAzimuthImage)
+            .data / rounding) * rounding
+        look_mid = np.round(
+            np.mean(ds_l1_star[track]
+                    .sel(Antenna='Mid')
+                    .AntennaAzimuthImage)
+            .data / rounding) * rounding
+        look_aft = np.round(
+            np.mean(ds_l1_star[track]
+                    .sel(Antenna='Aft')
+                    .AntennaAzimuthImage)
+            .data / rounding) * rounding
+        looks[list(star_pattern_tracks.values())
+              .index(star_pattern_tracks[track]),
+              :] = [look_fore, look_mid, look_aft]
+    look_files = dict()
+    for d in range(rounding, 360 + rounding, rounding):
+        look_range = np.abs(looks - d) <= d_precision
+        if np.any(look_range) and np.count_nonzero(look_range) > 1:
+            antenna_info = list()
+            for i in range(len(np.where(look_range)[0])):
+                ii = np.where(look_range)[0][i]
+                jj = np.where(look_range)[1][i]
+                antenna_info.append(
+                    (list(star_pattern_tracks.keys())[ii],
+                     list(antennas.keys())[jj])
+                    )
+            look_files[d] = antenna_info
+    return look_files
