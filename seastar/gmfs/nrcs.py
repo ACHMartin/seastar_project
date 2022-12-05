@@ -7,6 +7,54 @@ from scipy.interpolate import interpn
 import seastar
 
 
+def compute_nrcs(L1_combined, aux_geo):
+    """
+    Compute Normalized Radar Cross Section (nrcs).
+
+    Compute NRCS (Sigma0) using incidence angle, antenna polarization and
+    windspeed/direction data.
+
+    Parameters
+    ----------
+    L1_combined : ``xr.Dataset``
+        Dataset containing IncidenceAngleImage and antenna polarization data
+    aux_geo : ``xr.Dataset``
+        Geophysical parameter dataset containing wind speed and direction data
+
+    Returns
+    -------
+    nrcs : ``xr.Dataset``
+        Dataset of computed Normalized Radar Cross Section DataArrays,
+        arranged along a dimension corresponding to antenna position
+
+    """
+    nrcs = xr.Dataset()
+    for antenna in L1_combined.Antenna.data:
+        L1 = L1_combined.sel(Antenna=antenna)
+        L1, aux_geo = xr.align(L1, aux_geo, join="outer")
+        relative_wind_direction =\
+            seastar.utils.tools.compute_relative_wind_direction(
+                aux_geo.WindDirection,
+                L1.AntennaAzimuthImage
+                )
+        ind = {'VV': 1, 'HH': 2}
+        pol_val = np.full(L1.IncidenceAngleImage.values.shape,
+                          ind[str(L1_combined
+                                  .sel(Antenna='Fore')
+                                  .Polarization.data)]
+                          )
+        nrcs[antenna] = xr.DataArray(nscat4ds(
+            aux_geo.WindSpeed.values,
+            relative_wind_direction.values,
+            L1.IncidenceAngleImage.values,
+            pol_val),
+                                     coords=L1.IncidenceAngleImage.coords,
+                                     dims=L1.IncidenceAngleImage.dims)
+    nrcs = nrcs.to_array(dim='Antenna')
+    nrcs.attrs['long_name'] = 'Normalized radar cross section Sigma 0'
+    nrcs.attrs['units'] = ['']
+    return nrcs
+
 def nscat4ds(u10, phi, inc, pol):
     """
     Compute sigma0 due to wind.
