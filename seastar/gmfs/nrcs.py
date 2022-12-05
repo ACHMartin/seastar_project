@@ -39,8 +39,8 @@ def compute_nrcs(L1_combined, aux_geo):
                 )
         ind = {'VV': 1, 'HH': 2}
         pol_val = np.full(L1.IncidenceAngleImage.values.shape,
-                          ind[str(L1_combined
-                                  .sel(Antenna='Fore')
+                          ind[str(L1
+                                  .sel(Antenna=antenna)
                                   .Polarization.data)]
                           )
         nrcs[antenna] = xr.DataArray(nscat4ds(
