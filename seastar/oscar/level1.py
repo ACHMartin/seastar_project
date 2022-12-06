@@ -640,25 +640,22 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
         L2 dataset
 
     """
-    dswasv_f = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Fore'),
-                                                 aux,
-                                                 gmf)
-    dswasv_a = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Aft'),
-                                                 aux,
-                                                 gmf)
-    dswasv_m = seastar.gmfs.doppler.compute_wasv(level1.sel(Antenna='Mid'),
-                                                 aux,
-                                                 gmf)
-
-    level1['RadialSurfaceCurrent'] = xr.concat(
-        [level1.RadialSurfaceVelocity.sel(Antenna='Fore') - dswasv_f.WASV,
-         level1.RadialSurfaceVelocity.sel(Antenna='Aft') - dswasv_a.WASV,
-         level1.RadialSurfaceVelocity.sel(Antenna='Mid') - dswasv_m.WASV],
-        'Antenna', join='outer')
-    level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent.assign_coords(
-
-    Antenna=('Antenna', list(level1.Antenna.data)))
-
+    dswasv = seastar.gmfs.doppler.compute_wasv(level1,
+                                               aux,
+                                               gmf
+                                               )
+    rsv_list = [level1.RadialSurfaceVelocity.sel(Antenna=a)
+                - dswasv.sel(Antenna=a)
+                for a in list(level1.Antenna.data)
+                ]
+    level1['RadialSurfaceCurrent'] = xr.concat(rsv_list,
+                                               'Antenna',
+                                               join='outer')
+    level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent\
+        .assign_coords(Antenna=('Antenna',
+                                list(level1.Antenna.data)
+                                )
+                       )
     level1.RadialSurfaceCurrent.attrs['long_name'] =\
         'Radial Surface Current (RSC) along antenna beam direction, corrected'\
         'for Wind Artifact Surface Velocity (WASV)'
