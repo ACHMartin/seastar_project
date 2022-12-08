@@ -37,12 +37,12 @@ def compute_nrcs(L1_combined, aux_geo):
                 aux_geo.WindDirection,
                 L1.AntennaAzimuthImage
                 )
-        ind = {'VV': 1, 'HH': 2}
-        pol_val = np.full(L1.IncidenceAngleImage.values.shape,
-                          ind[str(L1
-                                  .sel(Antenna=antenna)
-                                  .Polarization.data)]
-                          )
+        # ind = {'VV': 1, 'HH': 2}
+        # pol_val = np.full(L1.IncidenceAngleImage.values.shape,
+        #                   ind[str(L1
+        #                           .Polarization.data)]
+        #                   )
+        pol_val = seastar.utils.tools.polarizationStr2Val(L1.Polarization)
         nrcs[antenna] = xr.DataArray(nscat4ds(
             aux_geo.WindSpeed.values,
             relative_wind_direction.values,
