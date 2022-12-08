@@ -7,7 +7,7 @@ from scipy.interpolate import interpn
 import seastar
 
 
-def compute_nrcs(L1_combined, aux_geo):
+def compute_nrcs(L1_combined, aux_geo, gmf):
     """
     Compute Normalized Radar Cross Section (nrcs).
 
@@ -43,13 +43,21 @@ def compute_nrcs(L1_combined, aux_geo):
         #                           .Polarization.data)]
         #                   )
         pol_val = seastar.utils.tools.polarizationStr2Val(L1.Polarization)
-        nrcs[antenna] = xr.DataArray(nscat4ds(
-            aux_geo.WindSpeed.values,
-            relative_wind_direction.values,
-            L1.IncidenceAngleImage.values,
-            pol_val),
-                                     coords=L1.IncidenceAngleImage.coords,
-                                     dims=L1.IncidenceAngleImage.dims)
+
+        if gmf.name == 'nscat4ds':
+            nrcs[antenna] = xr.DataArray(
+                nscat4ds(
+                    aux_geo.WindSpeed.values,
+                    relative_wind_direction.values,
+                    L1.IncidenceAngleImage.values,
+                    pol_val
+                ),
+                coords=L1.IncidenceAngleImage.coords,
+                dims=L1.IncidenceAngleImage.dims
+            )
+        else:
+            raise Exception('Error, unknown gmf, gmf.name should be nscat4ds')
+
     nrcs = nrcs.to_array(dim='Antenna')
     nrcs.attrs['long_name'] = 'Normalized radar cross section Sigma 0'
     nrcs.attrs['units'] = ['']
