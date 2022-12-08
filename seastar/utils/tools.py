@@ -456,3 +456,46 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
                     )
             look_files[d] = antenna_info
     return look_files
+
+
+def polarizationStr2Val(da):
+    '''
+    Transform Polarization string ('VV' or 'HH') towards values (1, 2)
+
+    Parameters
+    ----------
+    da: `DataArray`
+    Returns
+    -------
+    out: `DataArray`
+    '''
+
+    keys = {'VV': 1, 'HH': 2}
+    data = np.vectorize(keys.get)(da.data)
+    out = xr.DataArray(
+        data=data,
+        dims=da.dims,
+    )
+
+    return out
+
+def polarizationVal2Str(da):
+    '''
+    Transform Polarization values (1, 2) to string ('VV' or 'HH')
+
+    Parameters
+    ----------
+    da: `DataArray`
+    Returns
+    -------
+    out: `DataArray`
+    '''
+
+    keys = {1: 'VV', 2: 'HH'}
+    data = np.vectorize(keys.get)(da.data)
+    out = xr.DataArray(
+        data=data,
+        dims=da.dims,
+    )
+
+    return out
