@@ -45,18 +45,23 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
         pol_val = seastar.utils.tools.polarizationStr2Val(L1.Polarization)
 
         if gmf.name == 'nscat4ds':
-            nrcs[antenna] = xr.DataArray(
-                nscat4ds(
-                    aux_geo.WindSpeed.values,
-                    relative_wind_direction.values,
-                    L1.IncidenceAngleImage.values,
-                    pol_val
-                ),
-                coords=L1.IncidenceAngleImage.coords,
-                dims=L1.IncidenceAngleImage.dims
+            nrcs_data = nscat4ds(
+                aux_geo.WindSpeed.values,
+                relative_wind_direction.values,
+                L1.IncidenceAngleImage.values,
+                pol_val.values
             )
         else:
             raise Exception('Error, unknown gmf, gmf.name should be nscat4ds')
+
+        if len(nrcs_data) == 1: # bug if nrcs_data is of len = 1 for DataArray creation
+            nrcs_data = nrcs_data[0]
+
+        nrcs[antenna] = xr.DataArray(
+            data=nrcs_data,
+            coords=L1.IncidenceAngleImage.coords,
+            dims=L1.IncidenceAngleImage.dims
+        )
 
     nrcs = nrcs.to_array(dim='Antenna')
     nrcs.attrs['long_name'] = 'Normalized radar cross section Sigma 0'
