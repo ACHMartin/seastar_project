@@ -14,16 +14,16 @@ def currentVelDir2UV(vel, cdir):
 
     Parameters
     ----------
-    vel : array, float
+    vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Magnitude of current (m/s).
-    cdir : array, float
+    cdir : `float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Direction of current (degrees N) in oceanographic convention.
 
     Returns
     -------
-    u : array, float
+    u : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         u component (positive East) of current vector.
-    v : array, float
+    v : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         v component (positive North) of current vector..
 
     """
@@ -39,16 +39,16 @@ def currentUV2VelDir(u, v):
 
     Parameters
     ----------
-    u : ``float``
+    u : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         u vector component in positive East direction
-    v : ``float``
+    v : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         v vector component in positive North direction
 
     Returns
     -------
-    vel : ``float``
+    vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Magnitude of the converted vector with same units as `u` and `v`
-    cdir : ``float``
+    cdir : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Direction of the converted vector (degrees)
     """
     tmp = u + 1j * v
@@ -64,16 +64,16 @@ def windSpeedDir2UV(wspd, wdir):
 
     Parameters
     ----------
-    wspd : array, ``float``
+    wspd : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Magnitude of wind (m/s).
-    wdir : ``float``
+    wdir : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Direction of wind (degrees N) in wind convention.
 
     Returns
     -------
-    u : array, ``float``
+    u : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         u component (positive East) of wind vector (m/s)
-    v : array, ``float``
+    v : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         v component (positive North) of wind vector (m/s)
 
     Notes
@@ -94,16 +94,16 @@ def windUV2SpeedDir(u, v):
 
     Parameters
     ----------
-    u : array, ``float``
+    u : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         u component (positive East) of wind vector (m/s)
-    v : array, ``float``
+    v : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         v component (positive North) of wind vector (m/s)
 
     Returns
     -------
-    wspd : array, ``float``
+    wspd : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Magnitude of wind (m/s).
-    wdir : ``float``
+    wdir : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Direction of wind (degrees N) in wind convention.
 
     Notes
@@ -456,3 +456,53 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
                     )
             look_files[d] = antenna_info
     return look_files
+
+
+def polarizationStr2Val(da):
+    '''
+    Transform Polarization string ('VV' or 'HH') towards values (1, 2)
+
+    Parameters
+    ----------
+    da: `DataArray`
+    Returns
+    -------
+    out: `DataArray`
+    '''
+
+    keys = {'VV': 1, 'HH': 2}
+    data = np.vectorize(keys.get)(da.data)
+    out = xr.DataArray(
+        data=data,
+        dims=da.dims,
+    )
+
+    return out
+
+def polarizationVal2Str(da):
+    '''
+    Transform Polarization values (1, 2) to string ('VV' or 'HH')
+
+    Parameters
+    ----------
+    da: `DataArray`
+    Returns
+    -------
+    out: `DataArray`
+    '''
+
+    keys = {1: 'VV', 2: 'HH'}
+    data = np.vectorize(keys.get)(da.data)
+    out = xr.DataArray(
+        data=data,
+        dims=da.dims,
+    )
+
+    return out
+
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__

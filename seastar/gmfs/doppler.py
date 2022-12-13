@@ -9,7 +9,55 @@ from scipy.constants import c  # speed of light in vacuum
 import seastar
 
 
+def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
+    """
+    Compute the total surface motion (or RVL, ...? TODO need to agree on the naming)
+    including Wind-wave Artefact Surface Velocity (WASV)
+    + surface current.
+
+    Parameters
+    ----------
+    L1 : xarray.Dataset
+        A Dataset containing IncidenceAngleImage, AntennaAzimuthImage and
+        Polarization.
+    aux_geo : xarray.Dataset
+        A Dataset containing WindSpeed, WindDirection, CurrentVelocity, CurrentDirection
+    gmf : str
+        Option for geophysical model function. 'mouche12', 'yurovsky19'
+        with kwargs for options.
+    **kwargs : TYPE
+        Optional arguments.
+
+    Raises
+    ------
+    Exception
+        Exception raised if LookDirection is not in the form of a 2D array.
+
+    Returns
+    -------
+    da : ``xarray.DataArray``
+        A DataArray containing the Radial Velocity for
+        the given geophysical and geometric conditions.
+    """
+
+    ds = seastar.gmfs.doppler.compute_wasv(L1, aux_geo, gmf, **kwargs)
+
+    relative_current_direction = np.mod(aux_geo.CurrentDirection - L1.AntennaAzimuthImage, 360)
+    relative_direction_influence = np.cos(np.radians(relative_current_direction))
+    radial_current = aux_geo.CurrentVelocity * relative_direction_influence
+
+    da = xr.DataArray(
+        data=ds.WASV + radial_current,
+        dims=ds.WASV.dims,
+    )
+
+    return da
+
+
+
+
 def compute_wasv(L1_combined, aux_geo, gmf, **kwargs):
+
     """
     Compute the Wind-wave Artefact Surface Velocity (WASV).
 
@@ -49,6 +97,7 @@ def compute_wasv(L1_combined, aux_geo, gmf, **kwargs):
         # Initialisation
         central_wavelength = seastar.utils.tools.wavenumber2wavelength(
             L1.CentralWavenumber
+
         )
 
         if len(L1.LookDirection.shape) > 2:
