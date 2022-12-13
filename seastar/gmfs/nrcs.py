@@ -7,7 +7,7 @@ from scipy.interpolate import interpn
 import seastar
 
 
-def compute_nrcs(L1_combined, aux_geo):
+def compute_nrcs(L1_combined, aux_geo, gmf):
     """
     Compute Normalized Radar Cross Section (nrcs).
 
@@ -37,19 +37,32 @@ def compute_nrcs(L1_combined, aux_geo):
                 aux_geo.WindDirection,
                 L1.AntennaAzimuthImage
                 )
-        ind = {'VV': 1, 'HH': 2}
-        pol_val = np.full(L1.IncidenceAngleImage.values.shape,
-                          ind[str(L1
-                                  .sel(Antenna=antenna)
-                                  .Polarization.data)]
-                          )
-        nrcs[antenna] = xr.DataArray(nscat4ds(
-            aux_geo.WindSpeed.values,
-            relative_wind_direction.values,
-            L1.IncidenceAngleImage.values,
-            pol_val),
-                                     coords=L1.IncidenceAngleImage.coords,
-                                     dims=L1.IncidenceAngleImage.dims)
+        # ind = {'VV': 1, 'HH': 2}
+        # pol_val = np.full(L1.IncidenceAngleImage.values.shape,
+        #                   ind[str(L1
+        #                           .Polarization.data)]
+        #                   )
+        pol_val = seastar.utils.tools.polarizationStr2Val(L1.Polarization)
+
+        if gmf.name == 'nscat4ds':
+            nrcs_data = nscat4ds(
+                aux_geo.WindSpeed.values,
+                relative_wind_direction.values,
+                L1.IncidenceAngleImage.values,
+                pol_val.values
+            )
+        else:
+            raise Exception('Error, unknown gmf, gmf.name should be nscat4ds')
+
+        if len(nrcs_data) == 1: # bug if nrcs_data is of len = 1 for DataArray creation
+            nrcs_data = nrcs_data[0]
+
+        nrcs[antenna] = xr.DataArray(
+            data=nrcs_data,
+            coords=L1.IncidenceAngleImage.coords,
+            dims=L1.IncidenceAngleImage.dims
+        )
+
     nrcs = nrcs.to_array(dim='Antenna')
     nrcs.attrs['long_name'] = 'Normalized radar cross section Sigma 0'
     nrcs.attrs['units'] = ['']
