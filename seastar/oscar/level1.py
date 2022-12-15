@@ -648,6 +648,14 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
                 - dswasv.sel(Antenna=a)
                 for a in list(level1.Antenna.data)
                 ]
+    warnings.warn(
+        "WARNING: Applying direction convention correction on the Aft beam,"
+        "Be aware this may be an obsolete correction in the future and will"
+        "lead to an error in retrieved current direction."
+    )
+    rsv_list[list(level1.Antenna.data).index('Aft')] = \
+        -level1.RadialSurfaceVelocity.sel(Antenna='Aft')\
+        - dswasv.sel(Antenna='Aft')
     level1['RadialSurfaceCurrent'] = xr.concat(rsv_list,
                                                'Antenna',
                                                join='outer')
