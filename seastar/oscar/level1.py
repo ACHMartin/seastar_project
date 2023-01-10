@@ -499,7 +499,7 @@ def compute_antenna_azimuth_direction(ds, antenna):
     Parameters
     ----------
     ds : ``xarray.Dataset``
-        OSCAR SAR dataset
+        OSCAR SAR dataset with "SquintImage" as a required field
     antenna : ``str``
         'Fore' Fore beam pair, 'Aft' Aft beam pair
 
@@ -527,28 +527,18 @@ def compute_antenna_azimuth_direction(ds, antenna):
             'Heading (degrees N) of the airfraft for each pixel in the image'
         ds.OrbitHeadingImage.attrs['units'] = '[degrees]'
 
-    antenna_direc = {'Fore': 45, 'Aft': 135, 'Mid': 90}
+    # antenna_direc = {'Fore': 45, 'Aft': 135, 'Mid': 90}
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
     look_direc_angle = {'L': -90, 'R': 90}
 
     if 'SquintImage' in ds:
         ds['AntennaAzimuthImage'] = np.mod(
-            np.mod(
-                ds.OrbitHeadingImage
-                + look_direc_angle[lookdirec],
-                360)
+            ds.OrbitHeadingImage
+            + look_direc_angle[lookdirec]
             + ds.SquintImage,
             360)
-    elif 'SquintImage' not in ds:
-        warnings.warn(
-            "WARNING: No computed antenna squint present,"
-            "continuing with 45 degree Fore/Aft squint assumption"
-        )
-        ds['AntennaAzimuthImage'] = np.mod(ds.OrbitHeadingImage
-                                           + (np.sign(
-                                               look_direc_angle[lookdirec])
-                                               * antenna_direc[antenna]),
-                                           360)
+    else:
+        raise Exception('SquintImage is a required field in ds')
     ds.AntennaAzimuthImage.attrs['long_name'] =\
         'Antenna azimuth direction for each pixel in the image'
     ds.AntennaAzimuthImage.attrs['units'] = '[degrees North]'
