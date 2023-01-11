@@ -7,6 +7,8 @@ import xarray as xr
 from scipy import interpolate
 from collections import defaultdict
 from os import listdir
+import cartopy.feature as cfeature
+from shapely.geometry import Point
 
 def currentVelDir2UV(vel, cdir):
     """
@@ -506,3 +508,38 @@ class dotdict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+
+def compute_ushant_mask(dsl2, bound):
+    """
+    Compute land mask.
+    
+    Generates a boolean land mask using the GSHHS coasline dataset. A good
+    value for `bound` to cover the island of Ushant is:
+        [-5.2, -5.0, 48.37, 48.5]
+
+    Parameters
+    ----------
+    dsl2 : ``xarray.Dataset``
+        Dataset containing 
+    bound : ``list``
+        DESCRIPTION.
+
+    Returns
+    -------
+    mask : ``array``, ``bool``
+        Boolean mask of Ushant island in data coordinates, xr.DataArray format.
+
+    """
+    coast = cfeature.GSHHSFeature(scale='full').intersecting_geometries(bound)
+    coast_polygon = next(coast)
+    m, n = dsl2.longitude.shape
+    mask = np.full((m, n), True)
+    for i in range(m):
+        for j in range(n):
+            mask[i, j] = Point(dsl2.longitude.data[i, j],
+                               dsl2.latitude.data[i, j]).within(coast_polygon)
+    mask = xr.DataArray(data=mask,
+                        coords=dsl2.coords,
+                        dims=dsl2.dims)
+    return mask
