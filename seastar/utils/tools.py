@@ -9,6 +9,8 @@ from collections import defaultdict
 from os import listdir
 import cartopy.feature as cfeature
 from shapely.geometry import Point
+from scipy.io import loadmat
+from scipy.ndimage import binary_erosion as erode
 
 def currentVelDir2UV(vel, cdir):
     """
@@ -510,36 +512,87 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
-def compute_ushant_mask(dsl2, bound):
+def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=False,
+                                 erode_scale=False, coastline_selection=False):
     """
-    Compute land mask.
-    
-    Generates a boolean land mask using the GSHHS coasline dataset. A good
-    value for `bound` to cover the island of Ushant is:
-        [-5.2, -5.0, 48.37, 48.5]
+    Compute boolean land mask from GSHHS global coastline.
+
+    Computes a boolean mask with size, coords and dims corresponding to a
+    supplied xarray.Dataset, with mask values = True where the point lies
+    within the coastline from the GSHHS global coastline dataset.
 
     Parameters
     ----------
-    dsl2 : ``xarray.Dataset``
-        Dataset containing 
-    bound : ``list``
-        DESCRIPTION.
+    ds : ``xarray.Dataset``
+        Dataset containing `longitude` and `latitude` coordinates as well as
+        coords and dims to align the new `mask` to.
+    erosion : ``bool``, optional
+        Boolean switch to trigger binary erosion of the resulting `mask`.
+        The default is False.
+    boundary : ``list``, optional
+        Optional boundary to check for the presence of coastlines in the GSHHS
+        dataset. Supply `boundary` in the form:
+        `[min(long), max(long), min(lat), max(lat)]`. The default is False.
+        The default boundary will be set to the minimum and maximum extent of
+        the `longitude` and `latitude` data present in the coords of `ds`.
+    erode_scale : ``int``, ``float``, optional
+        Scale for the array-like structure used for optional binary erosion.
+        The default is False. When default is used but `erosion=True` then a
+        `erode_scale` of 3 is assumed.
+    coastline_selection : ``int``, ``list``, optional
+        Manual choice of which identified coastlines within `boundary` are used
+        in the generation of the `mask`. Choice is a key or list of keys of
+        type ``int``. The default is False. The default behaviour is all
+        coastlines within `boundary` are used to generate the `mask`.
+
+    Raises
+    ------
+    Exception
+        'longitude and latitude missing from input dataset'.
 
     Returns
     -------
-    mask : ``array``, ``bool``
-        Boolean mask of Ushant island in data coordinates, xr.DataArray format.
+    mask : ``bool``, ``array``, ``xr.DataArray``
+        An xr.DataArray containing an array-like boolean mask of land pixels.
 
     """
-    coast = cfeature.GSHHSFeature(scale='full').intersecting_geometries(bound)
-    coast_polygon = next(coast)
-    m, n = dsl2.longitude.shape
-    mask = np.full((m, n), True)
+    if 'longitude' not in ds.coords or 'latitude' not in ds.coords:
+        raise Exception('longitude and latitude missing from input dataset')
+    if not boundary:
+        boundary = [np.min(ds.longitude.data),
+                    np.max(ds.longitude.data),
+                    np.min(ds.latitude.data),
+                    np.max(ds.latitude.data)]
+
+    if erosion:
+        if not erode_scale:
+            erode_structure = np.full((3, 3), True)
+        else:
+            erode_scale = int(np.round(erode_scale))
+            erode_structure = np.full((erode_scale, erode_scale), True)
+    coast_polygons = dict()
+    coast = cfeature.GSHHSFeature(scale='full')\
+        .intersecting_geometries(boundary)
+
+    for k, polygon in enumerate(coast):
+        coast_polygons[k] = polygon
+    if type(coastline_selection) is not bool:
+        if type(coastline_selection) is int:
+            coastline_selection = [coastline_selection]
+        coast_polygons = {key: coast_polygons[key]
+                          for key in coastline_selection}
+    m, n = ds.longitude.shape
+    mask = np.full((m, n), False)
     for i in range(m):
         for j in range(n):
-            mask[i, j] = Point(dsl2.longitude.data[i, j],
-                               dsl2.latitude.data[i, j]).within(coast_polygon)
+            for k in coast_polygons.keys():
+                mask[i, j] = mask[i, j] or\
+                    Point(ds.longitude.data[i, j], ds.latitude.data[i, j])\
+                    .within(coast_polygons[k])
+    if erosion:
+        mask = erode(mask, structure=erode_structure)
     mask = xr.DataArray(data=mask,
-                        coords=dsl2.coords,
-                        dims=dsl2.dims)
+                        coords=ds.coords,
+                        dims=ds.dims)
+
     return mask
