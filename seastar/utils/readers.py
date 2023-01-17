@@ -2,6 +2,42 @@ import os
 import glob
 import configparser
 import xarray as xr
+import platform
+from configparser import ConfigParser
+
+
+def _set_file_paths():
+    """
+    Set file paths.
+
+    Sets file paths for local machine using the output of platform.node() as
+    the device name. Device names and local paths for each device are stored in
+    ../config.ini
+
+    Raises
+    ------
+    Exception
+        Device name not in config.ini
+
+    Returns
+    -------
+    local_paths : ``dict`` of ``str``
+        Dict of file paths with their variable identifiers as keys and local
+        paths as values in ``str`` format.
+
+    """
+    device_name = platform.node()
+    print('Device name = ' + device_name)
+    print('Setting local paths...')
+    config = ConfigParser()
+    config.read('config.ini')
+    if device_name not in config.sections():
+        raise Exception('Device name not in config.ini. Please check device'
+                        'name and file paths are entered into config and try'
+                        ' again.')
+    local_paths = dict(config.items(platform.node()))
+
+    return local_paths
 
 
 def _readConfig(config_file_path):
