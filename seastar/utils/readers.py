@@ -3,7 +3,7 @@ import glob
 import configparser
 import xarray as xr
 import platform
-import configparser as ConfigParser
+from configparser import ConfigParser
 
 
 def _set_file_paths():
