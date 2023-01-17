@@ -512,8 +512,8 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
-def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=False,
-                                 erode_scale=False, coastline_selection=False):
+def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=None,
+                                 erode_scale=3, coastline_selection=0):
     """
     Compute boolean land mask from GSHHS global coastline.
 
@@ -532,28 +532,34 @@ def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=False,
     boundary : ``list``, optional
         Optional boundary to check for the presence of coastlines in the GSHHS
         dataset. Supply `boundary` in the form:
-        `[min(long), max(long), min(lat), max(lat)]`. The default is False.
+        `[min(long), max(long), min(lat), max(lat)]`.
         The default boundary will be set to the minimum and maximum extent of
         the `longitude` and `latitude` data present in the coords of `ds`.
     erode_scale : ``int``, ``float``, optional
         Scale for the array-like structure used for optional binary erosion.
-        The default is False. When default is used but `erosion=True` then a
+        When default is used but `erosion=True` then a
         `erode_scale` of 3 is assumed.
     coastline_selection : ``int``, ``list``, optional
         Manual choice of which identified coastlines within `boundary` are used
         in the generation of the `mask`. Choice is a key or list of keys of
-        type ``int``. The default is False. The default behaviour is all
-        coastlines within `boundary` are used to generate the `mask`.
+        type ``int``. The default is 0. The default behaviour is the first
+        identified coastline within `boundary` is used to generate the `mask`.
 
     Raises
     ------
     Exception
         'longitude and latitude missing from input dataset'.
+        'coastline_selection out of bounds of identified coastlines within
+        boundary'
 
     Returns
     -------
     mask : ``bool``, ``array``, ``xr.DataArray``
         An xr.DataArray containing an array-like boolean mask of land pixels.
+    coast_polygons : ``dict`` of `shapely Polygons`
+        A dict of all identified coastlines within the supplied or default
+        `boundary`, with keys of values for `coastline_selection` and values
+        of type ``shapely.polygon.Polygon``
 
     """
     if 'longitude' not in ds.coords or 'latitude' not in ds.coords:
@@ -565,22 +571,26 @@ def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=False,
                     np.max(ds.latitude.data)]
 
     if erosion:
-        if not erode_scale:
-            erode_structure = np.full((3, 3), True)
-        else:
-            erode_scale = int(np.round(erode_scale))
-            erode_structure = np.full((erode_scale, erode_scale), True)
+        erode_scale = int(np.round(erode_scale))
+        erode_structure = np.full((erode_scale, erode_scale), True)
     coast_polygons = dict()
     coast = cfeature.GSHHSFeature(scale='full')\
         .intersecting_geometries(boundary)
 
     for k, polygon in enumerate(coast):
         coast_polygons[k] = polygon
-    if type(coastline_selection) is not bool:
-        if type(coastline_selection) is int:
-            coastline_selection = [coastline_selection]
-        coast_polygons = {key: coast_polygons[key]
-                          for key in coastline_selection}
+    if type(coastline_selection) is int:
+        coastline_selection = [coastline_selection]
+    if np.max(coastline_selection) > k:
+        raise Exception('Selected coastline(s)',
+                        coastline_selection,
+                        ' different to coastlines identified within boundary ',
+                        list(coast_polygons.keys()),
+                        '. Please try a different coastline_selection (default=0)'
+                        )
+
+    coast_polygons = {key: coast_polygons[key]
+                      for key in coastline_selection}
     m, n = ds.longitude.shape
     mask = np.full((m, n), False)
     for i in range(m):
@@ -592,7 +602,7 @@ def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=False,
     if erosion:
         mask = erode(mask, structure=erode_structure)
     mask = xr.DataArray(data=mask,
-                        coords=ds.coords,
-                        dims=ds.dims)
+                        coords=ds.latitude.coords,
+                        dims=ds.latitude.dims)
 
-    return mask
+    return mask, coast_polygons
