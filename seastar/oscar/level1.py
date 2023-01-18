@@ -40,12 +40,19 @@ def fill_missing_variables(ds_dict, antenna_id):
     mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
     aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
 
-    # Find vars that dont exist in Mid, but exist in Fore
-    ds_diff = ds_dict[fore_id]\
-        [[x for x in ds_dict[fore_id].data_vars if x not in ds_dict[mid_id].data_vars]]
-    ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds_dict[mid_id] = ds_dict[mid_id].merge(ds_diff)
-    
+    fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
+    mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
+    aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
+    for var in ds_dict[fore_id].data_vars:
+        if var not in ds_dict[mid_id].data_vars:
+            if 'Slave' in var:
+                var_master = var.replace('Slave', '')
+                ds_dict[mid_id][var] = xr.DataArray(
+                    data=np.full(ds_dict[mid_id][var_master].shape,
+                                 np.NaN),
+                    coords=ds_dict[mid_id][var_master].coords,
+                    dims=ds_dict[mid_id][var_master].dims
+                    )
     # Find vars that dont exist in Fore, but exist in Mid
     ds_diff = ds_dict[mid_id]\
         [[x for x in ds_dict[mid_id].data_vars if x not in ds_dict[fore_id].data_vars]]
@@ -248,7 +255,8 @@ def compute_multilooking_Master_Slave(ds, window=3):
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
     ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
-        .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
+        .rolling(GroundRange=window).mean()\
+        .rolling(CrossRange=window).mean()
     ds.IntensityAvgComplexMasterSlave.attrs['long_name'] =\
         'Average intensity of Master/Slave single looc complex images'
     ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[none]'
