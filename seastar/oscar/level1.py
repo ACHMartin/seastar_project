@@ -39,28 +39,23 @@ def fill_missing_variables(ds_dict, antenna_id):
     fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
     mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
     aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
-
+    # Find vars that dont exist in Mid , but exist in Fore
     for var in ds_dict[fore_id].data_vars:
         if var not in ds_dict[mid_id].data_vars:
             if 'Slave' in var:
                 var_master = var.replace('Slave', '')
                 ds_dict[mid_id][var] = xr.DataArray(
-                    data=np.full(ds_dict[mid_id][var_master].shape,
-                                 np.NaN),
+                    data=np.full(ds_dict[mid_id][var_master].shape, np.NaN),
                     coords=ds_dict[mid_id][var_master].coords,
-                    dims=ds_dict[mid_id][var_master].dims
-                    )
-    # Find vars that dont exist in Fore, but exist in Mid
-    ds_diff = ds_dict[mid_id]\
-        [[x for x in ds_dict[mid_id].data_vars if x not in ds_dict[fore_id].data_vars]]
-    ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds_dict[fore_id] = ds_dict[fore_id].merge(ds_diff)
-
-    # Find vars that dont exist in Aft, but exist in Mid
-    ds_diff = ds_dict[mid_id]\
-        [[x for x in ds_dict[mid_id].data_vars if x not in ds_dict[aft_id].data_vars]]
-    ds_diff.where(ds_diff == np.nan, other=np.nan)
-    ds_dict[aft_id] = ds_dict[aft_id].merge(ds_diff)
+                    dims=ds_dict[mid_id][var_master].dims)
+    # Find vars that dont exist in Fore for Aft , but exist in Mid
+    for var in ds_dict[mid_id].data_vars:
+        for antenna in [fore_id, aft_id]:
+            if var not in ds_dict[antenna].data_vars:
+                ds_dict[antenna][var] = xr.DataArray(
+                    data=np.full(ds_dict[mid_id][var].shape, np.NaN),
+                    coords=ds_dict[mid_id][var].coords,
+                    dims=ds_dict[mid_id][var].dims)
 
     return ds_dict
 
