@@ -40,9 +40,6 @@ def fill_missing_variables(ds_dict, antenna_id):
     mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
     aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
 
-    fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
-    mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
-    aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
     for var in ds_dict[fore_id].data_vars:
         if var not in ds_dict[mid_id].data_vars:
             if 'Slave' in var:
@@ -759,4 +756,34 @@ def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
     return u10Image, WindDirectionImage
 
 
+def replace_dummy_values(ds, dummy_val=-9999, replace=np.NaN):
+    """
+    Replace dummy values.
 
+    Removes dummy values from dataset variables and replaces with a set value.
+    Default dummy value is -9999 and default replacement is NaN.
+
+    Parameters
+    ----------
+    ds : ``xarray.Dataset``
+        Dataset containing variables with dummy values to replace.
+    dummy_val : ``int``, ``float``, optional
+        Dummy value to replace. The default is -9999.
+    replace : ``int``, ``float``, optional
+        Constant value to replace Dummy values with. The default is NaN
+
+    Returns
+    -------
+    ds : ``xarray.Dataset``
+        Dataset with variables scrubbed for `dummy_val` and replaced with
+        `replace`
+
+    """
+    for var in ds.data_vars:
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore', category=FutureWarning)
+            bad_val = ds[var].data == dummy_val
+            if np.sum(bad_val) > 0:
+                ds[var] = ds[var].where(~bad_val, replace)
+
+    return ds
