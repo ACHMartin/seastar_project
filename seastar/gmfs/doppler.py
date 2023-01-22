@@ -43,16 +43,52 @@ def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
     ds = seastar.gmfs.doppler.compute_wasv(L1, aux_geo, gmf, **kwargs)
 
     relative_current_direction = np.mod(aux_geo.CurrentDirection - L1.AntennaAzimuthImage, 360)
-    relative_direction_influence = np.cos(np.radians(relative_current_direction))
-    radial_current = aux_geo.CurrentVelocity * relative_direction_influence
+    # relative_direction_influence = np.cos(np.radians(relative_current_direction))
+    # radial_current = aux_geo.CurrentVelocity * relative_direction_influence
+    u_rsc, u_r = compute_radial_current(aux_geo.CurrentVelocity,
+                                        relative_current_direction,
+                                        L1.IncidenceAngleImage)
 
     da = xr.DataArray(
-        data=ds.WASV + radial_current,
+        data=ds.WASV + u_rsc,
         dims=ds.WASV.dims,
     )
 
     return da
 
+def compute_radial_current(current_vel, rel_current_dir, inci):
+    """
+    Compute Radial and Radial Surface Current from known Current and acquisition geometry.
+
+    Input parameters u10, phi and inc must be in identical sizes and formats.
+
+    Parameters
+    ----------
+    current_vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Current Velocity (m/s)
+    rel_current_dir : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Angle between current and look directions (degrees)
+    inci : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Incidence angle of radar beam (degrees from nadir).
+
+    #
+    # Raises
+    # ------
+    # Exception
+    #     Exception for inconsistency in sizes of input parameters.
+
+    Returns
+    -------
+    u_rsc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Radial Surface Current (m/s)
+    u_r : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Radial Current (m/s) in the slant direction directly towards the radar.
+
+        """
+    relative_direction_influence = np.cos(np.radians(rel_current_dir))
+    radial_surface_current = current_vel * relative_direction_influence
+    radial_current = radial_surface_current * np.sin(np.radians(inci))
+    return radial_surface_current, radial_current
 
 
 
