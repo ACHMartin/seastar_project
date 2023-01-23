@@ -31,7 +31,7 @@ def fill_missing_variables(ds_dict, antenna_id):
 
     Returns
     -------
-    ds : ``dict``
+    ds_dict : ``dict``
         OSCAR data stored as a dict with antenna number as keys and loaded
         data in ``xarray.Dataset`` format as values
 
@@ -48,6 +48,14 @@ def fill_missing_variables(ds_dict, antenna_id):
                     data=np.full(ds_dict[mid_id][var_master].shape, np.NaN),
                     coords=ds_dict[mid_id][var_master].coords,
                     dims=ds_dict[mid_id][var_master].dims)
+            else:
+                var_shape = (
+                        len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[0]]),
+                        len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[1]]))
+                ds_dict[mid_id][var] = xr.DataArray(
+                    data=np.full(var_shape, np.NaN),
+                    coords=ds_dict[mid_id].coords,
+                    dims=ds_dict[mid_id].dims)
     # Find vars that dont exist in Fore for Aft , but exist in Mid
     for var in ds_dict[mid_id].data_vars:
         for antenna in [fore_id, aft_id]:
@@ -112,23 +120,22 @@ def check_antenna_polarization(ds):
     Parameters
     ----------
     ds : ``xarray.Dataset``
-        OSCAR SAR dataset
+        OSCAR SAR dataset containing Tx and Rx polarization strings
 
     Returns
     -------
-    Polarization : ``str``
+    Polarization : ``str``, ``xr.DataArray``
         Antenna polarization in 'HH', 'VV' format
-    ds : ``xarray.Dataset``
-        OSCAR SAR dataset
 
     """
     polarization = [str(ds.TxPolarization.data), str(ds.RxPolarization.data)]
     polarization = ''.join(polarization)
-    ds['Polarization'] = re.sub('[^VH]', '', polarization)
-    ds.Polarization.attrs['long_name'] =\
+    Polarization = xr.DataArray(data=re.sub('[^VH]', '', polarization))
+    Polarization.attrs['long_name'] =\
         'Antenna polarization, Transmit / Receive.'
-    ds.Polarization.attrs['units'] = '[none]'
-    return ds
+    Polarization.attrs['units'] = '[none]'
+
+    return Polarization
 
 
 def compute_antenna_baseline(antenna_baseline):
@@ -218,61 +225,68 @@ def add_central_electromagnetic_wavenumber(ds):
 
 def compute_multilooking_Master_Slave(ds, window=3):
     """
-    Calculate multilooking Master/Slave L2 image products.
+    Calculate multilooking Master/Slave L1b image products.
 
     Parameters
     ----------
     ds : ``xarray.Dataset``
-        OSCAR SAR dataset
+        OSCAR L1a dataset
     window : ``int``
         Integer averaging window size. The default is 3.
 
     Returns
     -------
-    ds : xarray.Dataset
-        OSCAR SAR dataset
-    ds.IntensityAvgComplexMasterSlave : xarray.DataArray
-        Rolling average multilooking SLC image
-    ds.Intensity : xarray.DataArray
-        Multilook image pixel intensity
-    ds.Interferogram : xarray.DataArray
-        Interferogram (radians)
-    ds.IntensityAvgMaster : xarray.DataArray
-        rolling agerage Master SLC intensity image
-    ds.IntensityAvgSlave : xarray.DataArray
-        rolling average Slave SLC intensity image
-    ds.Coherence : xarray.DataArray
-        Multilook image coherence
+    ds_out : ``xarray.Dataset``
+        Dataset containing computed L1b variables
+
     """
+    ds_out = xr.Dataset()
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
-    ds['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
-        .rolling(GroundRange=window).mean()\
-        .rolling(CrossRange=window).mean()
-    ds.IntensityAvgComplexMasterSlave.attrs['long_name'] =\
-        'Average intensity of Master/Slave single looc complex images'
-    ds.IntensityAvgComplexMasterSlave.attrs['units'] = '[none]'
-    ds['Intensity'] = np.abs(ds.IntensityAvgComplexMasterSlave)
-    ds.Intensity.attrs['long_name'] =\
+    if 'SigmaSLCSlave' not in ds.data_vars:
+        IntensityAvgComplexMasterSlave = (ds.SigmaSLCMaster ** 2)\
+            .rolling(GroundRange=window).mean()\
+            .rolling(CrossRange=window).mean()
+    else:
+        IntensityAvgComplexMasterSlave = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
+            .rolling(GroundRange=window).mean()\
+            .rolling(CrossRange=window).mean()
+    ds_out['Intensity'] = np.abs(IntensityAvgComplexMasterSlave)
+    ds_out.Intensity.attrs['long_name'] = 'SLC Intensity'
+    ds_out.Intensity.attrs['description'] =\
         'Absolute single look complex image intensity'
-    ds.Intensity.attrs['units'] = '[none]'
-    ds['Interferogram'] = (
-        ['CrossRange', 'GroundRange'],
-        np.angle(ds.IntensityAvgComplexMasterSlave, deg=False)
-        )
-    ds.Interferogram.attrs['long_name'] =\
-        'Interferogram between master/slave antenna pair'
-    ds.Interferogram.attrs['units'] = '[radians]'
-    ds['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
-        .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
-        .rolling(GroundRange=window).mean().rolling(CrossRange=window).mean()
-    ds['Coherence'] = ds.Intensity / np.sqrt(ds.IntensityAvgMaster
-                                             * ds.IntensityAvgSlave)
-    ds.Coherence.attrs['long_name'] =\
-        'Coherence between master/slave antenna pair'
-    ds.Coherence.attrs['units'] = '[none]'
-    return ds
+    ds_out.Intensity.attrs['units'] = ''
+    if 'SigmaSLCSlave' not in ds.data_vars:
+        ds_out['Interferogram'] = (
+            ['CrossRange', 'GroundRange'],
+            np.full(IntensityAvgComplexMasterSlave.shape, np.NaN))
+        ds_out.Interferogram.attrs['description'] =\
+            'Interferogram between master/slave antenna pair.'\
+            ' Values set to NaN as no Slave data present in beam dataset'
+    else:
+        ds_out['Interferogram'] = (
+            ['CrossRange', 'GroundRange'],
+            np.angle(IntensityAvgComplexMasterSlave, deg=False)
+            )
+        ds_out.Interferogram.attrs['description'] =\
+            'Interferogram between master/slave antenna pair.'
+    ds_out.Interferogram.attrs['long_name'] = 'Interferogram'
+    ds_out.Interferogram.attrs['units'] = 'radians'
+    if 'SigmaSLCSlave' in ds.data_vars:
+        IntensityAvgMaster = (np.abs(ds.SigmaSLCMaster) ** 2)\
+            .rolling(GroundRange=window).mean()\
+            .rolling(CrossRange=window).mean()
+        IntensityAvgSlave = (np.abs(ds.SigmaSLCSlave) ** 2)\
+            .rolling(GroundRange=window).mean()\
+            .rolling(CrossRange=window).mean()
+        ds_out['Coherence'] = ds_out.Intensity / np.sqrt(IntensityAvgMaster
+                                                         * IntensityAvgSlave)
+        ds_out.Coherence.attrs['long_name'] =\
+            'Coherence'
+        ds_out.Coherence.attrs['description'] =\
+            'Coherence between master/slave antenna pair'
+        ds_out.Coherence.attrs['units'] = ''
+    return ds_out
 
 def compute_local_coordinates(ds):
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
@@ -302,7 +316,7 @@ def compute_incidence_angle_from_simple_geometry(ds):
 
     X, Y = np.meshgrid(ds.CrossRange, ds.GroundRange, indexing='ij')
     if 'SquintImage' in ds:
-        ds['IncidenceAngleImage'] = np.degrees(
+        IncidenceAngleImage = np.degrees(
             np.arctan(Y / (np.cos(ds.SquintImage) / ds.OrbHeightImage))
             )
 
@@ -311,16 +325,16 @@ def compute_incidence_angle_from_simple_geometry(ds):
             "WARNING: No computed antenna squint present,"
             "continuing with 45 degree assumption"
             )
-        ds['IncidenceAngleImage'] = np.degrees(np.arctan(np.sqrt(2)
-                                                         * Y
-                                                         / ds.OrbHeightImage
-                                                         )
-                                               )
-        ds.IncidenceAngleImage.attrs['long_name'] =\
+        IncidenceAngleImage = np.degrees(np.arctan(np.sqrt(2)
+                                                   * Y
+                                                   / ds.OrbHeightImage
+                                                   )
+                                         )
+        IncidenceAngleImage.attrs['long_name'] =\
             'Incidence angle of beam from nadir'
-        ds.IncidenceAngleImage.attrs['units'] = '[degrees]'
+        IncidenceAngleImage.attrs['units'] = '[degrees]'
 
-    return ds
+    return IncidenceAngleImage
 
 def compute_incidence_angle_from_GBPGridInfo(ds):
     """
@@ -492,7 +506,7 @@ def compute_incidence_angle_from_GBPGridInfo(ds):
     return ds
 
 
-def compute_antenna_azimuth_direction(ds, antenna):
+def compute_antenna_azimuth_direction(ds, antenna, return_heading=False):
     """
     Calculate antenna azimuth relative to North in degrees.
 
@@ -502,16 +516,16 @@ def compute_antenna_azimuth_direction(ds, antenna):
         OSCAR SAR dataset with "SquintImage" as a required field
     antenna : ``str``
         'Fore' Fore beam pair, 'Aft' Aft beam pair
-
+    return_heading: ``bool``
+        Option to return OrbitHeadingImage variable, default=False
 
     Returns
     -------
-    ds : ``xarray.Dataset``
-        OSCAR SAR dataset
-    ds.OrbitHeadingImage : Aircraft heading of each image pixel
-    (degrees from North)
-    ds.AntennaAzimuthImage : Antenna beam azimuth of each image pixel
-    (degrees from North)
+
+    AntennaAzimuthImage : ``xr.DataArray``
+        Antenna beam azimuth of each image pixel (degrees from North)
+    OrbitHeadingImage : ``xr.DataArray``, optional
+        Aircraft heading of each image pixel (degrees from North)
 
     """
     if antenna not in ['Fore', 'Aft', 'Mid']:
@@ -522,27 +536,32 @@ def compute_antenna_azimuth_direction(ds, antenna):
         head = np.interp(np.reshape(ds.OrbTimeImage, (1, m * n)), ds.GPSTime,
                          ds.OrbitHeading)
         head = np.reshape(head, (m, n))
-        ds['OrbitHeadingImage'] = xr.DataArray.copy(ds.OrbTimeImage, data=head)
-        ds.OrbitHeadingImage.attrs['long_name'] =\
+        OrbitHeadingImage = xr.DataArray.copy(ds.OrbTimeImage, data=head)
+        OrbitHeadingImage.attrs['long_name'] =\
             'Heading (degrees N) of the airfraft for each pixel in the image'
-        ds.OrbitHeadingImage.attrs['units'] = '[degrees]'
+        OrbitHeadingImage.attrs['units'] = '[degrees]'
+    else:
+        OrbitHeadingImage = ds.OrbitHeadingImage
 
     # antenna_direc = {'Fore': 45, 'Aft': 135, 'Mid': 90}
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
     look_direc_angle = {'L': -90, 'R': 90}
 
     if 'SquintImage' in ds:
-        ds['AntennaAzimuthImage'] = np.mod(
-            ds.OrbitHeadingImage
+        AntennaAzimuthImage = np.mod(
+            OrbitHeadingImage
             + look_direc_angle[lookdirec]
             + ds.SquintImage,
             360)
     else:
         raise Exception('SquintImage is a required field in ds')
-    ds.AntennaAzimuthImage.attrs['long_name'] =\
+    AntennaAzimuthImage.attrs['long_name'] =\
         'Antenna azimuth direction for each pixel in the image'
-    ds.AntennaAzimuthImage.attrs['units'] = '[degrees North]'
-    return ds
+    AntennaAzimuthImage.attrs['units'] = '[degrees North]'
+    if return_heading:
+        return AntennaAzimuthImage, OrbitHeadingImage
+    else:
+        return AntennaAzimuthImage
 
 
 def compute_time_lag_Master_Slave(ds, options):
@@ -551,59 +570,87 @@ def compute_time_lag_Master_Slave(ds, options):
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        OSCAR SAR dataset
-    options : Time lag computation method. The default is 'from_SAR_time'.
+    ds : ``xarray.Dataset``
+        OSCAR SAR dataset containing orbit, time and baseline information
+    options : ``str``
+        Time lag computation method. The default is 'from_SAR_time'.
 
     Returns
     -------
-    ds : xarray.Dataset
-        OSCAR SAR dataset
-    ds.TimeLag : Time lag tau between Master/Slave images (s)
+
+    TimeLag : ``float``, ``xr.DataArray``
+        Time lag tau between Master/Slave images (s)
 
     """
     if options not in ['from_SAR_time', 'from_aircraft_velocity']:
         raise Exception('Unknown time lag computation method: Please refer to'
                         'function documentation')
     if options == 'from_SAR_time':
-        ds['TimeLag'] = (ds.OrbTimeImage - ds.OrbTimeImageSlave)
+        if 'OrbTimeImageSlave' in ds.data_vars:
+            TimeLag = (ds.OrbTimeImage - ds.OrbTimeImageSlave)
+            TimeLag.attrs['long_name'] = 'Time lag'
+            TimeLag.attrs['description'] =\
+                'Time difference between antenna master and slave.'
+            TimeLag.attrs['units'] = 's'
+        else:
+            TimeLag = xr.DataArray(data=np.NaN)
+            TimeLag.attrs['long_name'] = 'Time lag'
+            TimeLag.attrs['description'] =\
+                'Time difference between antenna master and slave.'\
+                ' Set to NaN as no slave data in beam dataset.'
+            TimeLag.attrs['units'] = 's'
     if options == 'from_aircraft_velocity':
-        ds['TimeLag'] = (ds.Baseline / 2 * ds.MeanForwardVelocity)
-    ds.TimeLag.attrs['long_name'] = 'Time difference between antenna pair'
-    ds.TimeLag.attrs['units'] = '[s]'
-    return ds
+        TimeLag = (ds.Baseline / 2 * ds.MeanForwardVelocity)
+        TimeLag.attrs['long_name'] = 'Time lag'
+        TimeLag.attrs['description'] =\
+            'Time difference between antenna master and slave.'
+        TimeLag.attrs['units'] = 's'
+    return TimeLag
 
 
-def compute_radial_surface_velocity(ds):
+def compute_radial_surface_velocity(ds_L1a, ds_ml):
     """
     Compute radial surface velocity from SAR interferogram.
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        OSCAR SAR dataset
+    ds_L1a : ``xarray.Dataset``
+        OSCAR L1a dataset
+    ds_ml : ``xarray.Dataset``
+         OSCAR L1b dataset of computed multilooking variables
 
     Returns
     -------
-    ds : xarray.Dataset
-        OSCAR SAR dataset
-    ds.RadialSuraceVelocity : Surface velocity (m/s) along a radar beam radial
+
+    RadialSuraceVelocity : ``float``, ``xr.DataArray``
+        Surface velocity (m/s) along a radar beam radial
+    IncidenceAngleImage : ``float``, ``xr.DataArray``, optional
+        Incidence angle (degrees from nadir) of the radar beam. Rturned if
+        IncidenceAngleImage was not already present in the input dataset and
+        its computation by simple geometry was required.
     """
-    if 'CentralWavenumber' not in ds.data_vars:
-        ds = add_central_electromagnetic_wavenumber(ds)
-    if 'IncidenceAngleImage' not in ds:
+    return_flag = False
+    if 'CentralWavenumber' not in ds_L1a.data_vars:
+        ds_L1a = add_central_electromagnetic_wavenumber(ds_L1a)
+    if 'IncidenceAngleImage' not in ds_L1a:
         warnings.warn(
-            "WARNING: Incidence Angle not present in dataset,"
+            "WARNING: Incidence Angle not present in dataset"
             "computing incidence angle using simple geometry."
+            "IncidenceAngleImage sent as output"
             )
-        ds = compute_incidence_angle_from_simple_geometry(ds)
-    ds['RadialSurfaceVelocity'] = ds.Interferogram /\
-        (ds.TimeLag * ds.CentralWavenumber
-         * np.sin(np.radians(ds.IncidenceAngleImage)))
-    ds.RadialSurfaceVelocity.attrs['long_name'] =\
-        'Radial Surface Velocity (RSV) along antenna beam direction'
-    ds.RadialSurfaceVelocity.attrs['units'] = '[m/s]'
-    return ds
+        return_flag = True
+        IncidenceAngleImage =\
+            compute_incidence_angle_from_simple_geometry(ds_L1a)
+    RadialSurfaceVelocity = ds_ml.Interferogram /\
+        (ds_ml.TimeLag * ds_L1a.CentralWavenumber
+         * np.sin(np.radians(ds_L1a.IncidenceAngleImage)))
+    RadialSurfaceVelocity.attrs['long_name'] =\
+        'Radial Surface Velocity'
+    RadialSurfaceVelocity.attrs['units'] = 'm/s'
+    if return_flag:
+        return RadialSurfaceVelocity, IncidenceAngleImage
+    else:
+        return RadialSurfaceVelocity
 
 
 def compute_radial_surface_current(level1, aux, gmf='mouche12'):
