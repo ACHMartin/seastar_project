@@ -606,7 +606,7 @@ def compute_time_lag_Master_Slave(ds, options):
     return TimeLag
 
 
-def compute_radial_surface_velocity(ds_L1a, ds_ml):
+def compute_radial_surface_velocity(ds_ml):
     """
     Compute radial surface velocity from SAR interferogram.
 
@@ -628,9 +628,9 @@ def compute_radial_surface_velocity(ds_L1a, ds_ml):
         its computation by simple geometry was required.
     """
     return_flag = False
-    if 'CentralWavenumber' not in ds_L1a.data_vars:
-        ds_L1a = add_central_electromagnetic_wavenumber(ds_L1a)
-    if 'IncidenceAngleImage' not in ds_L1a:
+    if 'CentralWavenumber' not in ds_ml.data_vars:
+        ds_ml = add_central_electromagnetic_wavenumber(ds_ml)
+    if 'IncidenceAngleImage' not in ds_ml:
         warnings.warn(
             "WARNING: Incidence Angle not present in dataset"
             "computing incidence angle using simple geometry."
@@ -638,10 +638,10 @@ def compute_radial_surface_velocity(ds_L1a, ds_ml):
             )
         return_flag = True
         IncidenceAngleImage =\
-            compute_incidence_angle_from_simple_geometry(ds_L1a)
+            compute_incidence_angle_from_simple_geometry(ds_ml)
     RadialSurfaceVelocity = ds_ml.Interferogram /\
-        (ds_ml.TimeLag * ds_L1a.CentralWavenumber
-         * np.sin(np.radians(ds_L1a.IncidenceAngleImage)))
+        (ds_ml.TimeLag * ds_ml.CentralWavenumber
+         * np.sin(np.radians(ds_ml.IncidenceAngleImage)))
     RadialSurfaceVelocity.attrs['long_name'] =\
         'Radial Surface Velocity'
     RadialSurfaceVelocity.attrs['units'] = 'm/s'
