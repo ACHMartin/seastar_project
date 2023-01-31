@@ -10,6 +10,7 @@ import scipy as sp
 import seastar
 import re
 import warnings
+from datetime import datetime as dt
 
 
 def fill_missing_variables(ds_dict, antenna_id):
@@ -848,12 +849,6 @@ def track_title_to_datetime(title):
         Time in numpy.datetime64 format
 
     """
-    year = title.split()[2].split('T')[0][0:4]
-    month = title.split()[2].split('T')[0][4:6]
-    day = title.split()[2].split('T')[0][6:8]
-    hour = title.split()[2].split('T')[1][0:2]
-    minute = title.split()[2].split('T')[1][2:4]
-    second = title.split()[2].split('T')[1][4:6]
-    track_time = np.datetime64(year + '-' + month + '-' + day +
-                               'T' + hour + ':' + minute + ':' + second)
+    datestr = title.split()[2]
+    track_time = np.datetime64(dt.strptime(datestr, '%Y%m%dT%H%M%S'))
     return track_time
