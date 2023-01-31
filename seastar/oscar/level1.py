@@ -42,20 +42,13 @@ def fill_missing_variables(ds_dict, antenna_id):
     # Find vars that dont exist in Mid , but exist in Fore
     for var in ds_dict[fore_id].data_vars:
         if var not in ds_dict[mid_id].data_vars:
-            if 'Slave' in var:
-                var_master = var.replace('Slave', '')
-                ds_dict[mid_id][var] = xr.DataArray(
-                    data=np.full(ds_dict[mid_id][var_master].shape, np.NaN),
-                    coords=ds_dict[mid_id][var_master].coords,
-                    dims=ds_dict[mid_id][var_master].dims)
-            else:
-                var_shape = (
-                        len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[0]]),
-                        len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[1]]))
-                ds_dict[mid_id][var] = xr.DataArray(
-                    data=np.full(var_shape, np.NaN),
-                    coords=ds_dict[mid_id].coords,
-                    dims=ds_dict[mid_id].dims)
+            var_shape = (
+                len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[0]]),
+                len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[1]]))
+            ds_dict[mid_id][var] = xr.DataArray(
+                data=np.full(var_shape, np.NaN),
+                coords=ds_dict[mid_id].coords,
+                dims=ds_dict[mid_id].dims)
     # Find vars that dont exist in Fore for Aft , but exist in Mid
     for var in ds_dict[mid_id].data_vars:
         for antenna in [fore_id, aft_id]:
@@ -829,3 +822,32 @@ def replace_dummy_values(ds, dummy_val=-9999, replace=np.NaN):
                 ds[var] = ds[var].where(~bad_val, replace)
 
     return ds
+
+
+def track_title_to_datetime(title):
+    """
+    Track title to datetime conversion.
+
+    Converts the Title attribute of an OSCAR .netcdf dataset to
+    numpy.datetime64 format.
+
+    Parameters
+    ----------
+    title : ``str``
+        Dataset title in the form "Track : YYYYMMDDTHHMMSS"
+
+    Returns
+    -------
+    track_time : ``np.datetime64``
+        Time in numpy.datetime64 format
+
+    """
+    year = title.split()[2].split('T')[0][0:4]
+    month = title.split()[2].split('T')[0][4:6]
+    day = title.split()[2].split('T')[0][6:8]
+    hour = title.split()[2].split('T')[1][0:2]
+    minute = title.split()[2].split('T')[1][2:4]
+    second = title.split()[2].split('T')[1][4:6]
+    track_time = np.datetime64(year + '-' + month + '-' + day +
+                               'T' + hour + ':' + minute + ':' + second)
+    return track_time
