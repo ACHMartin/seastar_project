@@ -264,7 +264,7 @@ def compute_multilooking_Master_Slave(ds, window=3):
         ds_out.Interferogram.attrs['description'] =\
             'Interferogram between master/slave antenna pair.'
     ds_out.Interferogram.attrs['long_name'] = 'Interferogram'
-    ds_out.Interferogram.attrs['units'] = 'radians'
+    ds_out.Interferogram.attrs['units'] = 'rad'
     if 'SigmaSLCSlave' in ds.data_vars:
         IntensityAvgMaster = (np.abs(ds.SigmaSLCMaster) ** 2)\
             .rolling(GroundRange=window).mean()\
@@ -531,8 +531,10 @@ def compute_antenna_azimuth_direction(ds, antenna, return_heading=False):
         head = np.reshape(head, (m, n))
         OrbitHeadingImage = xr.DataArray.copy(ds.OrbTimeImage, data=head)
         OrbitHeadingImage.attrs['long_name'] =\
+            'Heading from North'
+        OrbitHeadingImage.attrs['description'] =\
             'Heading (degrees N) of the airfraft for each pixel in the image'
-        OrbitHeadingImage.attrs['units'] = '[degrees]'
+        OrbitHeadingImage.attrs['units'] = 'deg'
     else:
         OrbitHeadingImage = ds.OrbitHeadingImage
 
@@ -549,8 +551,10 @@ def compute_antenna_azimuth_direction(ds, antenna, return_heading=False):
     else:
         raise Exception('SquintImage is a required field in ds')
     AntennaAzimuthImage.attrs['long_name'] =\
+        'Antenna azimuth'
+    AntennaAzimuthImage.attrs['description'] =\
         'Antenna azimuth direction for each pixel in the image'
-    AntennaAzimuthImage.attrs['units'] = '[degrees North]'
+    AntennaAzimuthImage.attrs['units'] = 'deg'
     if return_heading:
         return AntennaAzimuthImage, OrbitHeadingImage
     else:
@@ -695,9 +699,11 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
                                 )
                        )
     level1.RadialSurfaceCurrent.attrs['long_name'] =\
+        'Radial Surface Current'
+    level1.RadialSurfaceCurrent.attrs['description'] =\
         'Radial Surface Current (RSC) along antenna beam direction, corrected'\
         'for Wind Artifact Surface Velocity (WASV)'
-    level1.RadialSurfaceCurrent.attrs['units'] = '[m/s]'
+    level1.RadialSurfaceCurrent.attrs['units'] = 'm/s'
 
     return level1
 
