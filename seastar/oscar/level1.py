@@ -48,8 +48,8 @@ def fill_missing_variables(ds_dict, antenna_id):
                 len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[1]]))
             ds_dict[mid_id][var] = xr.DataArray(
                 data=np.full(var_shape, np.NaN),
-                coords=ds_dict[mid_id].coords,
-                dims=ds_dict[mid_id].dims)
+                coords=ds_dict[mid_id][var].coords,
+                dims=ds_dict[mid_id][var].dims)
     # Find vars that dont exist in Fore for Aft , but exist in Mid
     for var in ds_dict[mid_id].data_vars:
         for antenna in [fore_id, aft_id]:
