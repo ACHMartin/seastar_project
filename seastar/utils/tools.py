@@ -593,12 +593,18 @@ def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=None,
                       for key in coastline_selection}
     m, n = ds.longitude.shape
     mask = np.full((m, n), False)
+    count = 0
+    print('Performing search...')
     for i in range(m):
         for j in range(n):
+            count = count + 1
+            if not int(np.mod(count, ((m * n) / 10))):
+                print(int((count / (m * n)) * 100), '% complete')
             for k in coast_polygons.keys():
                 mask[i, j] = mask[i, j] or\
                     Point(ds.longitude.data[i, j], ds.latitude.data[i, j])\
                     .within(coast_polygons[k])
+    print('...done')
     if erosion:
         mask = erode(mask, structure=erode_structure)
     mask = xr.DataArray(data=mask,
