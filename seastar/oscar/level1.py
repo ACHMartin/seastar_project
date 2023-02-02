@@ -206,7 +206,7 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, window=3):
+def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity, Interferogram', 'Coherence']):
     """
     Calculate multilooking Master/Slave L1b image products.
 
@@ -216,6 +216,9 @@ def compute_multilooking_Master_Slave(ds, window=3):
         OSCAR L1a dataset
     window : ``int``
         Integer averaging window size. The default is 3.
+    vars_to_send:  list
+        default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
+        can in addition take among: 'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'
 
     Returns
     -------
@@ -223,53 +226,78 @@ def compute_multilooking_Master_Slave(ds, window=3):
         Dataset containing computed L1b variables
 
     """
+
+    list_vars_to_send = set(['Intensity', 'Interferogram', 'Coherence',
+                         'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'])
+    vars_to_send = set(vars_to_send)
+    if len(vars_to_send.difference(list_vars_to_send)) > 0:
+        raise Exception("vars_to_send should be within the following variables "
+                        "'Intensity', 'Interferogram', 'Coherence',"
+                        "'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'")
+
     ds_out = xr.Dataset()
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
     if 'SigmaSLCSlave' not in ds.data_vars:
-        IntensityAvgComplexMasterSlave = (ds.SigmaSLCMaster ** 2)\
+        ds_out['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster ** 2)\
             .rolling(GroundRange=window).mean()\
             .rolling(CrossRange=window).mean()
     else:
-        IntensityAvgComplexMasterSlave = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
+        ds_out['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
             .rolling(GroundRange=window).mean()\
             .rolling(CrossRange=window).mean()
-    ds_out['Intensity'] = np.abs(IntensityAvgComplexMasterSlave)
+    ds_out.IntensityAvgComplexMasterSlave.attrs['long_name'] = \
+        'Average intensity of Master/Slave SLC'
+    ds_out.IntensityAvgComplexMasterSlave.attrs['units'] = ''
+    ds_out['Intensity'] = np.abs(ds_out.IntensityAvgComplexMasterSlave)
     ds_out.Intensity.attrs['long_name'] = 'SLC Intensity'
     ds_out.Intensity.attrs['description'] =\
         'Absolute single look complex image intensity'
     ds_out.Intensity.attrs['units'] = ''
     if 'SigmaSLCSlave' not in ds.data_vars:
-        ds_out['Interferogram'] = (
-            ['CrossRange', 'GroundRange'],
-            np.full(IntensityAvgComplexMasterSlave.shape, np.NaN))
+        # ds_out['Interferogram'] = (
+        #     ['CrossRange', 'GroundRange'],
+        #     np.full(ds_out.IntensityAvgComplexMasterSlave.shape, np.NaN))
+        ds_out['Interferogram'] = xr.DataArray(data=np.NaN)
         ds_out.Interferogram.attrs['description'] =\
             'Interferogram between master/slave antenna pair.'\
             ' Values set to NaN as no Slave data present in beam dataset'
     else:
         ds_out['Interferogram'] = (
             ['CrossRange', 'GroundRange'],
-            np.angle(IntensityAvgComplexMasterSlave, deg=False)
+            np.angle(ds_out.IntensityAvgComplexMasterSlave, deg=False)
             )
         ds_out.Interferogram.attrs['description'] =\
             'Interferogram between master/slave antenna pair.'
     ds_out.Interferogram.attrs['long_name'] = 'Interferogram'
     ds_out.Interferogram.attrs['units'] = 'rad'
     if 'SigmaSLCSlave' in ds.data_vars:
-        IntensityAvgMaster = (np.abs(ds.SigmaSLCMaster) ** 2)\
+        ds_out['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
             .rolling(GroundRange=window).mean()\
             .rolling(CrossRange=window).mean()
-        IntensityAvgSlave = (np.abs(ds.SigmaSLCSlave) ** 2)\
+        ds_out['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
             .rolling(GroundRange=window).mean()\
             .rolling(CrossRange=window).mean()
-        ds_out['Coherence'] = ds_out.Intensity / np.sqrt(IntensityAvgMaster
-                                                         * IntensityAvgSlave)
-        ds_out.Coherence.attrs['long_name'] =\
-            'Coherence'
-        ds_out.Coherence.attrs['description'] =\
-            'Coherence between master/slave antenna pair'
-        ds_out.Coherence.attrs['units'] = ''
-    return ds_out
+        ds_out['Coherence'] = ds_out.Intensity / np.sqrt(ds_out.IntensityAvgMaster
+                                                         * ds_out.IntensityAvgSlave)
+    else:
+        ds_out['IntensityAvgMaster'] = xr.DataArray(data=np.NaN)
+        ds_out['IntensityAvgSlave'] = xr.DataArray(data=np.NaN)
+        ds_out['Coherence'] = xr.DataArray(data=np.NaN)
+
+    ds_out.Coherence.attrs['long_name'] = \
+        'Coherence'
+    ds_out.Coherence.attrs['description'] = \
+        'Coherence between master/slave antenna pair'
+    ds_out.Coherence.attrs['units'] = ''
+    ds_out.IntensityAvgMaster.attrs['long_name'] = \
+        'Intensity Master'
+    ds_out.IntensityAvgMaster.attrs['units'] = ''
+    ds_out.IntensityAvgSlave.attrs['long_name'] = \
+        'Intensity Slave'
+    ds_out.IntensityAvgSlave.attrs['units'] = ''
+
+    return ds_out[list(vars_to_send)]
 
 def compute_local_coordinates(ds):
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
