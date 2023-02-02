@@ -40,24 +40,13 @@ def fill_missing_variables(ds_dict, antenna_id):
     fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
     mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
     aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
-    # Find vars that dont exist in Mid , but exist in Fore
-    for var in ds_dict[fore_id].data_vars:
-        if var not in ds_dict[mid_id].data_vars:
-            var_shape = (
-                len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[0]]),
-                len(ds_dict[mid_id][list(ds_dict[mid_id].dims)[1]]))
-            ds_dict[mid_id][var] = xr.DataArray(
-                data=np.full(var_shape, np.NaN),
-                coords=ds_dict[mid_id][var].coords,
-                dims=ds_dict[mid_id][var].dims)
-    # Find vars that dont exist in Fore for Aft , but exist in Mid
-    for var in ds_dict[mid_id].data_vars:
-        for antenna in [fore_id, aft_id]:
-            if var not in ds_dict[antenna].data_vars:
-                ds_dict[antenna][var] = xr.DataArray(
-                    data=np.full(ds_dict[mid_id][var].shape, np.NaN),
-                    coords=ds_dict[mid_id][var].coords,
-                    dims=ds_dict[mid_id][var].dims)
+    antenna_list = [fore_id, mid_id, aft_id]
+
+    for antenna_1 in antenna_list:
+        for antenna_2 in [a for a in antenna_list if a not in [antenna_1]]:
+            for var in ds_dict[antenna_1].data_vars:
+                if var not in ds_dict[antenna_2].data_vars:
+                    ds_dict[mid_id][var] = xr.DataArray(data=np.NaN)
 
     return ds_dict
 
