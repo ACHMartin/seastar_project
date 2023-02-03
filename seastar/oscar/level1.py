@@ -46,7 +46,7 @@ def fill_missing_variables(ds_dict, antenna_id):
         for antenna_2 in [a for a in antenna_list if a not in [antenna_1]]:
             for var in ds_dict[antenna_1].data_vars:
                 if var not in ds_dict[antenna_2].data_vars:
-                    ds_dict[mid_id][var] = xr.DataArray(data=np.NaN)
+                    ds_dict[antenna_2][var] = xr.DataArray(data=np.NaN)
 
     return ds_dict
 
