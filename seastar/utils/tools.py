@@ -571,60 +571,62 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
                     np.max(da.longitude.data),
                     np.min(da.latitude.data),
                     np.max(da.latitude.data)]
-    longitude, latitude = np.meshgrid(np.arange(boundary[0], boundary[1], skip),
+    lon_skip, lat_skip = np.meshgrid(np.arange(boundary[0], boundary[1], skip),
                                  np.arange(boundary[2], boundary[3], skip))
     if erosion:
         erode_scale = int(np.round(erode_scale))
         erode_structure = np.full((erode_scale, erode_scale), True)
     coast_polygons = dict()
+    m, n = lon_skip.shape
+    mask = np.full((m, n), False)
     print('Scanning GSHHS dataset for coastlines within boundary...')
     coast = cfeature.GSHHSFeature(scale='full')\
         .intersecting_geometries(boundary)
     for k, polygon in enumerate(coast):
         coast_polygons[k] = polygon
-    if type(coastline_selection) is int:
-        coastline_selection = [coastline_selection]
-    if np.max(coastline_selection) > k:
-        raise Exception('Selected coastline(s)',
-                       coastline_selection,
-                       ' different to coastlines identified within boundary ',
-                       list(coast_polygons.keys()),
-                       '. Please try a different coastline_selection (default=0)'
-                       )
-    coast_polygons = {key: coast_polygons[key]
-                     for key in coastline_selection}
-
-    m, n = longitude.shape
-    mask = np.full((m, n), False)
-    count = 0
-    print('Performing search...')
-    for i in range(m):
-        for j in range(n):
-            count = count + 1
-            if not int(np.mod(count, ((m*n) / 10))):
-                print(int((count / (m*n)) * 100), '% complete')
-            for k in coast_polygons.keys():
-                mask[i, j] = mask[i, j] or\
-                   Point(longitude.data[i, j], latitude.data[i, j])\
-                   .within(coast_polygons[k])
-    print('...done')
+    if bool(coast_polygons):
+        print(coast_polygons)
+        if type(coastline_selection) is int:
+            coastline_selection = [coastline_selection]
+        if np.max(coastline_selection) > k:
+            raise Exception('Selected coastline(s)',
+                           coastline_selection,
+                           ' different to coastlines identified within boundary ',
+                           list(coast_polygons.keys()),
+                           '. Please try a different coastline_selection (default=0)'
+                           )
+        coast_polygons = {key: coast_polygons[key]
+                         for key in coastline_selection}
+    
+        
+        count = 0
+        print('Performing search...')
+        for i in range(m):
+            for j in range(n):
+                count = count + 1
+                if not int(np.mod(count, ((m*n) / 10))):
+                    print(int((count / (m*n)) * 100), '% complete')
+                for k in coast_polygons.keys():
+                    mask[i, j] = mask[i, j] or\
+                       Point(lon_skip[i, j], lat_skip[i, j])\
+                       .within(coast_polygons[k])
+        print('...done')
     if erosion:
         mask = erode(mask, structure=erode_structure)
     mask = xr.DataArray(data=mask.astype(int))
-    mask = mask.assign_coords(longitude=(['dim_0', 'dim_1'], longitude),
-                   latitude=(['dim_0', 'dim_1'], latitude),
+    mask = mask.assign_coords(longitude=(['dim_0', 'dim_1'], lon_skip),
+                   latitude=(['dim_0', 'dim_1'], lat_skip),
                    )
 
     new_data = interpolate.griddata(
-                            points=(np.ravel(longitude),
-                                    np.ravel(latitude)),
+                            points=(np.ravel(lon_skip),
+                                    np.ravel(lat_skip)),
                             values=(np.ravel(mask)),
                             xi=(da.longitude.values,
                                 da.latitude.values),
                             method='nearest'
                             )
-    mask = xr.DataArray(
-                        data=new_data,
+    mask = xr.DataArray(data=new_data.T,
                         dims=da.dims,
                         coords=da.coords)
     return mask
