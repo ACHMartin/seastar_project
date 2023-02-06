@@ -164,7 +164,7 @@ def uncertainty_fct( truth, uncertainty):
 
 
 
-return uncertainty
+    return uncertainty
 
 
 
