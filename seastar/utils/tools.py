@@ -512,38 +512,45 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
-def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=None,
-                                 erode_scale=3, coastline_selection=0):
+def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
+                                      erode_scale = 3, coastline_selection=0,):
     """
-    Compute boolean land mask from GSHHS global coastline.
+    Compute land mask.
 
     Computes a boolean mask with size, coords and dims corresponding to a
-    supplied xarray.Dataset, with mask values = True where the point lies
+    supplied xarray.DataArray, with mask values = True where the point lies
     within the coastline from the GSHHS global coastline dataset.
 
     Parameters
     ----------
-    ds : ``xarray.Dataset``
-        Dataset containing `longitude` and `latitude` coordinates as well as
+    da : ``xarray.DataArray``
+        xarray.DataArray to compute the land mask for. Must contain
+        `longitude` and `latitude` coordinates as well as
         coords and dims to align the new `mask` to.
-    erosion : ``bool``, optional
-        Boolean switch to trigger binary erosion of the resulting `mask`.
-        The default is False.
     boundary : ``list``, optional
         Optional boundary to check for the presence of coastlines in the GSHHS
         dataset. Supply `boundary` in the form:
         `[min(long), max(long), min(lat), max(lat)]`.
         The default boundary will be set to the minimum and maximum extent of
-        the `longitude` and `latitude` data present in the coords of `ds`.
+        the `longitude` and `latitude` data present in the coords of `da`.
+    skip : ``float``, optional
+        Speed-up factor in degrees longitude / latitude. The default is 1/1000.
+        Lower than 1/250 resolution will result in a coarsening of the computed
+        `mask`.
+    erosion : ``bool``, optional
+        Boolean switch to trigger binary erosion of the resulting `mask`.
+        The default is False.
     erode_scale : ``int``, ``float``, optional
         Scale for the array-like structure used for optional binary erosion.
         When default is used but `erosion=True` then a
         `erode_scale` of 3 is assumed.
     coastline_selection : ``int``, ``list``, optional
-        Manual choice of which identified coastlines within `boundary` are used
-        in the generation of the `mask`. Choice is a key or list of keys of
-        type ``int``. The default is 0. The default behaviour is the first
-        identified coastline within `boundary` is used to generate the `mask`.
+        Manual choice of which identified coastlines present within the 
+        `boundary` are used in the generation of the `mask`. 
+        Choice is a key or list of keys of type ``int``. The default is 0. 
+        The default behaviour is the first identified coastline within 
+        `boundary` is used to generate the `mask`, corresponding to the largest
+        coastline within the `boundary` by internal area.
 
     Raises
     ------
@@ -556,62 +563,70 @@ def compute_land_mask_from_GSHHS(ds, erosion=False, boundary=None,
     -------
     mask : ``bool``, ``array``, ``xr.DataArray``
         An xr.DataArray containing an array-like boolean mask of land pixels.
-    coast_polygons : ``dict`` of `shapely Polygons`
-        A dict of all identified coastlines within the supplied or default
-        `boundary`, with keys of values for `coastline_selection` and values
-        of type ``shapely.polygon.Polygon``
-
     """
-
-    if 'longitude' not in ds.coords or 'latitude' not in ds.coords:
+    if 'longitude' not in da.coords or 'latitude' not in da.coords:
         raise Exception('longitude and latitude missing from input dataset')
     if not boundary:
-        boundary = [np.min(ds.longitude.data),
-                    np.max(ds.longitude.data),
-                    np.min(ds.latitude.data),
-                    np.max(ds.latitude.data)]
-
+        boundary = [np.min(da.longitude.data),
+                    np.max(da.longitude.data),
+                    np.min(da.latitude.data),
+                    np.max(da.latitude.data)]
+    lon_skip, lat_skip = np.meshgrid(np.arange(boundary[0], boundary[1], skip),
+                                 np.arange(boundary[2], boundary[3], skip))
     if erosion:
         erode_scale = int(np.round(erode_scale))
         erode_structure = np.full((erode_scale, erode_scale), True)
     coast_polygons = dict()
+    m, n = lon_skip.shape
+    mask = np.full((m, n), False)
     print('Scanning GSHHS dataset for coastlines within boundary...')
     coast = cfeature.GSHHSFeature(scale='full')\
         .intersecting_geometries(boundary)
-
     for k, polygon in enumerate(coast):
         coast_polygons[k] = polygon
-    if type(coastline_selection) is int:
-        coastline_selection = [coastline_selection]
-    if np.max(coastline_selection) > k:
-        raise Exception('Selected coastline(s)',
-                        coastline_selection,
-                        ' different to coastlines identified within boundary ',
-                        list(coast_polygons.keys()),
-                        '. Please try a different coastline_selection (default=0)'
-                        )
-
-    coast_polygons = {key: coast_polygons[key]
-                      for key in coastline_selection}
-    m, n = ds.longitude.shape
-    mask = np.full((m, n), False)
-    count = 0
-    print('Performing search...')
-    for i in range(m):
-        for j in range(n):
-            count = count + 1
-            if not int(np.mod(count, ((m*n) / 10))):
-                print(int((count / (m*n)) * 100), '% complete')
-
-            for k in coast_polygons.keys():
-                mask[i, j] = mask[i, j] or\
-                    Point(ds.longitude.data[i, j], ds.latitude.data[i, j])\
-                    .within(coast_polygons[k])
-    print('...done')
+    if bool(coast_polygons):
+        print(coast_polygons)
+        if type(coastline_selection) is int:
+            coastline_selection = [coastline_selection]
+        if np.max(coastline_selection) > k:
+            raise Exception('Selected coastline(s)',
+                           coastline_selection,
+                           ' different to coastlines identified within boundary ',
+                           list(coast_polygons.keys()),
+                           '. Please try a different coastline_selection (default=0)'
+                           )
+        coast_polygons = {key: coast_polygons[key]
+                         for key in coastline_selection}
+    
+        
+        count = 0
+        print('Performing search...')
+        for i in range(m):
+            for j in range(n):
+                count = count + 1
+                if not int(np.mod(count, ((m*n) / 10))):
+                    print(int((count / (m*n)) * 100), '% complete')
+                for k in coast_polygons.keys():
+                    mask[i, j] = mask[i, j] or\
+                       Point(lon_skip[i, j], lat_skip[i, j])\
+                       .within(coast_polygons[k])
+        print('...done')
     if erosion:
         mask = erode(mask, structure=erode_structure)
-    mask = xr.DataArray(data=mask,
-                        coords=ds.latitude.coords,
-                        dims=ds.latitude.dims)
+    mask = xr.DataArray(data=mask.astype(int))
+    mask = mask.assign_coords(longitude=(['dim_0', 'dim_1'], lon_skip),
+                   latitude=(['dim_0', 'dim_1'], lat_skip),
+                   )
 
-    return mask, coast_polygons
+    new_data = interpolate.griddata(
+                            points=(np.ravel(lon_skip),
+                                    np.ravel(lat_skip)),
+                            values=(np.ravel(mask)),
+                            xi=(da.longitude.values,
+                                da.latitude.values),
+                            method='nearest'
+                            )
+    mask = xr.DataArray(data=new_data.T,
+                        dims=da.dims,
+                        coords=da.coords)
+    return mask

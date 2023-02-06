@@ -40,6 +40,44 @@ def _set_file_paths():
     return local_paths
 
 
+def _read_DAR_config(date):
+    """
+    Read DAR track name config.
+
+    Reads the seastarex_DAR_config.ini file containing names for aquisition
+    as a dict with keys equalling track names and values equalling the file
+    list number for loading.
+
+    Parameters
+    ----------
+    date : ``str``, ``int``
+        Date of aquisition in the form YYYYMMDD
+
+    Raises
+    ------
+    Exception
+        DESCRIPTION.
+
+    Returns
+    -------
+    DAR_tracks : ``dict``
+        Dict of {track names : file number}. File numbers of type ``int``.
+        Track names capitalised.
+
+    """
+    if type(date) is not str:
+        date = str(date)
+    config = ConfigParser()
+    config_path = os.path.join('seastar', 'oscar', 'seastarex_DAR_config.ini')
+    config.read(config_path)
+    if date not in config.sections():
+        raise Exception('Date not present in seastarex_DAR_config.ini.'
+                        'Please check config file')
+    DAR_tracks = dict(config.items(date))
+    DAR_tracks = {str.capitalize(k): int(v) for k, v in DAR_tracks.items()}
+    return DAR_tracks
+
+
 def _readConfig(config_file_path):
     """Reads the configuration ini file.
 
