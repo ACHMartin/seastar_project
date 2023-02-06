@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Nov 30
+Created on December 2022
 
 @author: admartin, dlmccann
 """
@@ -157,6 +157,9 @@ def find_minima(level1_pixel, noise_pixel, gmf):
         **opt
     )
 
+    #nsol or init[1:3] =
+    nsol = find_initial_values(lmout[0].x, inst, gmf=gmf)
+
     # find the 3 ambiguities and run along them to find them
     # level1_conf = level1_pixel.drop_vars([var for var in level1_pixel.data_vars])
     # find_initial_values( lmout[0].x,  level1_conf, gmf) # gmf??? or default Mouche?
@@ -210,7 +213,7 @@ def uvcucv2x(mydict):
     ])
     return x
 
-def find_initial_values(sol1st, level1_inst, gmf):
+def find_initial_values(sol1st_x, level1_inst, gmf):
     """
     Find the rough position of the ambiguities given a first solution.
 
@@ -224,9 +227,43 @@ def find_initial_values(sol1st, level1_inst, gmf):
         dictionary with gmf.nrcs.name and gmf.doppler.name fields
     Returns
     -------
-    out : ??
+    out : list of "x" array containing [u,v,c_u,c_v]
         list of the 3 new initial values to look for ambiguities
     """
+
+    # Intern Function initialisation TODO to update using the original matlab code below
+    WS = np.array([5,10])
+    dte_coef = 0.1 # to update with matlab code below diff(WASV)/diff(WS)
+    def smooth(x):
+        if np.abs(x) < 3:
+            return(x/3)
+        else:
+            return(x)
+    dte = lambda x: smooth(x) * np.sign(x) * dte_coef * (np.abs(x) - WS[0])
+
+
+    sol = x2uvcucv(sol1st_x)
+    sol = seastar.utils.tools.windCurrentUV2all(sol)
+
+    init_list = [None] * 3
+
+    meas_cur = dotdict({
+        'c_u': ( dte(sol['vis_u']) + sol['c_u'] ),
+        'c_v': ( dte(sol['vis_v']) + sol['c_v'] ),
+    })
+
+    for ii in range(len(init_list)):
+        init = dotdict({})
+        init['vis_wspd'] = sol['vis_wspd']
+        init['vis_wdir'] = np.mod( sol['vis_wdir'] + ii*90, 360)
+        init['vis_u'], init['vis_v'] = \
+            seastar.utils.tools.windSpeedDir2UV(
+                init['vis_wspd'], init['vis_wdir']
+            )
+        init['c_u'] = meas_cur['c_u'] - dte(init['vis_u'])
+        init['c_v'] = meas_cur['c_v'] - dte(init['vis_v'])
+        init_list[ii] = uvcucv2x(init)
+
     # sol: 1st  solution, type vector: [u v c_u c_v]
 
 #     inst = comb.inst(1);
@@ -284,7 +321,8 @@ def find_initial_values(sol1st, level1_inst, gmf):
 
     print("To Be Done")
 
-    return
+    return init_list
+
 
 
 # def run_find_minima():
