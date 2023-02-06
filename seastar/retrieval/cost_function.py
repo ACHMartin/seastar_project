@@ -157,16 +157,21 @@ def find_minima(level1_pixel, noise_pixel, gmf):
         **opt
     )
 
-    #nsol or init[1:3] =
-    nsol = find_initial_values(lmout[0].x, inst, gmf=gmf)
+    # find the 3 ambiguities and run the minimisation to find the 3 minima
+    init[1:3] = find_initial_values(lmout[0].x, level1_pixel, gmf)
+    for ii in [1,2,3]:
+        lmout[ii] = least_squares(
+            seastar.retrieval.cost_function.fun_residual,
+            init[ii].x0,
+            args=(level1_pixel, noise_pixel, gmf),
+            **opt
+        )
 
-    # find the 3 ambiguities and run along them to find them
+
+
     # level1_conf = level1_pixel.drop_vars([var for var in level1_pixel.data_vars])
-    # find_initial_values( lmout[0].x,  level1_conf, gmf) # gmf??? or default Mouche?
-    # loop of the 3 new initialisation
 
-    # sort as function of the cost function
-
+    # sort as function of the cost function => ambiguity
     # format the solution as output as u, v, c_u, c_v xarray for different ambiguities
 
     return lmout
@@ -214,6 +219,7 @@ def uvcucv2x(mydict):
     return x
 
 def find_initial_values(sol1st_x, level1_inst, gmf):
+    # find_initial_values( lmout[0].x,  level1_conf, gmf) # gmf??? or default Mouche?
     """
     Find the rough position of the ambiguities given a first solution.
 
@@ -227,7 +233,7 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
         dictionary with gmf.nrcs.name and gmf.doppler.name fields
     Returns
     -------
-    out : list of "x" array containing [u,v,c_u,c_v]
+    out : list of dotdict.x0 containing [u,v,c_u,c_v]
         list of the 3 new initial values to look for ambiguities
     """
 
@@ -262,7 +268,11 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
             )
         init['c_u'] = meas_cur['c_u'] - dte(init['vis_u'])
         init['c_v'] = meas_cur['c_v'] - dte(init['vis_v'])
-        init_list[ii] = uvcucv2x(init)
+        init_list[ii] = \
+            dotdict({
+                'x0': uvcucv2x(init)
+            })
+
 
     # sol: 1st  solution, type vector: [u v c_u c_v]
 
