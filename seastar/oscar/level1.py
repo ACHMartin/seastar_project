@@ -206,7 +206,7 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity, Interferogram', 'Coherence']):
+def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', 'Interferogram', 'Coherence']):
     """
     Calculate multilooking Master/Slave L1b image products.
 
