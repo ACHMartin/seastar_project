@@ -78,6 +78,8 @@ def level1_geo_dataset():
             along=np.arange(0, 6),
         ),
     )
+    [geo['U'], geo['V']] = ss.utils.tools.windSpeedDir2UV(geo.WindSpeed, geo.WindDirection)
+    [geo['C_U'], geo['C_V']] = ss.utils.tools.currentVelDir2UV(geo.CurrentVelocity, geo.CurrentDirection)
 
 
     return dict({'level1': level1, 'geo': geo})
