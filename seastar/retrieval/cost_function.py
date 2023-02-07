@@ -111,7 +111,7 @@ def fun_residual(variables, level1, noise, gmf):
         model_rvl_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(level1.sel(Antenna=ant), geo, gmf=gmf['doppler']['name'])
         # print(model_rvl_list[aa])
     model['RVL'] = xr.concat(model_rvl_list, dim='Antenna')
-    # in future it should be: model['RVL'] = seastar.gmfs.doppler.compute_total_surface_motion(level1, geo, gmf=gmf.doppler)
+    # in future it should be: model['RVL'] = seastar.gmfs.doppler.compute_total_surface_motion(level1, geo, gmf=gmf.doppler) without the loop on antennas
 
     model['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf=gmf['nrcs'])
 

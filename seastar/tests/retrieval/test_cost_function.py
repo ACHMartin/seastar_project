@@ -6,25 +6,10 @@ import pytest
 import seastar
 from seastar.utils.tools import dotdict
 
-from seastar.gmfs import doppler
+from seastar.retrieval import cost_function
 
 @pytest.fixture
-def point_wind_speed():
-    return(7) # in m/s
-
-@pytest.fixture
-def point_relative_dir():
-    return(3) # in degree
-
-@pytest.fixture
-def point_inci_angle():
-    return(30) # in degree from nadir
-
-@pytest.fixture
-def point_polarization():
-    return 'VV' # in degree
-
-@pytest.fixture
+# TODO it is the same function/constant as in test_doppler, it would be better to have it save somewhere and load here
 def level1_geo_dataset():
     level1 = xr.Dataset(
         data_vars=dict(
@@ -80,10 +65,8 @@ def level1_geo_dataset():
         ),
     )
     # TODO, we shouldn't do this, it should be fixed value, without calling a function
-    [geo['U'], geo['V']] = seastar.utils.tools.windSpeedDir2UV(geo.WindSpeed, geo.WindDirection)
+    geo['U'], geo['V'] = seastar.utils.tools.windSpeedDir2UV(geo.WindSpeed, geo.WindDirection)
     [geo['C_U'], geo['C_V']] = seastar.utils.tools.currentVelDir2UV(geo.CurrentVelocity, geo.CurrentDirection)
-
-
     return dict({'level1': level1, 'geo': geo})
 
 @pytest.fixture
@@ -92,81 +75,32 @@ def gmf_mouche():
     gmf['doppler'] = dotdict({'name': 'mouche12'})
     return gmf
 
-# TODO might be ideal to have a table of input and expected output
 
-
-def test_mouche12(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization):
-
-    assert doppler.mouche12(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization) \
-           == pytest.approx(24, 1) # 1 +- 5 => error on pol in mouche12, with pol expected as a str not a function
-    # Test points
-    assert doppler.mouche12(7, 3, 30, 'VV') \
-            == pytest.approx(24, 1)  # in Hz 24 +- 1
-    assert doppler.mouche12(7, 3, 30, 'HH') \
-           == pytest.approx(24, 1)  # in Hz 24 +- 1
-
-    # Test numpy array
-    np.testing.assert_allclose(
-        doppler.mouche12(
-            np.array([3, 7, 20]),
-            np.array([0, 3, 200]),
-            np.array([20, 30, 40]),
-            'VV' #np.array(['VV', 'VV', 'VV']),
-        ),
-        np.array([ 19.6,  24.1, -23.8 ]),
-        rtol=0.1,
-    ) # in Hz
-
-    # Test xr.DataArray
-    t, inci2D = np.mgrid[-10:10:5, 20:50:10]
-    wdir2D = 150 + 15 * np.random.random_sample(inci2D.shape)
-    wspd2D = 7 + 2 * np.random.random_sample(inci2D.shape)
-    ds = xr.Dataset(
-        data_vars=dict(
-            incidenceImage=(['x', 'y'], inci2D),
-            wdir=(['x', 'y'], wdir2D),
-            wspd=(['x', 'y'], wspd2D),
-        ),
-    )
-    xr.testing.assert_allclose(
-        doppler.mouche12(
-            ds.wspd,
-            ds.wdir,
-            ds.incidenceImage,
-            'VV',
-        ),
-        xr.DataArray(
-            data=np.array([[-21, -16, -12],
-                           [-20, -15, -12],
-                           [-21, -16, -12],
-                           [-21, -16, -12]]),
-            dims=(['x', 'y'])
-        ),
-        rtol=1
-    )
-
-def test_compute_wasv(level1_geo_dataset, gmf_mouche):
+def test_fun_residual(level1_geo_dataset, gmf_mouche):
     level1 = level1_geo_dataset['level1']
-    L1ant = level1.sel(Antenna='Fore')
     geo = level1_geo_dataset['geo']
-
-    # Test dataset with .sel(Antenna)
-    xr.testing.assert_allclose(
-        doppler.compute_wasv(
-            L1ant,
+    level1['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf_mouche.nrcs) * 1.001
+    level1['RVL'] = xr.concat([
+        seastar.gmfs.doppler.compute_total_surface_motion(
+            level1.sel(Antenna=ant),
             geo,
             gmf=gmf_mouche.doppler.name
-        ).drop_vars(['CentralWavenumber', 'CentralFreq', 'IncidenceAngleImage', 'AntennaAzimuthImage',
-                     'Polarization','Antenna','along','across']),
-        xr.DataArray(
-            data=np.full( L1ant.AntennaAzimuthImage.shape, 0.32),
-            dims=( L1ant.dims)
-        ),
-        rtol=0.01
-    )
+        ) for ant in level1.Antenna.data],
+        'Antenna',
+        join='outer')
+    # Add NaN for RVL for the mid antennas
+    level1.RVL[1, :, :] = np.full([5, 6], np.nan)
+    level1.RVL[2, :, :] = np.full([5, 6], np.nan)
+    # Noise
+    noise = level1.drop_vars([var for var in level1.data_vars])
+    noise['Sigma0'] = level1.Sigma0 * 0.05
+    noise['RVL'] = level1.RVL * 0.05
 
-
-
-
-    # with pytest.raises(ValueError):
-    #     adult_or_child(-10)
+    # Test on full xr.DataSet
+    results = cost_function.fun_residual([geo.U, geo.V, geo.C_U, geo.C_V], level1, noise, gmf_mouche)
+    np.testing.assert_allclose(
+        results[:,0,0],
+        np.array([-3.0, -3.2, -3.2, -3.7,
+                  -7.4,  0. ,  0. , -2.4 ]),
+        rtol=0.1,
+    )  # cost values for Sigma0, then RVL
