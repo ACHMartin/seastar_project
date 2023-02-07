@@ -30,8 +30,8 @@ def test_mouche12():
     # print(type(str(point_polarization)))
     # print(str(point_polarization))
     # print(type(point_inci_angle))
-    # assert doppler.mouche12(point_wind_speed, point_relative_dir, point_inci_angle, str(point_polarization)) \
-    #        == pytest.approx(1, 50) # 1 +- 5
+    # assert doppler.mouche12(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization) \
+    #        == pytest.approx(1, 50) # 1 +- 5 => error on pol in mouche12, with pol expected as a str not a function
     # Test points
     assert doppler.mouche12(7, 3, 30, 'VV') \
             == pytest.approx(24, 1)  # in Hz 24 +- 1
@@ -39,13 +39,16 @@ def test_mouche12():
            == pytest.approx(24, 1)  # in Hz 24 +- 1
 
     # Test numpy array
-    assert  doppler.mouche12(
-                np.array([3, 7, 20]),
-                np.array([0, 3, 200]),
-                np.array([20, 30, 40]),
-                'VV' #np.array(['VV', 'VV', 'VV']),
-            ) \
-            == pytest.approx(24, 50)  # in Hz 24 +- 1
+    np.testing.assert_allclose(
+        doppler.mouche12(
+            np.array([3, 7, 20]),
+            np.array([0, 3, 200]),
+            np.array([20, 30, 40]),
+            'VV' #np.array(['VV', 'VV', 'VV']),
+        ),
+        np.array([ 19.6,  24.1, -23.8 ]),
+        rtol=0.1,
+    ) # in Hz
 
     # Test xr.DataArray
     t, inci2D = np.mgrid[-10:10:5, 20:50:10]
