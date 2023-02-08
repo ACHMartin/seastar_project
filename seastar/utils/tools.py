@@ -11,6 +11,7 @@ import cartopy.feature as cfeature
 from shapely.geometry import Point
 from scipy.io import loadmat
 from scipy.ndimage import binary_erosion as erode
+# import seastar
 
 def currentVelDir2UV(vel, cdir):
     """
@@ -139,11 +140,11 @@ def windCurrentUV2all(mydict):
     mydict['vis_u'] = mydict['u'] - mydict['c_u']
     mydict['vis_v'] = mydict['v'] - mydict['c_v']
     mydict['vis_wspd'], mydict['vis_wdir'] = \
-        seastar.utils.tools.windUV2SpeedDir(
+        windUV2SpeedDir(
             mydict['vis_u'], mydict['vis_v']
         )
     mydict['c_vel'], mydict['c_dir'] = \
-        seastar.utils.tools.currentUV2VelDir(
+        currentUV2VelDir(
             mydict['c_u'], mydict['c_v']
         )
     return mydict
