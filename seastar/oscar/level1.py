@@ -113,7 +113,7 @@ def check_antenna_polarization(ds):
     """
     polarization = [str(ds.TxPolarization.data), str(ds.RxPolarization.data)]
     polarization = ''.join(polarization)
-    Polarization = xr.DataArray(data=re.sub('[^VH]', '', polarization))
+    Polarization = xr.DataArray(data=[re.sub('[^VH]', '', polarization)])
     Polarization.attrs['long_name'] =\
         'Antenna polarization, Transmit / Receive.'
     Polarization.attrs['units'] = '[none]'
@@ -206,7 +206,10 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity, Interferogram', 'Coherence']):
+def compute_multilooking_Master_Slave(ds, window=3,
+                                      vars_to_send=['Intensity',
+                                                    'Interferogram',
+                                                    'Coherence']):
     """
     Calculate multilooking Master/Slave L1b image products.
 
@@ -226,7 +229,6 @@ def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity, In
         Dataset containing computed L1b variables
 
     """
-
     list_vars_to_send = set(['Intensity', 'Interferogram', 'Coherence',
                          'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'])
     vars_to_send = set(vars_to_send)
@@ -491,10 +493,8 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
                                                aux,
                                                gmf
                                                )
-    rsv_list = [level1.RadialSurfaceVelocity.sel(Antenna=a)
-                - dswasv.sel(Antenna=a)
-                for a in list(level1.Antenna.data)
-                ]
+    radial_surface_current = level1.RadialSurfaceVelocity - dswasv
+
 #    warnings.warn(
 #        "WARNING: Applying direction convention correction on the Aft beam,"
 #        "Be aware this may be an obsolete correction in the future and will"
