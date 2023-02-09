@@ -7,10 +7,11 @@ Created on Fri Sep 16 16:48:48 2022
 
 import numpy as np
 import xarray as xr
+from seastar.retrieval import cost_function, ambiguity_removal
 import seastar
 
 
-def wind_current_retrieval(level1):
+def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
     Compute ocean surface WIND and CURRENT magnitude and direction
     by minimisation of a cost function.
@@ -25,7 +26,7 @@ def wind_current_retrieval(level1):
      Parameters
      ----------
      level1 : ``xarray.Dataset``
-        L1 observable noisy dataset (NRCS, RVL, geometry)
+        L1 observable noisy dataset (Sigma0, RVL, geometry)
 
      Returns
      -------
@@ -42,10 +43,41 @@ def wind_current_retrieval(level1):
          Ocean Surface Wind Direction (degrees N) in meteorologic convention (coming from)
      """
 
+    list_L1s0 = list(level1.Sigma0.dims)
+    list_L1s0.remove('Antenna')
+
+    level1_stack = level1.stack(z=tuple(list_L1s0))
+    noise_stack = noise.stack(z=tuple(list_L1s0))
+
+    lmoutmap = [None] * level1_stack.z.size
+    for ii, zindex in enumerate(level1_stack.z.data):
+        sl1 = level1_stack.sel(z=zindex)
+        sn = noise_stack.sel(z=zindex)
+        lmout = cost_function.find_minima(sl1, sn, gmf)
+        lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+        lmoutmap[ii] = lmout
+
+    lmmap = xr.concat(lmoutmap, dim='z')
+    sol = lmmap.unstack(dim='z')
+
+    level2 = xr.Dataset()
+    level2['CurrentVelocity'],  level2['CurrentDirection'] = \
+        seastar.utils.tools.currentUV2VelDir(
+            sol.x.isel(Ambiguities=0).sel(x_variables='c_u'),
+            sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
+        )
+
+    level2['WindSpeed'],  level2['WindDirection'] = \
+        seastar.utils.tools.windUV2SpeedDir(
+            sol.x.isel(Ambiguities=0).sel(x_variables='u'),
+            sol.x.isel(Ambiguities=0).sel(x_variables='v')
+        )
+
+
     # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
     print('To be done')
 
-    return
+    return level2, sol
 
 def compute_current_magnitude_and_direction(level1, level2):
     """

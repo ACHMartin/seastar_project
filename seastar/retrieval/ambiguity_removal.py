@@ -45,7 +45,13 @@ def ambiguity_closest_to_truth(truth, results, method='windcurrent', windcurrent
 
     return level2
 
-def solve_ambiguity():
+def ambiguity_sort_by_cost(lmout):
+    print("To Be Done - ambiguity_sort_by_cost")
+    return lmout.sortby('cost')
+
+
+
+def solve_ambiguity(lmout, ambiguity):
     """
     As function of:
     - cost values: chi2
@@ -55,7 +61,14 @@ def solve_ambiguity():
 
 
     """
-    return level2
+
+    if ambiguity == 'sort_by_cost':
+        lmout = ambiguity_sort_by_cost(lmout)
+
+
+    print("To Be Done - solve_ambiguity")
+
+    return lmout
 
 
 
