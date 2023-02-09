@@ -10,6 +10,43 @@ import xarray as xr
 import seastar
 
 
+def wind_current_retrieval(level1):
+    """
+    Compute ocean surface WIND and CURRENT magnitude and direction
+    by minimisation of a cost function.
+
+    Compute Ocean Surface Vector Wind (OSVW) in (m/s) and
+    direction (degrees N) in the meteorological convention (coming from).
+    Assumed neutral wind at 10m.
+
+    Compute Total Surface Current Vector (TSCV) in (m/s) and
+    direction (degrees N) in the oceanographic convention (going to).
+
+     Parameters
+     ----------
+     level1 : ``xarray.Dataset``
+        L1 observable noisy dataset (NRCS, RVL, geometry)
+
+     Returns
+     -------
+     level2 : xarray.Dataset
+         L2 dataset with a new dimension with ambiguity
+         L2.shape (ambiguity, x, y)
+     level2.CurrentMagnitude : xarray.DataArray
+         Magnitude of surface current vector (m/s)
+     level2.CurrentDirection : xarray.DataArray
+         Surface current direction (degrees N) in oceanographic convention (going to)
+    level2.WindSpeed : xarray.DataArray
+         Ocean Surface Wind Speed (m/s)
+     level2.WindDirection : xarray.DataArray
+         Ocean Surface Wind Direction (degrees N) in meteorologic convention (coming from)
+     """
+
+    # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
+    print('To be done')
+
+    return
+
 def compute_current_magnitude_and_direction(level1, level2):
     """
     Compute surface current magnitude and direction.
