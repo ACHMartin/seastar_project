@@ -10,7 +10,7 @@ from seastar.retrieval import cost_function
 
 @pytest.fixture
 # TODO it is the same function/constant as in test_doppler, it would be better to have it save somewhere and load here
-def level1_geo_dataset():
+def level1_geo_dataset(gmf_mouche):
     level1 = xr.Dataset(
         data_vars=dict(
             CentralWavenumber=([], 270),
@@ -64,21 +64,9 @@ def level1_geo_dataset():
             along=np.arange(0, 6),
         ),
     )
-    # TODO, we shouldn't do this, it should be fixed value, without calling a function
     geo['U'], geo['V'] = seastar.utils.tools.windSpeedDir2UV(geo.WindSpeed, geo.WindDirection)
     [geo['C_U'], geo['C_V']] = seastar.utils.tools.currentVelDir2UV(geo.CurrentVelocity, geo.CurrentDirection)
-    return dict({'level1': level1, 'geo': geo})
 
-@pytest.fixture
-def gmf_mouche():
-    gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
-    gmf['doppler'] = dotdict({'name': 'mouche12'})
-    return gmf
-
-
-def test_fun_residual(level1_geo_dataset, gmf_mouche):
-    level1 = level1_geo_dataset['level1']
-    geo = level1_geo_dataset['geo']
     level1['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf_mouche.nrcs) * 1.001
     level1['RVL'] = xr.concat([
         seastar.gmfs.doppler.compute_total_surface_motion(
@@ -96,6 +84,21 @@ def test_fun_residual(level1_geo_dataset, gmf_mouche):
     noise['Sigma0'] = level1.Sigma0 * 0.05
     noise['RVL'] = level1.RVL * 0.05
 
+    # TODO, we shouldn't do this, it should be fixed value, without calling a function
+    return dict({'level1': level1, 'geo': geo, 'noise': noise})
+
+@pytest.fixture
+def gmf_mouche():
+    gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
+    gmf['doppler'] = dotdict({'name': 'mouche12'})
+    return gmf
+
+
+def test_fun_residual(level1_geo_dataset, gmf_mouche):
+    level1 = level1_geo_dataset['level1']
+    geo = level1_geo_dataset['geo']
+    noise = level1_geo_dataset['noise']
+
     # Test on full xr.DataSet
     results = cost_function.fun_residual([geo.U, geo.V, geo.C_U, geo.C_V], level1, noise, gmf_mouche)
     np.testing.assert_allclose(
@@ -104,3 +107,17 @@ def test_fun_residual(level1_geo_dataset, gmf_mouche):
                   -7.4,  0. ,  0. , -2.4 ]),
         rtol=0.1,
     )  # cost values for Sigma0, then RVL
+
+
+def test_find_minima(level1_geo_dataset, gmf_mouche):
+    level1 = level1_geo_dataset['level1']
+    geo = level1_geo_dataset['geo']
+    noise = level1_geo_dataset['noise']
+
+    ssL1 = level1.isel(across=0, along=0)
+    ssN = noise.isel(across=0, along=0)
+
+
+    # Test on full xr.DataSet
+    results = cost_function.find_minima(ssL1, ssN, gmf_mouche)
+    assert (results.cost < 1).any() # one of the 4 minima should be below 1 (noise floor)

@@ -101,6 +101,7 @@ def compute_current_magnitude_and_direction(level1, level2):
 
 
 def generate_wind_field_from_single_measurement(aux, u10, wind_direction, ds):
+    # TODO this should be moved to scene_generation.py (perhaps to put somewhere else than a "performance" package)
     """
     Generate 2D fields of wind velocity and direction.
 

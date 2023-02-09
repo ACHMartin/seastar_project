@@ -403,7 +403,7 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
                 'x0': uvcucv2x(init)
             })
         # test boundary # TODO properly from least_square/opt in future # with raise Exception
-        print(init_list[ii])
+        # print(init_list[ii])
         if ((init_list[ii]['x0'] - np.array([-30,-30,-5,-5])) < 0).any():
             print('below boundary')
             print(init_list[ii], init)
