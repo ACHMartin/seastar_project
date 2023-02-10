@@ -40,7 +40,9 @@ def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
         the given geophysical and geometric conditions.
     """
 
-    ds = seastar.gmfs.doppler.compute_wasv(L1, aux_geo, gmf, **kwargs)
+    wasv = seastar.gmfs.doppler.compute_wasv(L1, aux_geo, gmf, **kwargs)
+
+    # TODO test aux_geo and L1 are aligned
 
     relative_current_direction = np.mod(aux_geo.CurrentDirection - L1.AntennaAzimuthImage, 360)
     # relative_direction_influence = np.cos(np.radians(relative_current_direction))
@@ -50,8 +52,8 @@ def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
                                         L1.IncidenceAngleImage)
 
     da = xr.DataArray(
-        data=ds.WASV + u_rsc,
-        dims=ds.WASV.dims,
+        data=wasv + u_rsc,
+        dims=wasv.dims,
     )
 
     return da
@@ -92,7 +94,7 @@ def compute_radial_current(current_vel, rel_current_dir, inci):
 
 
 
-def compute_wasv(L1_combined, aux_geo, gmf, **kwargs):
+def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
     """
     Compute the Wind-wave Artefact Surface Velocity (WASV).
@@ -103,8 +105,8 @@ def compute_wasv(L1_combined, aux_geo, gmf, **kwargs):
     Parameters
     ----------
     L1 : xarray.Dataset
-        A Dataset containing IncidenceAngleImage, LookDirection and
-        Polarization across three beam directions ('Fore', 'Aft', 'Mid')
+        A Dataset containing IncidenceAngleImage, AntennaAzimuthImage and
+        Polarization
     aux_geo : xarray.Dataset
         A Dataset containing WindSpeed, WindDirection.
     gmf : str
@@ -127,66 +129,83 @@ def compute_wasv(L1_combined, aux_geo, gmf, **kwargs):
 
 
     """
-    ds_wa = xr.Dataset()
-    for antenna in L1_combined.Antenna.values:
-        L1 = L1_combined.sel(Antenna=antenna)
-        # Initialisation
-        central_wavelength = seastar.utils.tools.wavenumber2wavelength(
-            L1.CentralWavenumber
 
+    # Initialisation
+    central_wavelength = seastar.utils.tools.wavenumber2wavelength(
+        L1.CentralWavenumber
+    )
+
+    if len(L1.AntennaAzimuthImage.shape) > 2:
+        raise Exception('L1.AntennaAzimuthImage need to be a 2D field. \n'
+                        'Use e.g. L1.sel(Antenna="Fore") to reduce to '
+                        'a 2D field.')
+    # Aligned L1 and aux_geo dataset => 'outer' Union of the two indexes
+    # TODO I really think we might be able just to test L1 and geo are aligned and whatever the dimension
+    L1, aux_geo = xr.align(L1, aux_geo, join="outer")
+
+    relative_wind_direction =\
+        seastar.utils.tools.compute_relative_wind_direction(
+            aux_geo.WindDirection,
+            L1.AntennaAzimuthImage
         )
 
-        if len(L1.LookDirection.shape) > 2:
-            raise Exception('L1.LookDirection need to be a 2D field. \n'
-                            'Use e.g. L1.sel(Antenna="Fore") to reduce to '
-                            'a 2D field.')
-        # Aligned L1 and aux_geo dataset => 'outer' Union of the two indexes
-        L1, aux_geo = xr.align(L1, aux_geo, join="outer")
+    ind = dict()
+    if L1.Polarization.size > 1:
+        for pol_str in ['VV', 'HH']:
+            ind[pol_str] = (L1.Polarization == pol_str).values
 
-        relative_wind_direction =\
-            seastar.utils.tools.compute_relative_wind_direction(
-                aux_geo.WindDirection,
-                L1.AntennaAzimuthImage
-            )
-        wasv_rsv = np.full(L1.IncidenceAngleImage.shape, np.nan)
-        if gmf == 'mouche12':
-            dop_c = np.full(L1.IncidenceAngleImage.shape, np.nan)
+    if gmf == 'mouche12':
+        if L1.Polarization.size == 1:
             dop_c = mouche12(
                 aux_geo.WindSpeed.values,
                 relative_wind_direction.values,
                 L1.IncidenceAngleImage.values,
                 L1.Polarization.data,
             )
-
-            # Convert Doppler Shift of C-band (5.5 GHz) to CentralFrequency
-            f_c = 5.5 * 10 ** 9
-            dop_Hz = dop_c * L1.CentralFreq.data / f_c
-            [wasv_losv, wasv_rsv] = convertDoppler2Velocity(
-                L1.CentralFreq.data / 1e9,
-                dop_Hz,
-                L1.IncidenceAngleImage
-            )
-        elif gmf == 'yurovsky19':
-            dc = dict()
-            [dc['VV'], dc['HH']] = yurovsky19(
-                L1.IncidenceAngleImage,
-                relative_wind_direction,
-                aux_geo.WindSpeed,
-                lambdar=central_wavelength,
-                **kwargs
-            )
-
-           # for pol_str in ['VV', 'HH']:
-             #   wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
         else:
-            raise Exception(
-                'Error, unknown gmf, should be yurovsky19 or mouche 12'
-                )
-        ds_wa[antenna] = xr.DataArray(data=wasv_rsv.data,
-                                      coords=L1.AntennaAzimuthImage.coords,
-                                      dims=L1.AntennaAzimuthImage.dims
-                                      )
-    ds_wa = ds_wa.to_array(dim='Antenna')
+            dop_c = np.full(L1.IncidenceAngleImage.shape, np.nan)
+            for pol_str in ('VV', 'HH'):
+                if ind[pol_str].any():
+                    dop_c[ind[pol_str]] = mouche12(
+                        aux_geo.WindSpeed.values[ind[pol_str]],
+                        relative_wind_direction.values[ind[pol_str]],
+                        L1.IncidenceAngleImage.values[ind[pol_str]],
+                        pol_str,
+                    )
+
+
+        # Convert Doppler Shift of C-band (5.5 GHz) to CentralFrequency
+        f_c = 5.5 * 10 ** 9
+        dop_Hz = dop_c * L1.CentralFreq.data / f_c
+        [wasv_losv, wasv_rsv] = convertDoppler2Velocity(
+            L1.CentralFreq.data / 1e9,
+            dop_Hz,
+            L1.IncidenceAngleImage
+        )
+
+    elif gmf == 'yurovsky19':
+        dc = dict()
+        [dc['VV'], dc['HH']] = yurovsky19(
+            L1.IncidenceAngleImage,
+            relative_wind_direction,
+            aux_geo.WindSpeed,
+            lambdar=central_wavelength,
+            **kwargs
+        )
+        wasv_rsv = np.full(L1.IncidenceAngleImage.shape, np.nan)
+        for pol_str in ['VV', 'HH']:
+            wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
+
+    else:
+        raise Exception(
+            'Error, unknown gmf, should be yurovsky19 or mouche 12'
+            )
+
+    ds_wa = xr.DataArray(
+        data=wasv_rsv.data,
+        coords=L1.AntennaAzimuthImage.coords,
+        dims=L1.AntennaAzimuthImage.dims
+    )
     ds_wa.attrs['long_name'] = 'Wind Artifact Surface Velocity (WASV)'
     ds_wa.attrs['units'] = ['m/s']
     return ds_wa

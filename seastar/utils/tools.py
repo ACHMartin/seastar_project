@@ -11,6 +11,7 @@ import cartopy.feature as cfeature
 from shapely.geometry import Point
 from scipy.io import loadmat
 from scipy.ndimage import binary_erosion as erode
+# import seastar
 
 def currentVelDir2UV(vel, cdir):
     """
@@ -121,6 +122,32 @@ def windUV2SpeedDir(u, v):
     wdir = np.mod(-90 - np.angle(tmp) * 180 / np.pi, 360)
     return wspd, wdir
 
+def windCurrentUV2all(mydict):
+    """
+    Convert a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements to
+    a full dictionary with vis_u, vis_v, vis_wspd, vis_wdir, c_vel, c_dir
+
+    Parameters
+    ----------
+    mydict : dict or dotdict
+        a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements
+    Returns
+    -------
+    mydict : dict or dotdict
+        a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements
+    """
+
+    mydict['vis_u'] = mydict['u'] - mydict['c_u']
+    mydict['vis_v'] = mydict['v'] - mydict['c_v']
+    mydict['vis_wspd'], mydict['vis_wdir'] = \
+        windUV2SpeedDir(
+            mydict['vis_u'], mydict['vis_v']
+        )
+    mydict['c_vel'], mydict['c_dir'] = \
+        currentUV2VelDir(
+            mydict['c_u'], mydict['c_v']
+        )
+    return mydict
 
 def wavenumber2wavelength(wavenumber):
     """
