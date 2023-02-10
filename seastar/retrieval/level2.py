@@ -47,32 +47,43 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
     list_L1s0 = list(level1.Sigma0.dims)
     list_L1s0.remove('Antenna')
 
-    level1_stack = level1.stack(z=tuple(list_L1s0))
-    noise_stack = noise.stack(z=tuple(list_L1s0))
+    if len(list_L1s0) > 0: # 1d, 2d or more
+        level1_stack = level1.stack(z=tuple(list_L1s0))
+        noise_stack = noise.stack(z=tuple(list_L1s0))
 
-    lmoutmap = [None] * level1_stack.z.size
-    for ii, zindex in enumerate(level1_stack.z.data):
-        sl1 = level1_stack.sel(z=zindex)
-        sn = noise_stack.sel(z=zindex)
-        lmout = cost_function.find_minima(sl1, sn, gmf)
-        lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
-        lmoutmap[ii] = lmout
+        lmoutmap = [None] * level1_stack.z.size
+        for ii, zindex in enumerate(level1_stack.z.data):
+            sl1 = level1_stack.sel(z=zindex)
+            sn = noise_stack.sel(z=zindex)
+            lmout = cost_function.find_minima(sl1, sn, gmf)
+            lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+            lmoutmap[ii] = lmout
 
-    lmmap = xr.concat(lmoutmap, dim='z')
-    sol = lmmap.unstack(dim='z')
+        lmmap = xr.concat(lmoutmap, dim='z')
+        lmmap['z'] = level1_stack.z
+        sol = lmmap.unstack(dim='z')
+    else: # single pixel
+        lmout = cost_function.find_minima(level1, noise, gmf)
+        sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
-    level2 = xr.Dataset()
-    level2['CurrentVelocity'],  level2['CurrentDirection'] = \
+    level2['CurrentU'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_u')
+    level2['CurrentV'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
+    level2['WindU'] = sol.x.isel(Ambiguities=0).sel(x_variables='u')
+    level2['WindV'] = sol.x.isel(Ambiguities=0).sel(x_variables='v')
+
+    level2['CurrentVelocity'],  cdir = \
         seastar.utils.tools.currentUV2VelDir(
-            sol.x.isel(Ambiguities=0).sel(x_variables='c_u'),
-            sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
+            level2['CurrentU'],
+            level2['CurrentV']
         )
+    level2['CurrentDirection'] = ( (level2['CurrentVelocity'].dims), cdir)
 
-    level2['WindSpeed'],  level2['WindDirection'] = \
+    level2['WindSpeed'], wdir  = \
         seastar.utils.tools.windUV2SpeedDir(
-            sol.x.isel(Ambiguities=0).sel(x_variables='u'),
-            sol.x.isel(Ambiguities=0).sel(x_variables='v')
+            level2['WindU'],
+            level2['WindV']
         )
+    level2['WindDirection'] = ( (level2['WindSpeed'].dims), cdir)
 
 
     # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
