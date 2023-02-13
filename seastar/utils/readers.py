@@ -56,7 +56,8 @@ def _read_DAR_config(date):
     Raises
     ------
     Exception
-        DESCRIPTION.
+        Raises exception if data aquisition date not present in
+        seastarex_DAR_config.ini
 
     Returns
     -------
@@ -127,7 +128,7 @@ def readNetCDFFile(netCFD_path):
     :type netCFD_path: ``str``
 
     :raises: ``ValueError`` if file cannot be read as netCDF and \
-    returns ``None`` object
+        returns ``None`` object
 
     :return: xrray read from the netCDF file
     :rtype: ``xarray``

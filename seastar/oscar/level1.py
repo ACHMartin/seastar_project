@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Functions to calculate L1 data products for the OSCAR airborne SAR instrument.
-
-"""
-
 import numpy as np
 import xarray as xr
 import scipy as sp

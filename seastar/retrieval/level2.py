@@ -23,26 +23,27 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
     Compute Total Surface Current Vector (TSCV) in (m/s) and
     direction (degrees N) in the oceanographic convention (going to).
 
-     Parameters
-     ----------
-     level1 : ``xarray.Dataset``
+    Parameters
+    ----------
+    level1 : ``xarray.Dataset``
         L1 observable noisy dataset (Sigma0, RVL, geometry)
 
-     Returns
-     -------
-     level2 : xarray.Dataset
-         L2 dataset with a new dimension with ambiguity
-         L2.shape (ambiguity, x, y)
-     level2.CurrentMagnitude : xarray.DataArray
-         Magnitude of surface current vector (m/s)
-     level2.CurrentDirection : xarray.DataArray
-         Surface current direction (degrees N) in oceanographic convention (going to)
-    level2.WindSpeed : xarray.DataArray
-         Ocean Surface Wind Speed (m/s)
-     level2.WindDirection : xarray.DataArray
-         Ocean Surface Wind Direction (degrees N) in meteorologic convention (coming from)
-     """
-
+    Returns
+    -------
+    level2 : ``xarray.Dataset``
+        L2 dataset with a new dimension with ambiguity
+        L2.shape (ambiguity, x, y)
+    level2.CurrentMagnitude : ``xarray.DataArray``
+        Magnitude of surface current vector (m/s)
+    level2.CurrentDirection : ``xarray.DataArray``
+        Surface current direction (degrees N) in oceanographic convention
+        (going to)
+    level2.WindSpeed : ``xarray.DataArray``
+        Ocean Surface Wind Speed (m/s)
+    level2.WindDirection : ``xarray.DataArray``
+        Ocean Surface Wind Direction (degrees N) in meteorologic convention
+        (coming from)
+    """
     list_L1s0 = list(level1.Sigma0.dims)
     list_L1s0.remove('Antenna')
 
@@ -79,11 +80,12 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
 
     return level2, sol
 
+
 def compute_current_magnitude_and_direction(level1, level2):
     """
-    Compute surface current magnitude and direction.
+    Compute surface current velocity and direction.
 
-    Compute surface current magnitude (m/s) and direction (degrees N)
+    Compute surface current velocity (m/s) and direction (degrees N)
     from radial surface current (RSC) components measured from two
     orthogonal antennas
 
@@ -96,38 +98,14 @@ def compute_current_magnitude_and_direction(level1, level2):
 
     Returns
     -------
-    level2 : xarray.Dataset
+    level2 : ``xarray.Dataset``
         L2 dataset
-    level2.CurrentMagnitude : xarray.DataArray
-        Magnitude of surface current vector (m/s)
-    level2.CurrentDirection : xarray.DataArray
+    level2.CurrentVelocity : ``xarray.DataArray``
+        Magnitude of surface current velocity vector (m/s)
+    level2.CurrentDirection : ``xarray.DataArray``
         Surface current direction (degrees N) in oceanographic convention
 
     """
-    #antenna_angle = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage -
-    #                       level1.sel(Antenna='Aft').AntennaAzimuthImage,
-    #                       360)
-    #level2['CurrentMagnitude'] = np.sqrt(
-    #    level1.sel(Antenna='Fore').RadialSurfaceCurrent ** 2
-    #    + level1.sel(Antenna='Aft').RadialSurfaceCurrent ** 2)\
-    #    / np.sin(np.radians(antenna_angle))
-
-    #ind_pos = (level1.sel(Antenna='Fore').RadialSurfaceCurrent >
-    #           level1.sel(Antenna='Aft').RadialSurfaceCurrent) *\
-    #    np.cos(np.radians(antenna_angle))
-    # temporary_direction = xr.DataArray(np.empty(ind_pos.shape),
-    #                                    coords=[level2.CrossRange,
-    #                                            level2.GroundRange],
-    #                                    dims=('CrossRange', 'GroundRange'))
-    #temporary_direction = xr.where(ind_pos,
-    #                               np.degrees(np.arccos(
-    #                                   level1.sel(Antenna='Fore').RadialSurfaceCurrent /
-    #                                   level2.CurrentMagnitude)),
-    #                               - np.degrees(np.arccos(
-    #                                   level1.sel(Antenna='Fore').RadialSurfaceCurrent /
-    #                                   level2.CurrentMagnitude)))
-    #level2['CurrentDirection'] = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage
-    #                                    + (-temporary_direction), 360)
     antenna_angle = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage -
                            level1.sel(Antenna='Aft').AntennaAzimuthImage,
                            360)
@@ -182,17 +160,21 @@ def generate_wind_field_from_single_measurement(aux, u10, wind_direction, ds):
 
     Parameters
     ----------
-    level2 : xarray.Dataset
+    level2 : ``xarray.Dataset``
         L2 dataset
-    u10 : Wind velocity at 10m above sea surface (m/s)
-    wind_direction : Wind direction (degrees N) in wind convention
+    u10 : ``float``
+        Wind velocity at 10m above sea surface (m/s)
+    wind_direction : ``float``
+        Wind direction (degrees N) in wind convention
 
     Returns
     -------
-    level2 : xarray.Dataset
+    level2 : ``xarray.Dataset``
         L2 dataset
-    level2.u10Image: 2D field of u10 wind velocities (m/s)
-    level2.WindDirectionImage : 2D field of wind directions (degrees N)
+    level2.u10Image: ``xarray.DataArray``
+        2D field of u10 wind velocities (m/s)
+    level2.WindDirectionImage : ``xarray.DataArray``
+        2D field of wind directions (degrees N)
 
     """
     wind_direction = np.mod(wind_direction - 180, 360)
