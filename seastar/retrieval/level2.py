@@ -7,8 +7,77 @@ Created on Fri Sep 16 16:48:48 2022
 
 import numpy as np
 import xarray as xr
+from seastar.retrieval import cost_function, ambiguity_removal
 import seastar
 
+
+def wind_current_retrieval(level1, noise, gmf, ambiguity):
+    """
+    Compute ocean surface WIND and CURRENT magnitude and direction
+    by minimisation of a cost function.
+
+    Compute Ocean Surface Vector Wind (OSVW) in (m/s) and
+    direction (degrees N) in the meteorological convention (coming from).
+    Assumed neutral wind at 10m.
+
+    Compute Total Surface Current Vector (TSCV) in (m/s) and
+    direction (degrees N) in the oceanographic convention (going to).
+
+     Parameters
+     ----------
+     level1 : ``xarray.Dataset``
+        L1 observable noisy dataset (Sigma0, RVL, geometry)
+
+     Returns
+     -------
+     level2 : xarray.Dataset
+         L2 dataset with a new dimension with ambiguity
+         L2.shape (ambiguity, x, y)
+     level2.CurrentMagnitude : xarray.DataArray
+         Magnitude of surface current vector (m/s)
+     level2.CurrentDirection : xarray.DataArray
+         Surface current direction (degrees N) in oceanographic convention (going to)
+    level2.WindSpeed : xarray.DataArray
+         Ocean Surface Wind Speed (m/s)
+     level2.WindDirection : xarray.DataArray
+         Ocean Surface Wind Direction (degrees N) in meteorologic convention (coming from)
+     """
+
+    list_L1s0 = list(level1.Sigma0.dims)
+    list_L1s0.remove('Antenna')
+
+    level1_stack = level1.stack(z=tuple(list_L1s0))
+    noise_stack = noise.stack(z=tuple(list_L1s0))
+
+    lmoutmap = [None] * level1_stack.z.size
+    for ii, zindex in enumerate(level1_stack.z.data):
+        sl1 = level1_stack.sel(z=zindex)
+        sn = noise_stack.sel(z=zindex)
+        lmout = cost_function.find_minima(sl1, sn, gmf)
+        lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+        lmoutmap[ii] = lmout
+
+    lmmap = xr.concat(lmoutmap, dim='z')
+    sol = lmmap.unstack(dim='z')
+
+    level2 = xr.Dataset()
+    level2['CurrentVelocity'],  level2['CurrentDirection'] = \
+        seastar.utils.tools.currentUV2VelDir(
+            sol.x.isel(Ambiguities=0).sel(x_variables='c_u'),
+            sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
+        )
+
+    level2['WindSpeed'],  level2['WindDirection'] = \
+        seastar.utils.tools.windUV2SpeedDir(
+            sol.x.isel(Ambiguities=0).sel(x_variables='u'),
+            sol.x.isel(Ambiguities=0).sel(x_variables='v')
+        )
+
+
+    # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
+    print('To be done')
+
+    return level2, sol
 
 def compute_current_magnitude_and_direction(level1, level2):
     """
@@ -101,6 +170,7 @@ def compute_current_magnitude_and_direction(level1, level2):
 
 
 def generate_wind_field_from_single_measurement(aux, u10, wind_direction, ds):
+    # TODO this should be moved to scene_generation.py (perhaps to put somewhere else than a "performance" package)
     """
     Generate 2D fields of wind velocity and direction.
 
