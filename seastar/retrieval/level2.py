@@ -131,14 +131,15 @@ def compute_current_magnitude_and_direction(level1, level2):
     antenna_angle = np.mod(level1.sel(Antenna='Fore').AntennaAzimuthImage -
                            level1.sel(Antenna='Aft').AntennaAzimuthImage,
                            360)
-    level2['CurrentMagnitude'] = np.sqrt(
+    level2['CurrentVelocity'] = np.sqrt(
         level1.sel(Antenna='Fore').RadialSurfaceCurrent ** 2
         + level1.sel(Antenna='Aft').RadialSurfaceCurrent ** 2)\
         / np.sin(np.radians(antenna_angle))
-    level2.CurrentMagnitude.attrs['long_name'] =\
-        'Total surface current magnitude for each pixel in the image'
-
-    level2.CurrentMagnitude.attrs['units'] = '[m/s]'
+    level2.CurrentVelocity.attrs['long_name'] =\
+        'Current velocity'
+    level2.CurrentVelocity.attrs['description'] =\
+        'Total surface current velocity for each pixel in the image'
+    level2.CurrentMagnitude.attrs['units'] = 'm/s'
     u_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
         * np.sin(np.radians(level1.sel(Antenna='Fore').AntennaAzimuthImage))
     v_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
@@ -158,11 +159,13 @@ def compute_current_magnitude_and_direction(level1, level2):
 
     level2['CurrentDirection'] = direction_corrected
     level2.CurrentDirection.attrs['long_name'] =\
+        'Current direction'
+    level2.CurrentDirection.attrs['description'] =\
         'Total surface current direction (oceanographic convention)'\
         ' for each pixel in the image'
-    level2.CurrentDirection.attrs['units'] = '[degrees]'
+    level2.CurrentDirection.attrs['units'] = 'deg'
 
-    level2['CurrentMagnitude'] = level2.CurrentMagnitude.assign_coords(
+    level2['CurrentVelocity'] = level2.CurrentVelocity.assign_coords(
         coords={'longitude': level2.longitude, 'latitude': level2.latitude})
     level2['CurrentDirection'] = level2.CurrentDirection.assign_coords(
         coords={'longitude': level2.longitude, 'latitude': level2.latitude})

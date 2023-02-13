@@ -168,15 +168,17 @@ def compute_SLC_Master_Slave(ds):
     """
     ds['SigmaSLCMaster'] = (ds.SigmaImageSingleLookRealPart + 1j *
                             ds.SigmaImageSingleLookImaginaryPart)
-    ds.SigmaSLCMaster.attrs['long_name'] =\
+    ds.SigmaSLCMaster.attrs['long_name'] = 'SLC Master'
+    ds.SigmaSLCMaster.attrs['description'] =\
         'Single Look Complex image, Master antenna'
-    ds.SigmaSLCMaster.attrs['units'] = '[none]'
+    ds.SigmaSLCMaster.attrs['units'] = ''
     if 'SigmaImageSingleLookRealPartSlave' in ds.data_vars:
         ds['SigmaSLCSlave'] = (ds.SigmaImageSingleLookRealPartSlave + 1j *
                                ds.SigmaImageSingleLookImaginaryPartSlave)
+        ds.SigmaSLCSlave.attrs['long_name'] = 'SLC Slave'
         ds.SigmaSLCSlave.attrs['long_name'] =\
             'Single Look Complex image, Slave antenna'
-        ds.SigmaSLCSlave.attrs['units'] = '[none]'
+        ds.SigmaSLCSlave.attrs['units'] = ''
     return ds
 
 
@@ -202,7 +204,7 @@ def add_central_electromagnetic_wavenumber(ds):
     ds['CentralWavenumber'] = 2 * np.pi * ds.CentralFreq / sp.constants.c
     ds.CentralWavenumber.attrs['long_name'] =\
         'Central electromagnetic wavenumber'
-    ds.CentralWavenumber.attrs['units'] = '[radians / m]'
+    ds.CentralWavenumber.attrs['units'] = 'rad / m'
     return ds
 
 
