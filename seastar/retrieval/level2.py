@@ -66,6 +66,8 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
         lmout = cost_function.find_minima(level1, noise, gmf)
         sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
+    level2 = xr.Dataset()
+    level2['x_variables'] = sol.x.isel(Ambiguities=0)
     level2['CurrentU'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_u')
     level2['CurrentV'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
     level2['WindU'] = sol.x.isel(Ambiguities=0).sel(x_variables='u')
