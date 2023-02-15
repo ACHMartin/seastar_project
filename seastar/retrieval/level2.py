@@ -9,7 +9,7 @@ import numpy as np
 import xarray as xr
 from seastar.retrieval import cost_function, ambiguity_removal
 import seastar
-
+import pdb # pdb.set_trace() # where we want to start to debug
 
 def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
@@ -59,8 +59,10 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
             lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
             lmoutmap[ii] = lmout
 
+        # pdb.set_trace()
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap['z'] = level1_stack.z
+        lmmap = lmmap.reset_index('z')
         sol = lmmap.unstack(dim='z')
     else: # single pixel
         lmout = cost_function.find_minima(level1, noise, gmf)
