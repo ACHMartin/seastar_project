@@ -9,10 +9,11 @@ import numpy as np
 import xarray as xr
 from scipy.optimize import least_squares
 import seastar
-from seastar.utils.tools import dotdict
+from seastar.utils.tools import dotdict, da2py
 
 # import seastar.gmfs.doppler
 import pdb
+# pdb.set_trace() # where we want to start to debug
 
 
 def fun_residual(variables, level1, noise, gmf):
@@ -40,10 +41,10 @@ def fun_residual(variables, level1, noise, gmf):
         NaN are replaced by 0
     """
     # Initialisation
-    u = variables[0]
-    v = variables[1]
-    c_u = variables[2]
-    c_v = variables[3]
+    u = da2py(variables[0])
+    v = da2py(variables[1])
+    c_u = da2py(variables[2])
+    c_v = da2py(variables[3])
 
     #TODO if len(variables)==2; inversion of wind only and c_u=0 cf Matalb and find_simple_minimum
     vis_u = u - c_u

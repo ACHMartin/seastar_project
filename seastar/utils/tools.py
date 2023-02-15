@@ -420,6 +420,14 @@ class dotdict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+def da2py(v, include_dims=False):
+    if isinstance(v, xr.DataArray):
+        if include_dims:
+            return (v.dims, v.values)
+        else:
+            return v.values
+    return v
+
 
 def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
                                       erode_scale = 3, coastline_selection=0,):
