@@ -1,4 +1,4 @@
-function [fdc, squint, squintx] = squint_from_netcdf_monostatic(netcdf_fname)
+function [fdc, squint, squintx, fdcg, squintg, squintxg] = squint_from_netcdf_monostatic(netcdf_fname)
 
 fc = opennetcdf(netcdf_fname,'CentralFreq');
 lookdirec = opennetcdf(netcdf_fname,'LookDirection');
@@ -74,6 +74,7 @@ v_z=medfilt2(v_z,[winfx,winfy]);
 clear dt
 
 vnorm=sqrt(v_x.^2+v_y.^2+v_z.^2);
+vnormg=sqrt(v_x.^2+v_y.^2);
 
 
 %compute normalized LOS vector
@@ -85,6 +86,8 @@ los_ux = vetorx./norm;
 los_uy = vetory./norm;
 los_uz = vetorz./norm;
 
+normg=sqrt(vetorx.^2+vetory.^2);
+
 %compute Doppler centroid frequency
 wavelength = physconst('LightSpeed')./fc;
 fdc = (v_x.*los_ux + v_y.*los_uy + v_z.*los_uz)*2/wavelength;
@@ -92,5 +95,12 @@ fdc = (v_x.*los_ux + v_y.*los_uy + v_z.*los_uz)*2/wavelength;
 %fdc = reshape(fdc, size_tgt_lon);
 squint=asin(fdc./(2.*vnorm).*wavelength).*180/pi;
 squintx=-(acos(vetorx./(norm) )-pi/2).*180/pi;
+
+%compute Doppler centroid frequency
+fdcg = (v_x.*vetorx./normg + v_y.*vetory./normg)*2/wavelength;
+
+%fdc = reshape(fdc, size_tgt_lon);
+squintg=asin(fdcg./(2.*vnormg).*wavelength).*180/pi;
+squintxg=-(acos(vetorx./(normg) )-pi/2).*180/pi;
 
 end
