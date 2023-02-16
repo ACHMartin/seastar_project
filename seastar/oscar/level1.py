@@ -571,42 +571,6 @@ def init_auxiliary(level1, u10, wind_direction):
     return aux
 
 
-def generate_wind_field_from_single_measurement(u10, wind_direction, ds):
-    """
-    Generate 2D fields of wind velocity and direction.
-
-    Generate 2D fields of wind velocity u10 (m/s) and direction (degrees) in
-    wind convention from single observations.
-
-    Parameters
-    ----------
-    level2 : xarray.Dataset
-        L2 dataset
-    u10 : Wind velocity at 10m above sea surface (m/s)
-    wind_direction : Wind direction (degrees N) in wind convention
-
-    Returns
-    -------
-    level2 : xarray.Dataset
-        L2 dataset
-    level2.u10Image: 2D field of u10 wind velocities (m/s)
-    level2.WindDirectionImage : 2D field of wind directions (degrees N)
-
-    """
-    wind_direction = np.mod(wind_direction, 360)
-    u10Image = xr.DataArray(
-        np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
-        + u10,
-        coords=[ds.CrossRange, ds.GroundRange],
-        dims=('CrossRange', 'GroundRange'))
-    WindDirectionImage = xr.DataArray(
-        np.zeros((ds.CrossRange.shape[0], ds.GroundRange.shape[0]))
-        + wind_direction,
-        coords=[ds.CrossRange, ds.GroundRange],
-        dims=('CrossRange', 'GroundRange'))
-    return u10Image, WindDirectionImage
-
-
 def replace_dummy_values(ds, dummy_val=-9999, replace=np.NaN):
     """
     Replace dummy values.

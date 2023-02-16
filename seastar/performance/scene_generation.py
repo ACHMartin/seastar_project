@@ -324,10 +324,40 @@ def satellite_looking_geometry(input):
     return sat_geometry
 
 
+def generate_wind_field_from_single_measurement(u10, wind_direction, da):
+    """
+    Generate 2D fields of wind velocity and direction.
 
+    Generate 2D fields of wind velocity u10 (m/s) and direction (degrees) in
+    wind convention from single observations.
 
+    Parameters
+    ----------
+    u10 : ``float``
+        Wind velocity at 10m above sea surface (m/s)
+    wind_direction : ``float``
+        Wind direction (degrees N) in wind convention
+    da : ``xarray.DataArray``
+        DataArray in form (shape, coords, dims) to return wind field in
 
-
-
+    Returns
+    -------
+    u10Image: ``xarray.DataArray``
+        2D field of u10 wind velocities (m/s)
+    WindDirectionImage : ``xarray.DataArray``
+        2D field of wind directions (degrees N)
+    """
+    wind_direction = np.mod(wind_direction, 360)
+    u10Image = xr.DataArray(
+        np.zeros(da.shape)
+        + u10,
+        coords=da.coords,
+        dims=da.dims)
+    WindDirectionImage = xr.DataArray(
+        np.zeros(da.shape)
+        + wind_direction,
+        coords=da.coords,
+        dims=da.dims)
+    return u10Image, WindDirectionImage
 
 
