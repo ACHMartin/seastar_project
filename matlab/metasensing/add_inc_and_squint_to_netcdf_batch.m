@@ -84,9 +84,9 @@ for file = 1 : num_files
             info.Dimensions(find(cell2mat(dim_list(:,1)) == n)).Name, n},...
             'Format','netcdf4')
         ncwrite([file_path, file_name], 'SquintMounted', SquintImage)
-        ncwriteatt([file_path, file_name], 'SquintMounted','long_name','LOS squint')
+        ncwriteatt([file_path, file_name], 'SquintMounted','long_name','Mounted squint')
         ncwriteatt([file_path, file_name], 'SquintMounted','units','deg')
-        ncwriteatt([file_path, file_name], 'SquintMounted','description','Beam squint along the line of sight for each pixel in the image')
+        ncwriteatt([file_path, file_name], 'SquintMounted','description','Beam squint along the line of sight for each pixel in the image. Also called Mounted squint angle')
 
     end
     if sum(ismember(var_list,'OrbitHeadingImage')) == 1 &&...
@@ -113,7 +113,7 @@ for file = 1 : num_files
         ncwrite([file_path, file_name], 'OrbitYawImage', OrbitYawImage)
         ncwriteatt([file_path, file_name], 'OrbitYawImage','long_name','Orbit yaw')
         ncwriteatt([file_path, file_name], 'OrbitYawImage','units','deg')
-        ncwriteatt([file_path, file_name], 'OrbitYawImage','description','Yaw of sensor relative to platform heading along the ground for each pixel in the image')
+        ncwriteatt([file_path, file_name], 'OrbitYawImage','description','Gimbal yaw for each pixel in the image')
     end
 
 end
