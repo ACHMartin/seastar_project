@@ -117,7 +117,7 @@ def compute_current_magnitude_and_direction(level1, level2):
         'Current velocity'
     level2.CurrentVelocity.attrs['description'] =\
         'Total surface current velocity for each pixel in the image'
-    level2.CurrentMagnitude.attrs['units'] = 'm/s'
+    level2.CurrentVelocity.attrs['units'] = 'm/s'
     u_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
         * np.sin(np.radians(level1.sel(Antenna='Fore').AntennaAzimuthImage))
     v_1 = level1.sel(Antenna='Fore').RadialSurfaceCurrent\
