@@ -33,8 +33,8 @@ def fun_residual(variables, level1, noise, gmf):
         dictionary with gmf['nrcs']['name'] and gmf['doppler']['name'] items.
         cf compute_nrcs and compute_wasv for the gmf input
     Returns
-     -------
-     out : ``numpy.array``
+    -------
+    out : ``numpy.array``
         numpy array of size level1.isel(Antenna=0).shape times the sum of Antenna (observation) dimension of Sigma0 + RVL.
         if 4 antennas (Fore, Aft, MidVV, MidHH) for Sigma0 and RVL => 8
         NaN are replaced by 0
@@ -146,9 +146,10 @@ def x2uvcucv(x):
     ----------
     x : ``list`` ``numpy.array``
        array x = [u, v, c_u, c_v]
+
     Returns
     -------
-    out : dotdict
+    out : ``dotdict``
         a dictionary with .u, .v, .c_u, .c_v elements
     """
     out = dotdict({
@@ -165,12 +166,13 @@ def uvcucv2x(mydict):
 
     Parameters
     ----------
-    out : dict or dotdict
+    out : ``dict`` or ``dotdict``
         a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements
     Returns
     -------
     x : ``numpy.array``
        array x = [u, v, c_u, c_v]
+
     """
     x = np.array([
         mydict['u'],
