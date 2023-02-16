@@ -561,7 +561,8 @@ def init_auxiliary(level1, u10, wind_direction):
     "Polarization (1=VV; 2=HH)"
 
     WindSpeed, WindDirection =\
-        generate_wind_field_from_single_measurement(u10,
+        seastar.performance.scene_generation\
+            .generate_wind_field_from_single_measurement(u10,
                                                     wind_direction,
                                                     level1)
     aux = xr.Dataset()
