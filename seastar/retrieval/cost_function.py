@@ -12,8 +12,7 @@ import seastar
 from seastar.utils.tools import dotdict, da2py
 
 # import seastar.gmfs.doppler
-import pdb
-# pdb.set_trace() # where we want to start to debug
+# import pdb # pdb.set_trace() # where we want to start to debug
 
 
 def fun_residual(variables, level1, noise, gmf):
@@ -136,6 +135,7 @@ def find_minima(level1_pixel, noise_pixel, gmf):
 
     dslmout = xr.concat(lmout, dim='Ambiguities')
     dslmout = optionLeastSquares2dataset(opt, dslmout)
+    dslmout = dslmout.assign_coords(level1_pixel.coords)
 
     return dslmout
 

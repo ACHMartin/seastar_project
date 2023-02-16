@@ -7,9 +7,11 @@ Created on Fri Sep 16 16:48:48 2022
 
 import numpy as np
 import xarray as xr
-from seastar.retrieval import cost_function, ambiguity_removal
 import seastar
-import pdb # pdb.set_trace() # where we want to start to debug
+from seastar.retrieval import cost_function, ambiguity_removal
+# from seastar.utils.tools import da2py
+
+# import pdb # pdb.set_trace() # where we want to start to debug
 
 def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
@@ -55,21 +57,24 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
         for ii, zindex in enumerate(level1_stack.z.data):
             sl1 = level1_stack.sel(z=zindex)
             sn = noise_stack.sel(z=zindex)
+            # pdb.set_trace()
             lmout = cost_function.find_minima(sl1, sn, gmf)
             lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
             lmoutmap[ii] = lmout
 
         # pdb.set_trace()
         lmmap = xr.concat(lmoutmap, dim='z')
-        lmmap['z'] = level1_stack.z
-        lmmap = lmmap.reset_index('z')
+        # lmmap['z'] = level1_stack.z
+        # lmmap = lmmap.reset_index('z')
+        lmmap = lmmap.set_index(z=list_L1s0)
         sol = lmmap.unstack(dim='z')
     else: # single pixel
         lmout = cost_function.find_minima(level1, noise, gmf)
         sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
+    # pdb.set_trace()
     level2 = xr.Dataset()
-    level2['x_variables'] = sol.x.isel(Ambiguities=0)
+    level2['x'] = sol.x.isel(Ambiguities=0)
     level2['CurrentU'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_u')
     level2['CurrentV'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
     level2['WindU'] = sol.x.isel(Ambiguities=0).sel(x_variables='u')
