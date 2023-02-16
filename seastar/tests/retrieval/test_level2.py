@@ -110,6 +110,9 @@ def test_wind_current_retrieval(level1_geo_dataset, gmf_mouche):
     geo = level1_geo_dataset['geo']
     noise = level1_geo_dataset['noise']
 
+    L1 = level1.isel(across=slice(0, 2), along=slice(0, 2))
+    N = noise.isel(across=slice(0, 2), along=slice(0, 2))
+
     sL1 = level1.isel(across=slice(0,2), along=0)
     sN = noise.isel(across=slice(0,2), along=0)
 
@@ -121,7 +124,7 @@ def test_wind_current_retrieval(level1_geo_dataset, gmf_mouche):
     ssl2, sslmout = level2.wind_current_retrieval(ssL1, ssN, gmf_mouche, ambiguity)
     ssds = xr.Dataset(
         data_vars=dict(
-            x_variables=(['x_variables'], [-4.50, 7.80, 0.50, -0.86]),
+            x=(['x_variables'], [-4.50, 7.80, 0.50, -0.86]),
             CurrentU=([], 0.50),
             CurrentV=([], -0.86),
             WindU=([], -4.50),
@@ -138,3 +141,36 @@ def test_wind_current_retrieval(level1_geo_dataset, gmf_mouche):
         ssds,
         rtol=0.01
     )
+
+    # Test on full xr.DataSet with 1 dimension
+    # sl2, slmout = level2.wind_current_retrieval(sL1, sN, gmf_mouche, ambiguity)
+    # sds = xr.Dataset(
+    #     data_vars=dict(
+    #         x=(['x_variables'], [-4.50, 7.80, 0.50, -0.86]),
+    #         CurrentU=([], 0.50),
+    #         CurrentV=([], -0.86),
+    #         WindU=([], -4.50),
+    #         WindV=([], 7.80),
+    #         CurrentVelocity=([], 1.00),
+    #         CurrentDirection=([], 150.00),
+    #         WindSpeed=([], 9.00),  # TODO should be 10 if AbsoluteWind, 9 if RelativeWind
+    #         WindDirection=([], 150.00),
+    #     ),
+    # )
+
+    # Test on full xr.DataSet with 2 dimension
+    l2, lmout = level2.wind_current_retrieval(L1, N, gmf_mouche, ambiguity)
+    # ds = xr.Dataset(
+    #     data_vars=dict(
+    #         x=( ['x_variables', 'across', 'along'], [-4.50, 7.80, 0.50, -0.86]),
+    #         CurrentU=([], 0.50),
+    #         CurrentV=([], -0.86),
+    #         WindU=([], -4.50),
+    #         WindV=([], 7.80),
+    #         CurrentVelocity=([], 1.00),
+    #         CurrentDirection=([], 150.00),
+    #         WindSpeed=([], 9.00),  # TODO should be 10 if AbsoluteWind, 9 if RelativeWind
+    #         WindDirection=([], 150.00),
+    #     ),
+    # ) # Don't work as the global minimal is not always found.
+    # should change the kind of test I do here TODO

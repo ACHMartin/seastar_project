@@ -11,7 +11,7 @@ import seastar
 from seastar.retrieval import cost_function, ambiguity_removal
 # from seastar.utils.tools import da2py
 
-# import pdb # pdb.set_trace() # where we want to start to debug
+import pdb # pdb.set_trace() # where we want to start to debug
 
 def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
@@ -62,7 +62,7 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
             lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
             lmoutmap[ii] = lmout
 
-        # pdb.set_trace()
+        pdb.set_trace()
         lmmap = xr.concat(lmoutmap, dim='z')
         # lmmap['z'] = level1_stack.z
         # lmmap = lmmap.reset_index('z')
