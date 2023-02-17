@@ -74,14 +74,20 @@ def merge_beams(ds_dict, antenna_id):
     ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_id))
     key_list = list(ds_dict.keys())
     ds_level1.coords['latitude'] = xr.merge(
-            [ds_dict[key_list[0]].LatImage.dropna(dim='CrossRange'),
-             ds_dict[key_list[1]].LatImage.dropna(dim='CrossRange'),
-             ds_dict[key_list[2]].LatImage.dropna(dim='CrossRange')],
+            [ds_dict[key_list[0]].LatImage
+             .dropna(dim=ds_dict[key_list[0]].LatImage.dims[0]),
+             ds_dict[key_list[1]].LatImage
+             .dropna(dim=ds_dict[key_list[1]].LatImage.dims[0]),
+             ds_dict[key_list[2]].LatImage
+             .dropna(dim=ds_dict[key_list[2]].LatImage.dims[0])],
             ).LatImage
     ds_level1.coords['longitude'] = xr.merge(
-            [ds_dict[key_list[0]].LonImage.dropna(dim='CrossRange'),
-             ds_dict[key_list[1]].LonImage.dropna(dim='CrossRange'),
-             ds_dict[key_list[2]].LonImage.dropna(dim='CrossRange')],
+            [ds_dict[key_list[0]].LonImage
+             .dropna(dim=ds_dict[key_list[0]].LonImage.dims[0]),
+             ds_dict[key_list[1]].LonImage
+             .dropna(dim=ds_dict[key_list[1]].LonImage.dims[0]),
+             ds_dict[key_list[2]].LonImage
+             .dropna(dim=ds_dict[key_list[2]].LonImage.dims[0])],
             ).LonImage
 
     return ds_level1
@@ -237,12 +243,13 @@ def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', '
         ds = compute_SLC_Master_Slave(ds)
     if 'SigmaSLCSlave' not in ds.data_vars:
         ds_out['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster ** 2)\
-            .rolling(GroundRange=window).mean()\
-            .rolling(CrossRange=window).mean()
+            .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean()\
+            .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
     else:
-        ds_out['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
-            .rolling(GroundRange=window).mean()\
-            .rolling(CrossRange=window).mean()
+        ds_out['IntensityAvgComplexMasterSlave'] =\
+            (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
+            .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean()\
+            .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
     ds_out.IntensityAvgComplexMasterSlave.attrs['long_name'] = \
         'Average intensity of Master/Slave SLC'
     ds_out.IntensityAvgComplexMasterSlave.attrs['units'] = ''
@@ -252,16 +259,14 @@ def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', '
         'Absolute single look complex image intensity'
     ds_out.Intensity.attrs['units'] = ''
     if 'SigmaSLCSlave' not in ds.data_vars:
-        # ds_out['Interferogram'] = (
-        #     ['CrossRange', 'GroundRange'],
-        #     np.full(ds_out.IntensityAvgComplexMasterSlave.shape, np.NaN))
+
         ds_out['Interferogram'] = xr.DataArray(data=np.NaN)
         ds_out.Interferogram.attrs['description'] =\
             'Interferogram between master/slave antenna pair.'\
             ' Values set to NaN as no Slave data present in beam dataset'
     else:
         ds_out['Interferogram'] = (
-            ['CrossRange', 'GroundRange'],
+            [ds.SigmaSLCMaster.dims[0], ds.SigmaSLCMaster.dims[1]],
             np.angle(ds_out.IntensityAvgComplexMasterSlave, deg=False)
             )
         ds_out.Interferogram.attrs['description'] =\
@@ -270,13 +275,14 @@ def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', '
     ds_out.Interferogram.attrs['units'] = 'rad'
     if 'SigmaSLCSlave' in ds.data_vars:
         ds_out['IntensityAvgMaster'] = (np.abs(ds.SigmaSLCMaster) ** 2)\
-            .rolling(GroundRange=window).mean()\
-            .rolling(CrossRange=window).mean()
+            .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean()\
+            .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
         ds_out['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
-            .rolling(GroundRange=window).mean()\
-            .rolling(CrossRange=window).mean()
-        ds_out['Coherence'] = ds_out.Intensity / np.sqrt(ds_out.IntensityAvgMaster
-                                                         * ds_out.IntensityAvgSlave)
+            .rolling({ds.SigmaSLCSlave.dims[1]: window}).mean()\
+            .rolling({ds.SigmaSLCSlave.dims[0]: window}).mean()
+        ds_out['Coherence'] =\
+            ds_out.Intensity / np.sqrt(ds_out.IntensityAvgMaster
+                                       * ds_out.IntensityAvgSlave)
     else:
         ds_out['IntensityAvgMaster'] = xr.DataArray(data=np.NaN)
         ds_out['IntensityAvgSlave'] = xr.DataArray(data=np.NaN)
