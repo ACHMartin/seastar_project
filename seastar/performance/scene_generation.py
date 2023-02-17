@@ -36,13 +36,13 @@ def create_scene_dataset(geo, inst):
     inst : ``xarray.Dataset``
         Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
         geometry: antenna, incidence angle, azimuth look direction
-        uncertainty on: NRCS, (Doppler? or RVL?)
+        uncertainty on: NRCS, (Doppler? or RSV?)
 
 
     Returns
     -------
     level1 : ``xarray.Dataset``
-        L1 measurements dataset with data: Sigma0 (NRCS), RVL (Radial Velocity) <= truth + noise
+        L1 measurements dataset with data: Sigma0 (NRCS), RSV (Radial Surface Velocity) <= truth + noise
         and coordinates: longitude, latitude, antenna, incidence angle, azimuth look direction
         and attributes: (if needed)
         L1.shape (antenna, across, along)
@@ -50,7 +50,7 @@ def create_scene_dataset(geo, inst):
         same as truth but with noise values and longitude and latitude
     truth :
         same as geo but with direct model measurements and longitude, latitude
-        - direct model measurements: NRCS, RVL (including attributes concerning the model used and its attributes)
+        - direct model measurements: NRCS, RSV (including attributes concerning the model used and its attributes)
     """
 
     gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
@@ -80,32 +80,39 @@ def truth_fct(geo, inst, gmf):
         Antenna is required
         Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
         geometry: antenna, incidence angle, azimuth look direction
-        uncertainty on: NRCS, (Doppler? or RVL?)
+        uncertainty on: NRCS, (Doppler? or RSV?)
 
 
     Returns
     -------
     truth : ``xarray.DataArray`` list
         with WindSpeed, wdir, cvel, cdir, u, v, c_u, c_v, vis_u, vis_v,
-             sigma0, rvl
+             sigma0, RSV
     """
 
-    truth = xr.merge([inst, geo])
-    truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(inst, geo, gmf.nrcs)
+    truth = xr.broadcast(inst, geo)[0]
+
+
+    truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(truth, geo, gmf.nrcs)
 
     # TODO below, to enable to compute this without a loop through the antenna;
-    rvl_list = [None] * inst.Antenna.size
-    for aa, ant in enumerate(inst.Antenna.data):
-        rvl_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(
-            inst.sel(Antenna=ant),
+    rsv_list = [None] * truth.Antenna.size
+    for aa, ant in enumerate(truth.Antenna.data):
+        rsv_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(
+            truth.sel(Antenna=ant),
             geo,
             gmf=gmf.doppler.name
         )
-    truth['RVL'] = xr.concat(rvl_list, dim='Antenna')
+    truth['RSV'] = xr.concat(rsv_list, dim='Antenna')
+    truth.RSV.attrs['long_name'] = 'Radial Surface Velocity'
+    truth.RSV.attrs['units'] = 'm/s'
+
+    truth = xr.merge([truth, geo])
+    truth.attrs['gmf'] = gmf
 
     truth = truth.set_coords([
-        # 'CentralWavenumber',
-        # 'CentralFreq',
+        'CentralWavenumber',
+        'CentralFreq',
         'IncidenceAngleImage',
         'AntennaAzimuthImage',
         'Polarization',
@@ -144,8 +151,8 @@ def uncertainty_fct( truth, uncertainty):
     uncerty = uncertainty
     uncerty['Sigma0'] = truth.Sigma0 * uncerty.Kp
 
-    # noise = xr.broadcast(uncerty[['Sigma0', 'RVL']], truth)[0]
-    noise = uncerty[['Sigma0', 'RVL']]
+    noise = xr.broadcast(uncerty[['Sigma0', 'RSV']], truth)[0]
+    # noise = uncerty[['Sigma0', 'RSV']]
 
     print("To Be Done - uncertainty function")
 
@@ -196,9 +203,12 @@ def noise_generation(truth, noise):
 
     rng = np.random.default_rng()
     level1['Sigma0'] = truth.Sigma0 \
-                       + noise.Sigma0 * rng.standard_normal(size=noise.Sigma0.shape) # Draw samples from a standard Normal distribution (mean=0, stdev=1).
-    level1['RVL'] = truth.RVL \
-                       + noise.RVL * rng.standard_normal(size=noise.RVL.shape)
+                       + noise.Sigma0 * rng.standard_normal(size=truth.Sigma0.shape) # Draw samples from a standard Normal distribution (mean=0, stdev=1).
+    level1['RSV'] = truth.RSV \
+                    + noise.RSV * rng.standard_normal(size=truth.RSV.shape)
+
+    level1.RSV.attrs['long_name'] = 'Radial Surface Velocity'
+    level1.RSV.attrs['units'] = 'm/s'
 
     return level1
 
