@@ -65,7 +65,7 @@ def create_scene_dataset(geo, inst):
     return level1, truth_out, inst_out
 
 
-def truth_fct(geo, inst):
+def truth_fct(geo, inst, gmf):
     """
 
     Should work for all dimension; same behavior than xarray with dimension between geo and inst
@@ -77,6 +77,7 @@ def truth_fct(geo, inst):
         - geophysical parameters: WindSpeed, WindDirection, CurrentVel, CurrentDir, others (waves)
         - geographic coordinates: longitude, latitude (optional?)
     inst : ``xarray.Dataset``
+        Antenna is required
         Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
         geometry: antenna, incidence angle, azimuth look direction
         uncertainty on: NRCS, (Doppler? or RVL?)
@@ -84,23 +85,35 @@ def truth_fct(geo, inst):
 
     Returns
     -------
-    truth : ``xarray.Dataset``
+    truth : ``xarray.DataArray`` list
         with WindSpeed, wdir, cvel, cdir, u, v, c_u, c_v, vis_u, vis_v,
              sigma0, rvl
     """
 
-    truth_out['Sigma0'] = ss.gmfs.nrcs.compute_nrcs(inst, geo, gmf.nrcs)
+    truth = xr.merge([inst, geo])
+    truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(inst, geo, gmf.nrcs)
 
     # TODO below, to enable to compute this without a loop through the antenna;
-    for aa, ant in enumerate(level1.Antenna.data):
-        model_rvl_list[aa] = ss.gmfs.doppler.compute_total_surface_motion(inst.sel(Antenna=ant), geo,
-                                                                          gmf=gmf.doppler.name)
-    truth_out['RVL'] = xr.concat(model_rvl_list, dim='Antenna')
+    rvl_list = [None] * inst.Antenna.size
+    for aa, ant in enumerate(inst.Antenna.data):
+        rvl_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(
+            inst.sel(Antenna=ant),
+            geo,
+            gmf=gmf.doppler.name
+        )
+    truth['RVL'] = xr.concat(rvl_list, dim='Antenna')
+
+    truth = truth.set_coords([
+        # 'CentralWavenumber',
+        # 'CentralFreq',
+        'IncidenceAngleImage',
+        'AntennaAzimuthImage',
+        'Polarization',
+    ])
 
     # truth.msg_uv = sprintf('u: %1.0f, v: %1.0f; c_u: %2.1f, c_v: %2.1f', truth.u, truth.v, truth.c_u, truth.c_v);
     # truth.msg_vel = sprintf('wind: %2.1f, %3.0f^o, cur.: %2.1f, %3.0f^o', truth.wspd, truth.wdir, truth.cvel,
     #                         truth.cdir);
-
 
     return truth
 
@@ -128,7 +141,13 @@ def uncertainty_fct( truth, uncertainty):
 
     """
 
-    print("To Be Done")
+    uncerty = uncertainty
+    uncerty['Sigma0'] = truth.Sigma0 * uncerty.Kp
+
+    # noise = xr.broadcast(uncerty[['Sigma0', 'RVL']], truth)[0]
+    noise = uncerty[['Sigma0', 'RVL']]
+
+    print("To Be Done - uncertainty function")
 
     # from matlab_my_toolbox/wind_current_inversion/uncertainty_fct.m
     ##########################
@@ -162,11 +181,26 @@ def uncertainty_fct( truth, uncertainty):
     # un_sig0_prctg = uncerty.Kp;
     # un_dop = uncerty.dop;
 
+    return uncerty, noise
 
 
-    return uncertainty
+def noise_generation(truth, noise):
+    """
 
+    :param truth:
+    :param noise:
+    :return:
+    """
 
+    level1 = noise.drop_vars(noise.data_vars)
+
+    rng = np.random.default_rng()
+    level1['Sigma0'] = truth.Sigma0 \
+                       + noise.Sigma0 * rng.standard_normal(size=noise.Sigma0.shape) # Draw samples from a standard Normal distribution (mean=0, stdev=1).
+    level1['RVL'] = truth.RVL \
+                       + noise.RVL * rng.standard_normal(size=noise.RVL.shape)
+
+    return level1
 
 
 def satellite_looking_geometry(input):
