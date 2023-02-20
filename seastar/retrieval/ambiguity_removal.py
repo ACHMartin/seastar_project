@@ -57,13 +57,13 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
     )
     err.coords['x_reduce'] = ['uv','c_uv']
 
-    ind = dict({
+    ind_dict = dict({
         'windcurrent': err.dist_x_reduce.sum(dim='x_reduce').argmin(dim='Ambiguities'),
         'wind': err.dist_x_reduce.sel(x_reduce='uv').argmin(dim='Ambiguities'),
         'current': err.dist_x_reduce.sel(x_reduce='c_uv').argmin(dim='Ambiguities'),
     })
 
-    return ind
+    return ind_dict
 
 def ambiguity_sort_by_cost(lmout):
     """
@@ -82,24 +82,41 @@ def ambiguity_sort_by_cost(lmout):
 
 
 
-def solve_ambiguity(lmout, ambiguity):
+def solve_ambiguity(lmout, truth, ambiguity):
     """
-    As function of:
-    - cost values: chi2
-    - closest to truth
-    ...
-method='windcurrent',
-
-
+    Send back the solution after resolving the ambiguities following
+    the algorithm defined in the ambiguity dictionary.
+    Parameters
+    ----------
+    ambiguity : ``dict``
+        Dictionary with keys 'name':
+        - name == 'sort_by_cost'
+        - name == 'closest_truth'
+            additional key 'method' within 'windcurrent' (default), 'wind', 'current'
+            optional argument 'windcurrentratio' default == 10
+    Returns
+    ----------
+    sol : ``xarray.Dataset``
+        solution with ambiguities resolved
     """
+    if ambiguity['name'] == 'sort_by_cost':
+        index = ambiguity_sort_by_cost(lmout)
+        sol = lmout.isel(Ambiguities=index)
+    elif ambiguity['name'] == 'closest_truth':
+        if 'method' not in ambiguity:
+            ambiguity['method'] = 'windcurrent'
+        elif ambiguity['method'] not in ['windcurrent', 'wind', 'current']:
+            raise Exception("ambiguity.method should be 'windcurrent', 'wind' or 'current'")
+        if 'windcurrentratio' not in ambiguity:
+            ambiguity['windcurrentratio'] = 10
+        elif ambiguity['windcurrentratio'] < 0:
+            raise Exception("ambiguity.windcurrentratio should be positive")
+        index_dict = ambiguity_closest_to_truth(lmout, truth, windcurrentratio=windcurrentratio)
+        sol = lmout.isel(Ambiguities=index_dict[ambiguity['method']])
+    else:
+        raise Exception("ambiguity.name should be 'sort_by_cost' or 'closest_truth'")
 
-    if ambiguity == 'sort_by_cost':
-        lmout = ambiguity_sort_by_cost(lmout)
-
-
-    print("To Be Done - solve_ambiguity")
-
-    return lmout
+    return sol
 
 
 
