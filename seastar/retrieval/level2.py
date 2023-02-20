@@ -13,7 +13,7 @@ from seastar.retrieval import cost_function, ambiguity_removal
 
 import pdb # pdb.set_trace() # where we want to start to debug
 
-def wind_current_retrieval(level1, truth, noise, gmf, ambiguity):
+def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
     Compute ocean surface WIND and CURRENT magnitude and direction
     by minimisation of a cost function.
@@ -48,7 +48,7 @@ def wind_current_retrieval(level1, truth, noise, gmf, ambiguity):
     """
 
     lmout = run_find_minima(level1, noise, gmf)
-    sol = ambiguity_removal.solve_ambiguity(lmout, truth, ambiguity)
+    sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
     level2 = level1.drop_vars(level1.data_vars)
     level2['x'] = sol.x#.isel(Ambiguities=0)
@@ -74,7 +74,7 @@ def wind_current_retrieval(level1, truth, noise, gmf, ambiguity):
     # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
     print('To be done')
 
-    return level2, sol
+    return level2
 
 
 def run_find_minima(level1, noise, gmf):
