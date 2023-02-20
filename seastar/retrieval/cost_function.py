@@ -331,6 +331,8 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
     """
 
     # Intern Function initialisation TODO to update using the original matlab code below
+    # TODO, instead of this function, we can calculate the wind ambiguities;
+    #  calculate the WASV component for each, then current = total_motion - wasv
     WS = np.array([5,10])
     dte_coef = 0.03 # to update with matlab code below diff(WASV)/diff(WS)
     def smooth(x):
