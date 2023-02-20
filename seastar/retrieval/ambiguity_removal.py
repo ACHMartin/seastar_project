@@ -48,7 +48,7 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
         'x_variables'
     )
 
-    err = truth - lmout # keep only the 'x' variable
+    err = mytruth - lmout # keep only the 'x' variable
 
     err['dist_x_reduce'] = xr.concat(
         [err.x.sel(x_variables='u')**2 + err.x.sel(x_variables='v')**2,
@@ -116,7 +116,7 @@ def solve_ambiguity(lmout, ambiguity):
             raise Exception("ambiguity['method'] should be 'windcurrent', 'wind' or 'current'")
         if 'windcurrentratio' not in ambiguity:
             ambiguity['windcurrentratio'] = 10
-        elif ambiguity['windcurrentratio'] < 0:
+        elif not ambiguity['windcurrentratio'] > 0:
             raise Exception("ambiguity.windcurrentratio should be positive")
         if 'truth' not in ambiguity:
             raise Exception("ambiguity['truth'] HAVE to be provided for closest_truth method with"
