@@ -53,6 +53,12 @@ def merge_beams(ds_dict, antenna_id):
     Generate a combined-look-direction OSCAR L1 dataset from separate
     look directions and add a corresponding 'Antenna' dimension and coordinate.
 
+    Adds `longitude` and `latitude` coordinates to merged dataset.
+
+    Requires a ``dict`` of OSCAR L1 ``xarray.Dataset``, containing the
+    ``xarray.DataArray``s `LonImage` and `LatImage`. These arrays must be 2D,
+    with only two dimensions.
+
     Parameters
     ----------
     ds : ``dict``
@@ -75,19 +81,25 @@ def merge_beams(ds_dict, antenna_id):
     key_list = list(ds_dict.keys())
     ds_level1.coords['latitude'] = xr.merge(
             [ds_dict[key_list[0]].LatImage
-             .dropna(dim=ds_dict[key_list[0]].LatImage.dims[0]),
+             .dropna(dim=ds_dict[key_list[0]].LatImage.dims[0])
+             .dropna(dim=ds_dict[key_list[0]].LatImage.dims[1]),
              ds_dict[key_list[1]].LatImage
-             .dropna(dim=ds_dict[key_list[1]].LatImage.dims[0]),
+             .dropna(dim=ds_dict[key_list[1]].LatImage.dims[0])
+             .dropna(dim=ds_dict[key_list[1]].LatImage.dims[1]),
              ds_dict[key_list[2]].LatImage
-             .dropna(dim=ds_dict[key_list[2]].LatImage.dims[0])],
+             .dropna(dim=ds_dict[key_list[2]].LatImage.dims[0])
+             .dropna(dim=ds_dict[key_list[2]].LatImage.dims[1])],
             ).LatImage
     ds_level1.coords['longitude'] = xr.merge(
             [ds_dict[key_list[0]].LonImage
-             .dropna(dim=ds_dict[key_list[0]].LonImage.dims[0]),
+             .dropna(dim=ds_dict[key_list[0]].LonImage.dims[0])
+             .dropna(dim=ds_dict[key_list[0]].LonImage.dims[1]),
              ds_dict[key_list[1]].LonImage
-             .dropna(dim=ds_dict[key_list[1]].LonImage.dims[0]),
+             .dropna(dim=ds_dict[key_list[1]].LonImage.dims[0])
+             .dropna(dim=ds_dict[key_list[1]].LonImage.dims[1]),
              ds_dict[key_list[2]].LonImage
-             .dropna(dim=ds_dict[key_list[2]].LonImage.dims[0])],
+             .dropna(dim=ds_dict[key_list[2]].LonImage.dims[0])
+             .dropna(dim=ds_dict[key_list[2]].LonImage.dims[1])],
             ).LonImage
 
     return ds_level1
@@ -209,9 +221,21 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', 'Interferogram', 'Coherence']):
+def compute_multilooking_Master_Slave(ds, window=3,
+                                      vars_to_send=['Intensity',
+                                                    'Interferogram',
+                                                    'Coherence']):
     """
-    Calculate multilooking Master/Slave L1b image products.
+    Compute  multilooking Master/Slave L1b image products.
+
+    Computes multilooking ATI variables from L1 variables present in an
+    ``xarray.Dataset``. As a minimum must contain the following 2D
+    ``xarray.DataArray``s:
+        - `SigmaImageSingleLookRealPart`
+        - `SigmaImageSingleLookImaginaryPart`
+    Optionally, `ds` must include:
+        - `SigmaImageSingleLookRealPartSlave`
+        - `SigmaImageSingleLookImaginaryPartSlave`
 
     Parameters
     ----------
@@ -221,23 +245,36 @@ def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', '
         Integer averaging window size. The default is 3.
     vars_to_send:  list
         default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
-        can in addition take among: 'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'
+        can in addition take among: 'IntensityAvgComplexMasterSlave',
+        'IntensityAvgMaster', 'IntensityAvgSlave'
 
     Returns
     -------
     ds_out : ``xarray.Dataset``
         Dataset containing computed L1b variables
 
+    Raises
+    ------
+    Exception
+        Raises exception if `vars_to_send` is not within:
+            ['Intensity', 'Interferogram', 'Coherence',
+             'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster',
+             'IntensityAvgSlave']
+    Exception
+        Raises exception if `SigmaImageSingleLookRealPart` is not a 2D variable
     """
-
     list_vars_to_send = set(['Intensity', 'Interferogram', 'Coherence',
-                         'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'])
+                             'IntensityAvgComplexMasterSlave',
+                            'IntensityAvgMaster', 'IntensityAvgSlave'])
     vars_to_send = set(vars_to_send)
     if len(vars_to_send.difference(list_vars_to_send)) > 0:
-        raise Exception("vars_to_send should be within the following variables "
+        raise Exception("vars_to_send should be within the following variables"
                         "'Intensity', 'Interferogram', 'Coherence',"
                         "'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'")
 
+    if len(ds.SigmaImageSingleLookRealPart.dims) > 2:
+        raise Exception("The variable SigmaImageSingleLookRealPart is not a"
+                        "2D variable. Please check this variable's dimensions")
     ds_out = xr.Dataset()
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
@@ -266,7 +303,7 @@ def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', '
             ' Values set to NaN as no Slave data present in beam dataset'
     else:
         ds_out['Interferogram'] = (
-            [ds.SigmaSLCMaster.dims[0], ds.SigmaSLCMaster.dims[1]],
+            ds.SigmaSLCMaster.dims,
             np.angle(ds_out.IntensityAvgComplexMasterSlave, deg=False)
             )
         ds_out.Interferogram.attrs['description'] =\
@@ -341,11 +378,17 @@ def compute_antenna_azimuth_direction(ds, antenna, return_heading=False):
 
     Returns
     -------
-
     AntennaAzimuthImage : ``xr.DataArray``
         Antenna beam azimuth of each image pixel (degrees from North)
     OrbitHeadingImage : ``xr.DataArray``, optional
         Aircraft heading of each image pixel (degrees from North)
+
+    Raises
+    ------
+    Exception
+        Raises exception if `antenna` not in `['Fore', 'Aft', 'Mid']`
+    Exception
+        Raises exception if `SquintImage` not present in input `ds`
 
     """
     if antenna not in ['Fore', 'Aft', 'Mid']:
@@ -401,10 +444,14 @@ def compute_time_lag_Master_Slave(ds, options):
 
     Returns
     -------
-
     TimeLag : ``float``, ``xr.DataArray``
         Time lag tau between Master/Slave images (s)
 
+    Raises
+    ------
+    Exception
+        Raises exception if `options` not in the form 'from_SAR_time',
+        'from_aircraft_velocity'
     """
     if options not in ['from_SAR_time', 'from_aircraft_velocity']:
         raise Exception('Unknown time lag computation method: Please refer to'
@@ -445,15 +492,18 @@ def compute_radial_surface_velocity(ds_ml):
 
     Returns
     -------
-
     RadialSuraceVelocity : ``float``, ``xr.DataArray``
         Surface velocity (m/s) along a radar beam radial
-    """
 
+    Raises
+    ------
+    Exception
+        Raises exception if `IncidenceAngleImage` not present in input dataset
+    """
     if 'CentralWavenumber' not in ds_ml.data_vars:
         ds_ml = add_central_electromagnetic_wavenumber(ds_ml)
     if 'IncidenceAngleImage' not in ds_ml:
-        raise Exception('WARNING: Incidence Angle not present in dataset.'
+        raise Exception('WARNING: IncidenceAngleImage not present in dataset.'
                         'Computation not possible. please check dataset used'
                         'for input')
     RadialSurfaceVelocity = ds_ml.Interferogram /\
