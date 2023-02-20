@@ -78,24 +78,25 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
         sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
     level2 = level1.drop_vars(level1.data_vars)
-    # level2 = xr.Dataset()
     level2['x'] = sol.x.isel(Ambiguities=0)
-    level2['CurrentU'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_u')
-    level2['CurrentV'] = sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
-    level2['WindU'] = sol.x.isel(Ambiguities=0).sel(x_variables='u')
-    level2['WindV'] = sol.x.isel(Ambiguities=0).sel(x_variables='v')
+    level2['CurrentU'] = level2.x.sel(x_variables='c_u')
+    level2['CurrentV'] = level2.x.sel(x_variables='c_v')
+    level2['WindU'] = level2.x.sel(x_variables='u')
+    level2['WindV'] = level2.x.sel(x_variables='v')
 
-    [level2['CurrentVelocity'],  level2['CurrentDirection']] = \
+    [level2['CurrentVelocity'],  cdir] = \
         seastar.utils.tools.currentUV2VelDir(
             level2['CurrentU'],
             level2['CurrentV']
         )
+    level2['CurrentDirection'] = (level2.CurrentVelocity.dims, cdir)
 
-    [level2['WindSpeed'], level2['WindDirection']] = \
+    [level2['WindSpeed'], wdir] = \
         seastar.utils.tools.windUV2SpeedDir(
             level2['WindU'],
             level2['WindV']
         )
+    level2['WindDirection'] = (level2.WindSpeed.dims, wdir)
 
     # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
     print('To be done')
