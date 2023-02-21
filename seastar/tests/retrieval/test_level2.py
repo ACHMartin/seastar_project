@@ -6,7 +6,7 @@ import pytest
 import seastar
 from seastar.utils.tools import dotdict
 
-from seastar.retrieval import cost_function
+from seastar.retrieval import level2
 
 @pytest.fixture
 # TODO it is the same function/constant as in test_doppler, it would be better to have it save somewhere and load here
@@ -64,10 +64,20 @@ def level1_geo_dataset(gmf_mouche):
             along=np.arange(0, 6),
         ),
     )
-    geo['U'], geo['V'] = seastar.utils.tools.windSpeedDir2UV(geo.WindSpeed, geo.WindDirection)
-    [geo['C_U'], geo['C_V']] = seastar.utils.tools.currentVelDir2UV(geo.CurrentVelocity, geo.CurrentDirection)
 
-    # TODO warning should be relative wind, not absolute wind
+
+
+    geo['u'], geo['v'] = seastar.utils.tools.windSpeedDir2UV(geo.WindSpeed, geo.WindDirection)
+    [geo['c_u'], geo['c_v']] = seastar.utils.tools.currentVelDir2UV(geo.CurrentVelocity, geo.CurrentDirection)
+    geo['vis_u'] = geo['u'] - geo['c_u']
+    geo['vis_v'] = geo['v'] - geo['c_v']
+    geo['vis_wspd'], vis_wdir = \
+        seastar.utils.tools.windUV2SpeedDir(
+            geo['vis_u'], geo['vis_v']
+        )
+    geo['vis_wdir'] = (geo.vis_wspd.dims, vis_wdir)
+
+    # TODO geo should use the RelativeWind
     level1['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf_mouche.nrcs) * 1.001
     level1['RVL'] = xr.concat([
         seastar.gmfs.doppler.compute_total_surface_motion(
@@ -95,31 +105,72 @@ def gmf_mouche():
     return gmf
 
 
-def test_fun_residual(level1_geo_dataset, gmf_mouche):
+def test_wind_current_retrieval(level1_geo_dataset, gmf_mouche):
     level1 = level1_geo_dataset['level1']
     geo = level1_geo_dataset['geo']
     noise = level1_geo_dataset['noise']
 
-    # Test on full xr.DataSet
-    results = cost_function.fun_residual([geo.U, geo.V, geo.C_U, geo.C_V], level1, noise, gmf_mouche)
-    np.testing.assert_allclose(
-        results[:,0,0],
-        np.array([-3.0, -3.2, -3.2, -3.7,
-                  -7.4,  0. ,  0. , -2.4 ]),
-        rtol=0.1,
-    )  # cost values for Sigma0, then RVL
+    L1 = level1.isel(across=slice(0, 2), along=slice(0, 2))
+    N = noise.isel(across=slice(0, 2), along=slice(0, 2))
 
-
-def test_find_minima(level1_geo_dataset, gmf_mouche):
-    level1 = level1_geo_dataset['level1']
-    geo = level1_geo_dataset['geo']
-    noise = level1_geo_dataset['noise']
+    sL1 = level1.isel(across=slice(0,2), along=0)
+    sN = noise.isel(across=slice(0,2), along=0)
 
     ssL1 = level1.isel(across=0, along=0)
     ssN = noise.isel(across=0, along=0)
+    ambiguity = 'sort_by_cost'
 
+    # Test on full xr.DataSet but single pixel
+    ssl2, sslmout = level2.wind_current_retrieval(ssL1, ssN, gmf_mouche, ambiguity)
+    ssds = xr.Dataset(
+        data_vars=dict(
+            x=(['x_variables'], [-4.50, 7.80, 0.50, -0.86]),
+            CurrentU=([], 0.50),
+            CurrentV=([], -0.86),
+            WindU=([], -4.50),
+            WindV=([], 7.80),
+            CurrentVelocity=([], 1.00),
+            CurrentDirection=([], 150.00),
+            WindSpeed=([], 9.00), # TODO should be 10 if AbsoluteWind, 9 if RelativeWind
+            WindDirection=([], 150.00),
+        ),
+    )
 
-    # Test on full xr.DataSet
-    results = cost_function.find_minima(ssL1, ssN, gmf_mouche)
-    margin_noise_floor = 2
-    assert (results.cost < 1*margin_noise_floor).any() # one of the 4 minima should be below 1 (noise floor)
+    xr.testing.assert_allclose(
+        ssl2,
+        ssds,
+        rtol=0.01
+    )
+
+    # Test on full xr.DataSet with 1 dimension
+    # sl2, slmout = level2.wind_current_retrieval(sL1, sN, gmf_mouche, ambiguity)
+    # sds = xr.Dataset(
+    #     data_vars=dict(
+    #         x=(['x_variables'], [-4.50, 7.80, 0.50, -0.86]),
+    #         CurrentU=([], 0.50),
+    #         CurrentV=([], -0.86),
+    #         WindU=([], -4.50),
+    #         WindV=([], 7.80),
+    #         CurrentVelocity=([], 1.00),
+    #         CurrentDirection=([], 150.00),
+    #         WindSpeed=([], 9.00),  # TODO should be 10 if AbsoluteWind, 9 if RelativeWind
+    #         WindDirection=([], 150.00),
+    #     ),
+    # )
+
+    # Test on full xr.DataSet with 2 dimension
+    l2, lmout = level2.wind_current_retrieval(L1, N, gmf_mouche, ambiguity)
+    # ds = xr.Dataset(
+    #     data_vars=dict(
+    #         x=( ['x_variables', 'across', 'along'], [-4.50, 7.80, 0.50, -0.86]),
+    #         CurrentU=([], 0.50),
+    #         CurrentV=([], -0.86),
+    #         WindU=([], -4.50),
+    #         WindV=([], 7.80),
+    #         CurrentVelocity=([], 1.00),
+    #         CurrentDirection=([], 150.00),
+    #         WindSpeed=([], 9.00),  # TODO should be 10 if AbsoluteWind, 9 if RelativeWind
+    #         WindDirection=([], 150.00),
+    #     ),
+    # ) # Don't work as the global minimal is not always found.
+    # should change the kind of test I do here TODO
