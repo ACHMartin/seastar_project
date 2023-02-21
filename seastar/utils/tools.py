@@ -547,3 +547,9 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
                         dims=da.dims,
                         coords=da.coords)
     return mask
+
+def lin2db(lin):
+    return 10*np.log10(lin)
+
+def db2lin(db):
+    return 10**(db/10)
