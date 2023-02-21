@@ -7,9 +7,11 @@ Created on Fri Sep 16 16:48:48 2022
 
 import numpy as np
 import xarray as xr
-from seastar.retrieval import cost_function, ambiguity_removal
 import seastar
+from seastar.retrieval import cost_function, ambiguity_removal
+# from seastar.utils.tools import da2py
 
+# import pdb # pdb.set_trace() # where we want to start to debug
 
 def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
@@ -44,41 +46,86 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
         Ocean Surface Wind Direction (degrees N) in meteorologic convention
         (coming from)
     """
-    list_L1s0 = list(level1.Sigma0.dims)
-    list_L1s0.remove('Antenna')
 
-    level1_stack = level1.stack(z=tuple(list_L1s0))
-    noise_stack = noise.stack(z=tuple(list_L1s0))
+    lmout = run_find_minima(level1, noise, gmf)
+    sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
-    lmoutmap = [None] * level1_stack.z.size
-    for ii, zindex in enumerate(level1_stack.z.data):
-        sl1 = level1_stack.sel(z=zindex)
-        sn = noise_stack.sel(z=zindex)
-        lmout = cost_function.find_minima(sl1, sn, gmf)
-        lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
-        lmoutmap[ii] = lmout
+    level2 = level1.drop_vars(level1.data_vars)
+    level2['x'] = sol.x#.isel(Ambiguities=0)
+    level2['CurrentU'] = level2.x.sel(x_variables='c_u')
+    level2['CurrentV'] = level2.x.sel(x_variables='c_v')
+    level2['WindU'] = level2.x.sel(x_variables='u')
+    level2['WindV'] = level2.x.sel(x_variables='v')
 
-    lmmap = xr.concat(lmoutmap, dim='z')
-    sol = lmmap.unstack(dim='z')
-
-    level2 = xr.Dataset()
-    level2['CurrentVelocity'],  level2['CurrentDirection'] = \
+    [level2['CurrentVelocity'],  cdir] = \
         seastar.utils.tools.currentUV2VelDir(
-            sol.x.isel(Ambiguities=0).sel(x_variables='c_u'),
-            sol.x.isel(Ambiguities=0).sel(x_variables='c_v')
+            level2['CurrentU'],
+            level2['CurrentV']
         )
+    level2['CurrentDirection'] = (level2.CurrentVelocity.dims, cdir)
 
-    level2['WindSpeed'],  level2['WindDirection'] = \
+    [level2['WindSpeed'], wdir] = \
         seastar.utils.tools.windUV2SpeedDir(
-            sol.x.isel(Ambiguities=0).sel(x_variables='u'),
-            sol.x.isel(Ambiguities=0).sel(x_variables='v')
+            level2['WindU'],
+            level2['WindV']
         )
-
+    level2['WindDirection'] = (level2.WindSpeed.dims, wdir)
 
     # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
     print('To be done')
 
-    return level2, sol
+    return level2
+
+
+def run_find_minima(level1, noise, gmf):
+    """
+    Run find minima on xD dimension DataSet.
+    Parameters
+    ----------
+    level1 : ``xarray.Dataset``
+        L1 observables noisy dataset (Sigma0, RSV, geometry)
+    noise : ``xarray.Dataset``
+        Defined noise with data_vars "Sigma0", "RSV" on the same grid as level1
+    gmf : ``dict``
+    Returns
+    -------
+    sol : ``xarray.Dataset``
+        x dimension dataset of find_minima output containing among other ".x = [u,v,c_u,c_v]" and ".cost"
+        with dimension along "Ambiguities" of size=4 by construction.
+    """
+    list_L1s0 = list(level1.Sigma0.dims)
+    list_L1s0.remove('Antenna')
+
+    if len(list_L1s0) > 1:  # 2d or more
+        level1_stack = level1.stack(z=tuple(list_L1s0))
+        noise_stack = noise.stack(z=tuple(list_L1s0))
+
+        lmoutmap = [None] * level1_stack.z.size
+        for ii, zindex in enumerate(level1_stack.z.data):
+            sl1 = level1_stack.sel(z=zindex)
+            sn = noise_stack.sel(z=zindex)
+            lmout = cost_function.find_minima(sl1, sn, gmf)  # <- Take CPU time
+            # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+            lmoutmap[ii] = lmout
+        lmmap = xr.concat(lmoutmap, dim='z')
+        lmmap = lmmap.set_index(z=list_L1s0)
+        sol = lmmap.unstack(dim='z')
+    elif len(list_L1s0) == 1:  # 1d
+        length = level1[list_L1s0[0]].size
+        lmoutmap = [None] * length
+        for ii in range(length):
+            sl1 = level1.isel({list_L1s0[0]: ii})
+            sn = noise.isel({list_L1s0[0]: ii})
+            lmout = cost_function.find_minima(sl1, sn, gmf)
+            # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+            lmoutmap[ii] = lmout
+        sol = xr.concat(lmoutmap, dim=list_L1s0[0])
+    else:  # single pixel
+        sol = cost_function.find_minima(level1, noise, gmf)
+        # sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+
+    return sol
+
 
 
 def compute_current_magnitude_and_direction(level1, level2):

@@ -9,10 +9,10 @@ import numpy as np
 import xarray as xr
 from scipy.optimize import least_squares
 import seastar
-from seastar.utils.tools import dotdict
+from seastar.utils.tools import dotdict, da2py
 
 # import seastar.gmfs.doppler
-import pdb
+# import pdb # pdb.set_trace() # where we want to start to debug
 
 
 def fun_residual(variables, level1, noise, gmf):
@@ -26,24 +26,24 @@ def fun_residual(variables, level1, noise, gmf):
         [u, v, c_u, c_v]; u, v, c_u, c_v being floats
     level1 : ``xarray.Dataset``
         level1 dataset with "Antenna" as a dimension, with the mandatory following fields:
-         "IncidenceAngleImage", "RVL", "Sigma0"
+         "IncidenceAngleImage", "RSV", "Sigma0"
     noise : ``xarray.Dataset``
-        Noise DataSet with fields "RVL" and "Sigma0" of the same size as level1
+        Noise DataSet with fields "RSV" and "Sigma0" of the same size as level1
     gmf: dict or dotdict
         dictionary with gmf['nrcs']['name'] and gmf['doppler']['name'] items.
         cf compute_nrcs and compute_wasv for the gmf input
     Returns
     -------
     out : ``numpy.array``
-        numpy array of size level1.isel(Antenna=0).shape times the sum of Antenna (observation) dimension of Sigma0 + RVL.
-        if 4 antennas (Fore, Aft, MidVV, MidHH) for Sigma0 and RVL => 8
+        numpy array of size level1.isel(Antenna=0).shape times the sum of Antenna (observation) dimension of Sigma0 + RSV.
+        if 4 antennas (Fore, Aft, MidVV, MidHH) for Sigma0 and RSV => 8
         NaN are replaced by 0
     """
     # Initialisation
-    u = variables[0]
-    v = variables[1]
-    c_u = variables[2]
-    c_v = variables[3]
+    u = da2py(variables[0])
+    v = da2py(variables[1])
+    c_u = da2py(variables[2])
+    c_v = da2py(variables[3])
 
     #TODO if len(variables)==2; inversion of wind only and c_u=0 cf Matalb and find_simple_minimum
     vis_u = u - c_u
@@ -69,27 +69,27 @@ def fun_residual(variables, level1, noise, gmf):
         geo = geo.drop_vars('Antenna')
 
     # paragraph below to be changed in future without the loop for Antenna
-    model_rvl_list = [None] * level1.Antenna.size
+    model_rsv_list = [None] * level1.Antenna.size
     for aa, ant in enumerate(level1.Antenna.data):
         # print(aa, ant)
-        model_rvl_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(level1.sel(Antenna=ant), geo, gmf=gmf['doppler']['name'])
-        # print(model_rvl_list[aa])
-    model['RVL'] = xr.concat(model_rvl_list, dim='Antenna')
-    # in future it should be: model['RVL'] = seastar.gmfs.doppler.compute_total_surface_motion(level1, geo, gmf=gmf.doppler) without the loop on antennas
+        model_rsv_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(level1.sel(Antenna=ant), geo, gmf=gmf['doppler']['name'])
+        # print(model_rsv_list[aa])
+    model['RSV'] = xr.concat(model_rsv_list, dim='Antenna')
+    # in future it should be: model['RSV'] = seastar.gmfs.doppler.compute_total_surface_motion(level1, geo, gmf=gmf.doppler) without the loop on antennas
 
     model['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf=gmf['nrcs'])
 
-    res = ( level1 - model ) / noise # DataSet with RVL and Sigma0 fields
+    res = ( level1 - model ) / noise # DataSet with RSV and Sigma0 fields
 
     sigma0_axis_num = level1.Sigma0.get_axis_num('Antenna')
-    rvl_axis_num = level1.RVL.get_axis_num('Antenna')
-    if sigma0_axis_num == rvl_axis_num:
+    rsv_axis_num = level1.RSV.get_axis_num('Antenna')
+    if sigma0_axis_num == rsv_axis_num:
         concat_axis = sigma0_axis_num
     else:
-        raise Exception('Different axis in Antenna for Sigma0 and RVL')
+        raise Exception('Different axis in Antenna for Sigma0 and RSV')
 
     out = np.concatenate(
-        (res.Sigma0.data, res.RVL.data),
+        (res.Sigma0.data, res.RSV.data),
         axis=concat_axis,
     )
 
@@ -135,6 +135,7 @@ def find_minima(level1_pixel, noise_pixel, gmf):
 
     dslmout = xr.concat(lmout, dim='Ambiguities')
     dslmout = optionLeastSquares2dataset(opt, dslmout)
+    dslmout = dslmout.assign_coords(level1_pixel.coords)
 
     return dslmout
 
@@ -227,7 +228,7 @@ def optionLeastSquares2dataset(opt, dslmout):
 def optimizeResults2dataset(lmout, x0, level1):
     d = dict()
     d['x_variables'] = {"dims": "x_variables", "data": np.array(['u', 'v', 'c_u', 'c_v'])}
-    d['Observables'] = {"dims": "Observables", "data": np.array(['sigma0', 'RVL'])}
+    d['Observables'] = {"dims": "Observables", "data": np.array(['sigma0', 'RSV'])}
     # d['fun_variables'] = {"dims": "fun_variables", "data": range(8)}
     d['Antenna'] = {"dims": "Antenna", "data": level1.Antenna.data}
     d['fun_variables'] = {"dims": ("Observables", "Antenna"), "data": np.array([range(0,4), range(4,8)])}
@@ -330,6 +331,8 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
     """
 
     # Intern Function initialisation TODO to update using the original matlab code below
+    # TODO, instead of this function, we can calculate the wind ambiguities;
+    #  calculate the WASV component for each, then current = total_motion - wasv
     WS = np.array([5,10])
     dte_coef = 0.03 # to update with matlab code below diff(WASV)/diff(WS)
     def smooth(x):
@@ -462,8 +465,8 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
 #                           ),
 #             Sigma0=( ['across','along','Antenna'], np.full([10,10,4], 1.01) ),
 #             dsig0=( ['across','along','Antenna'], np.full([10,10,4], 0.05) ),
-#             RVL=( ['across','along','Antenna'], np.full([10,10,4], 0.5) ),
-#             drvl=( ['across','along','Antenna'], np.full([10,10,4], 0.01) ),
+#             RSV=( ['across','along','Antenna'], np.full([10,10,4], 0.5) ),
+#             dRSV=( ['across','along','Antenna'], np.full([10,10,4], 0.01) ),
 #         )
 #
 #     )

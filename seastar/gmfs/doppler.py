@@ -133,7 +133,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     # Initialisation
     central_wavelength = seastar.utils.tools.wavenumber2wavelength(
         L1.CentralWavenumber
-    )
+    ) # TODO used only in Yurovsky -> to move to the if
 
     if len(L1.AntennaAzimuthImage.shape) > 2:
         raise Exception('L1.AntennaAzimuthImage need to be a 2D field. \n'

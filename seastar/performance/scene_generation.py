@@ -36,13 +36,13 @@ def create_scene_dataset(geo, inst):
     inst : ``xarray.Dataset``
         Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
         geometry: antenna, incidence angle, azimuth look direction
-        uncertainty on: NRCS, (Doppler? or RVL?)
+        uncertainty on: NRCS, (Doppler? or RSV?)
 
 
     Returns
     -------
     level1 : ``xarray.Dataset``
-        L1 measurements dataset with data: Sigma0 (NRCS), RVL (Radial Velocity) <= truth + noise
+        L1 measurements dataset with data: Sigma0 (NRCS), RSV (Radial Surface Velocity) <= truth + noise
         and coordinates: longitude, latitude, antenna, incidence angle, azimuth look direction
         and attributes: (if needed)
         L1.shape (antenna, across, along)
@@ -50,7 +50,7 @@ def create_scene_dataset(geo, inst):
         same as truth but with noise values and longitude and latitude
     truth :
         same as geo but with direct model measurements and longitude, latitude
-        - direct model measurements: NRCS, RVL (including attributes concerning the model used and its attributes)
+        - direct model measurements: NRCS, RSV (including attributes concerning the model used and its attributes)
     """
 
     gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
@@ -65,7 +65,7 @@ def create_scene_dataset(geo, inst):
     return level1, truth_out, inst_out
 
 
-def truth_fct(geo, inst):
+def truth_fct(geo, inst, gmf):
     """
 
     Should work for all dimension; same behavior than xarray with dimension between geo and inst
@@ -77,30 +77,50 @@ def truth_fct(geo, inst):
         - geophysical parameters: WindSpeed, WindDirection, CurrentVel, CurrentDir, others (waves)
         - geographic coordinates: longitude, latitude (optional?)
     inst : ``xarray.Dataset``
+        Antenna is required
         Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
         geometry: antenna, incidence angle, azimuth look direction
-        uncertainty on: NRCS, (Doppler? or RVL?)
+        uncertainty on: NRCS, (Doppler? or RSV?)
 
 
     Returns
     -------
-    truth : ``xarray.Dataset``
+    truth : ``xarray.DataArray`` list
         with WindSpeed, wdir, cvel, cdir, u, v, c_u, c_v, vis_u, vis_v,
-             sigma0, rvl
+             sigma0, RSV
     """
 
-    truth_out['Sigma0'] = ss.gmfs.nrcs.compute_nrcs(inst, geo, gmf.nrcs)
+    truth = xr.broadcast(inst, geo)[0]
+
+
+    truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(truth, geo, gmf.nrcs)
 
     # TODO below, to enable to compute this without a loop through the antenna;
-    for aa, ant in enumerate(level1.Antenna.data):
-        model_rvl_list[aa] = ss.gmfs.doppler.compute_total_surface_motion(inst.sel(Antenna=ant), geo,
-                                                                          gmf=gmf.doppler.name)
-    truth_out['RVL'] = xr.concat(model_rvl_list, dim='Antenna')
+    rsv_list = [None] * truth.Antenna.size
+    for aa, ant in enumerate(truth.Antenna.data):
+        rsv_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(
+            truth.sel(Antenna=ant),
+            geo,
+            gmf=gmf.doppler.name
+        )
+    truth['RSV'] = xr.concat(rsv_list, dim='Antenna')
+    truth.RSV.attrs['long_name'] = 'Radial Surface Velocity'
+    truth.RSV.attrs['units'] = 'm/s'
+
+    truth = xr.merge([truth, geo])
+    truth.attrs['gmf'] = gmf
+
+    truth = truth.set_coords([
+        'CentralWavenumber',
+        'CentralFreq',
+        'IncidenceAngleImage',
+        'AntennaAzimuthImage',
+        'Polarization',
+    ])
 
     # truth.msg_uv = sprintf('u: %1.0f, v: %1.0f; c_u: %2.1f, c_v: %2.1f', truth.u, truth.v, truth.c_u, truth.c_v);
     # truth.msg_vel = sprintf('wind: %2.1f, %3.0f^o, cur.: %2.1f, %3.0f^o', truth.wspd, truth.wdir, truth.cvel,
     #                         truth.cdir);
-
 
     return truth
 
@@ -128,7 +148,13 @@ def uncertainty_fct( truth, uncertainty):
 
     """
 
-    print("To Be Done")
+    uncerty = uncertainty
+    uncerty['Sigma0'] = truth.Sigma0 * uncerty.Kp
+
+    noise = xr.broadcast(uncerty[['Sigma0', 'RSV']], truth)[0]
+    # noise = uncerty[['Sigma0', 'RSV']]
+
+    print("To Be Done - uncertainty function")
 
     # from matlab_my_toolbox/wind_current_inversion/uncertainty_fct.m
     ##########################
@@ -162,11 +188,29 @@ def uncertainty_fct( truth, uncertainty):
     # un_sig0_prctg = uncerty.Kp;
     # un_dop = uncerty.dop;
 
+    return uncerty, noise
 
 
-    return uncertainty
+def noise_generation(truth, noise):
+    """
 
+    :param truth:
+    :param noise:
+    :return:
+    """
 
+    level1 = noise.drop_vars(noise.data_vars)
+
+    rng = np.random.default_rng()
+    level1['Sigma0'] = truth.Sigma0 \
+                       + noise.Sigma0 * rng.standard_normal(size=truth.Sigma0.shape) # Draw samples from a standard Normal distribution (mean=0, stdev=1).
+    level1['RSV'] = truth.RSV \
+                    + noise.RSV * rng.standard_normal(size=truth.RSV.shape)
+
+    level1.RSV.attrs['long_name'] = 'Radial Surface Velocity'
+    level1.RSV.attrs['units'] = 'm/s'
+
+    return level1
 
 
 def satellite_looking_geometry(input):
