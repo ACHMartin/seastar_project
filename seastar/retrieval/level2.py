@@ -28,8 +28,10 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
     Parameters
     ----------
     level1 : ``xarray.Dataset``
-        L1 observable noisy dataset (Sigma0, RVL, geometry)
-
+        L1 observable noisy dataset (Sigma0, RSV, geometry)
+    noise : ``xarray.Dataset``
+    gmf : ``dict``
+    ambiguity : ``dict``
     Returns
     -------
     level2 : ``xarray.Dataset``
@@ -50,14 +52,31 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
     lmout = run_find_minima(level1, noise, gmf)
     sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
-    level2 = level1.drop_vars(level1.data_vars)
-    level2['x'] = sol.x#.isel(Ambiguities=0)
+    level2 = sol2level2(sol)
+
+    return level2
+
+def sol2level2(sol):
+    """
+    Convert solution.x into WindU, WindV, WindSpeed, WindCurrent, CurrentU, V, Velocity, Direction
+
+    Parameters
+    ----------
+    sol : ``xarray.Dataset``
+        solution without ambiguities with ".x" field
+    Returns
+    -------
+    level2 : ``xarray.Dataset``
+    """
+    level2 = sol.drop_vars(sol.data_vars)
+    level2['x'] = sol.x  # .isel(Ambiguities=0)
+    level2['cost'] = sol.cost
     level2['CurrentU'] = level2.x.sel(x_variables='c_u')
     level2['CurrentV'] = level2.x.sel(x_variables='c_v')
     level2['WindU'] = level2.x.sel(x_variables='u')
     level2['WindV'] = level2.x.sel(x_variables='v')
 
-    [level2['CurrentVelocity'],  cdir] = \
+    [level2['CurrentVelocity'], cdir] = \
         seastar.utils.tools.currentUV2VelDir(
             level2['CurrentU'],
             level2['CurrentV']
@@ -71,11 +90,7 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
         )
     level2['WindDirection'] = (level2.WindSpeed.dims, wdir)
 
-    # Wrap Up function for find_minima, should be similar input/output than compute_magnitude...
-    print('To be done')
-
     return level2
-
 
 def run_find_minima(level1, noise, gmf):
     """
@@ -105,6 +120,7 @@ def run_find_minima(level1, noise, gmf):
             sl1 = level1_stack.sel(z=zindex)
             sn = noise_stack.sel(z=zindex)
             lmout = cost_function.find_minima(sl1, sn, gmf)  # <- Take CPU time
+            lmout = lmout.sortby('cost')
             # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
             lmoutmap[ii] = lmout
         lmmap = xr.concat(lmoutmap, dim='z')
@@ -117,11 +133,13 @@ def run_find_minima(level1, noise, gmf):
             sl1 = level1.isel({list_L1s0[0]: ii})
             sn = noise.isel({list_L1s0[0]: ii})
             lmout = cost_function.find_minima(sl1, sn, gmf)
+            lmout = lmout.sortby('cost')
             # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
             lmoutmap[ii] = lmout
         sol = xr.concat(lmoutmap, dim=list_L1s0[0])
     else:  # single pixel
         sol = cost_function.find_minima(level1, noise, gmf)
+        sol = sol.sortby('cost')
         # sol = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
 
     return sol
