@@ -526,52 +526,31 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
 
     Parameters
     ----------
-    level1 : xarray.Dataset
+    level1 : ``xarray.Dataset``
         L1 dataset
-    aux : xarray.Dataset
+    aux : ``xarray.Dataset``
         Dataset containing geophysical wind data
-    gmf : str, optional
+    gmf : ``str``, optional
         Choice of geophysical model function to compute the WASV.
         The default is 'mouche12'.
 
     Returns
     -------
-    level2 : xarray.Dataset
-        L2 dataset
+    rsc : ``xarray.DataArray``
+        Radial Surface Current
 
     """
-    dswasv = seastar.gmfs.doppler.compute_wasv(level1,
-                                               aux,
-                                               gmf
-                                               )
-    rsv_list = [level1.RadialSurfaceVelocity.sel(Antenna=a)
-                - dswasv.sel(Antenna=a)
-                for a in list(level1.Antenna.data)
-                ]
-#    warnings.warn(
-#        "WARNING: Applying direction convention correction on the Aft beam,"
-#        "Be aware this may be an obsolete correction in the future and will"
-#        "lead to an error in retrieved current direction."
-#    )
-#    rsv_list[list(level1.Antenna.data).index('Aft')] = \
-#        -level1.RadialSurfaceVelocity.sel(Antenna='Aft')\
-#        - dswasv.sel(Antenna='Aft')
-    level1['RadialSurfaceCurrent'] = xr.concat(rsv_list,
-                                               'Antenna',
-                                               join='outer')
-    level1['RadialSurfaceCurrent'] = level1.RadialSurfaceCurrent\
-        .assign_coords(Antenna=('Antenna',
-                                list(level1.Antenna.data)
-                                )
-                       )
-    level1.RadialSurfaceCurrent.attrs['long_name'] =\
+    dswasv = seastar.gmfs.doppler.compute_wasv(level1, aux, gmf)
+    rsc = level1.RadialSurfaceVelocity - dswasv
+
+    rsc.attrs['long_name'] =\
         'Radial Surface Current'
-    level1.RadialSurfaceCurrent.attrs['description'] =\
+    rsc.attrs['description'] =\
         'Radial Surface Current (RSC) along antenna beam direction, corrected'\
         'for Wind Artifact Surface Velocity (WASV)'
-    level1.RadialSurfaceCurrent.attrs['units'] = 'm/s'
+    rsc.attrs['units'] = 'm/s'
 
-    return level1
+    return rsc
 
 
 def init_level2(level1):

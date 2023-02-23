@@ -11,6 +11,31 @@ from shapely.geometry import Point
 from scipy.ndimage import binary_erosion as erode
 # import seastar
 
+
+def add_version(ds, attr='seastar_version'):
+    """
+    Add code version to dataset.
+
+    Reads the _version.py file in the seastar main repository and adds
+    the __version__ number as an attribute.
+
+    Parameters
+    ----------
+    ds : ``xarray.Dataset``
+        Dataset processed with the seastar package.
+    attr : ``str``, optional
+        Name of the attribute to write the `__version__` number to.
+        The default is 'seastar_version'.
+
+    Returns
+    -------
+    ds : ``xarray.Dataset``
+        Dataset processed with the seastar package.
+    """
+    from _version import __version__
+    ds.attrs[attr] = __version__
+    return ds
+
 def currentVelDir2UV(vel, cdir):
     """
     Compute current vector components from direction and magnitude.
