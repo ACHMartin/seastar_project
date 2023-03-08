@@ -131,10 +131,6 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     """
 
     # Initialisation
-    central_wavelength = seastar.utils.tools.wavenumber2wavelength(
-        L1.CentralWavenumber
-    ) # TODO used only in Yurovsky -> to move to the if
-
     if len(L1.AntennaAzimuthImage.shape) > 2:
         raise Exception('L1.AntennaAzimuthImage need to be a 2D field. \n'
                         'Use e.g. L1.sel(Antenna="Fore") to reduce to '
@@ -184,6 +180,11 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         )
 
     elif gmf == 'yurovsky19':
+        if 'CentralWavenumber' not in L1:
+            L1 = seastar.level1.add_central_electromagnetic_wavenumber(L1) # TODO should return a dataArray not the dataSet, should directly calculate the wavelength
+        central_wavelength = seastar.utils.tools.wavenumber2wavelength(
+            L1.CentralWavenumber
+        )
         dc = dict()
         [dc['VV'], dc['HH']] = yurovsky19(
             L1.IncidenceAngleImage,
