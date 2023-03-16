@@ -120,6 +120,41 @@ def windUV2SpeedDir(u, v):
     wdir = np.mod(-90 - np.angle(tmp) * 180 / np.pi, 360)
     return wspd, wdir
 
+
+def EarthRelativeSpeedDir2all(ds):
+    """
+    Convert a dictionary with Earth Relative wind to Ocean Surface Wind
+
+    Parameters
+    ----------
+    mydict : ``xarray.Dataset``
+        a dictionary with ['EarthRelativeWindSpeed'], ['EarthRelativeWindDirection'], ['CurrentVelocity'], ['CurrentDirection'] elements
+    Returns
+    -------
+    mydict : ``xarray.Dataset``
+        a dictionary with previous fields + OceanSurfaceWind elements
+    """
+
+    [ds['CurrentU'], ds['CurrentV']] = \
+        currentVelDir2UV(
+            ds['CurrentVelocity'],
+            ds['CurrentDirection']
+        )
+    [ds['EarthRelativeWindU'], ds['EarthRelativeWindV']] = \
+        windSpeedDir2UV(
+            ds['EarthRelativeWindSpeed'],
+            ds['EarthRelativeWindDirection']
+        )
+    ds['OceanSurfaceWindU'] = ds['EarthRelativeWindU'] - ds['CurrentU']
+    ds['OceanSurfaceWindV'] = ds['EarthRelativeWindV'] - ds['CurrentV']
+    [ds['OceanSurfaceWindSpeed'], ds['OceanSurfaceWindDirection']] = \
+        windUV2SpeedDir(
+            ds['OceanSurfaceWindU'],
+            ds['OceanSurfaceWindV']
+        )
+
+    return ds
+
 def windCurrentUV2all(mydict):
     """
     Convert a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements to
