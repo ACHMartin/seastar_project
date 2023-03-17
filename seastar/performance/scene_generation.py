@@ -111,7 +111,7 @@ def truth_fct(geo, inst, gmf):
     truth.attrs['gmf'] = gmf
 
     truth = truth.set_coords([
-        'CentralWavenumber',
+        # 'CentralWavenumber',
         'CentralFreq',
         'IncidenceAngleImage',
         'AntennaAzimuthImage',
