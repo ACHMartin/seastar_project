@@ -108,7 +108,9 @@ def truth_fct(geo, inst, gmf):
     truth.RSV.attrs['units'] = 'm/s'
 
     truth = xr.merge([truth, geo])
-    truth.attrs['gmf'] = gmf
+    # truth.attrs['gmf'] = gmf
+    truth.attrs['gmf_nrcs'] = gmf['nrcs']['name']
+    truth.attrs['gmf_doppler'] = gmf['doppler']['name']
 
     truth = truth.set_coords([
         # 'CentralWavenumber',
