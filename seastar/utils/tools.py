@@ -147,11 +147,12 @@ def EarthRelativeSpeedDir2all(ds):
         )
     ds['OceanSurfaceWindU'] = ds['EarthRelativeWindU'] - ds['CurrentU']
     ds['OceanSurfaceWindV'] = ds['EarthRelativeWindV'] - ds['CurrentV']
-    [ds['OceanSurfaceWindSpeed'], ds['OceanSurfaceWindDirection']] = \
+    [ds['OceanSurfaceWindSpeed'], oswdir ] = \
         windUV2SpeedDir(
             ds['OceanSurfaceWindU'],
             ds['OceanSurfaceWindV']
         )
+    ds['OceanSurfaceWindDirection'] = ( ds['OceanSurfaceWindSpeed'].dims, oswdir)
 
     return ds
 
