@@ -44,7 +44,7 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
         #                   )
         pol_val = seastar.utils.tools.polarizationStr2Val(L1.Polarization)
 
-        if gmf.name == 'nscat4ds':
+        if gmf['name'] == 'nscat4ds':
             nrcs_data = nscat4ds(
                 aux_geo.WindSpeed.values,
                 relative_wind_direction.values,
@@ -52,7 +52,7 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
                 pol_val.values
             )
         else:
-            raise Exception('Error, unknown gmf, gmf.name should be nscat4ds')
+            raise Exception('Error, unknown gmf, gmf["name"] should be nscat4ds')
 
         if len(nrcs_data) == 1: # bug if nrcs_data is of len = 1 for DataArray creation
             nrcs_data = nrcs_data[0]
