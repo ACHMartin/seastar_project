@@ -93,7 +93,7 @@ def truth_fct(geo, inst, gmf):
     truth = xr.broadcast(inst, geo)[0]
 
 
-    truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(truth, geo, gmf.nrcs)
+    truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(truth, geo, gmf['nrcs'])
 
     # TODO below, to enable to compute this without a loop through the antenna;
     rsv_list = [None] * truth.Antenna.size
@@ -101,7 +101,7 @@ def truth_fct(geo, inst, gmf):
         rsv_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(
             truth.sel(Antenna=ant),
             geo,
-            gmf=gmf.doppler.name
+            gmf=gmf['doppler']['name']
         )
     truth['RSV'] = xr.concat(rsv_list, dim='Antenna')
     truth.RSV.attrs['long_name'] = 'Radial Surface Velocity'
