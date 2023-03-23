@@ -4,7 +4,7 @@ Created on Fri Sep 16 16:48:48 2022
 
 @author: admartin, dlmccann
 """
-
+import multiprocessing
 import numpy as np
 import xarray as xr
 import seastar
@@ -12,6 +12,34 @@ from seastar.retrieval import cost_function, ambiguity_removal
 # from seastar.utils.tools import da2py
 
 # import pdb # pdb.set_trace() # where we want to start to debug
+
+def task(element):
+    """
+    Parallel processing task
+    
+    Defines the task to be passed to multiprocessing.map() for MPI
+
+    Parameters
+    ----------
+    element : ``xr.Dataset``
+        Dataset containing  `level1`, `noise` and `gmf` data
+
+    Returns
+    -------
+    lmout : ``xr.Dataset``
+        Dataset containing minima information from least squares
+
+    """
+    sl1 = element['level1']
+    sn = element['noise']
+    gmf = element['gmf']
+    lmout = cost_function.find_minima(sl1,
+                                      sn,
+                                      gmf,
+                                      )
+    lmout = lmout.sortby('cost')
+    return lmout
+
 
 def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
@@ -31,6 +59,7 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
         L1 observable noisy dataset (Sigma0, RSV, geometry)
     noise : ``xarray.Dataset``
     gmf : ``dict``
+        Dict of dicts containing names of the `doppler` and `nrcs` gmfs
     ambiguity : ``dict``
     Returns
     -------
@@ -114,15 +143,26 @@ def run_find_minima(level1, noise, gmf):
     if len(list_L1s0) > 1:  # 2d or more
         level1_stack = level1.stack(z=tuple(list_L1s0))
         noise_stack = noise.stack(z=tuple(list_L1s0))
+        input_mp = [None] * level1_stack.z.size
+        for ii in range(level1_stack.z.size):
+            input_mp[ii] = dict({
+                'level1': level1_stack.isel(z=ii),
+                'noise': noise_stack.isel(z=ii),
+                'gmf': gmf,
 
-        lmoutmap = [None] * level1_stack.z.size
-        for ii, zindex in enumerate(level1_stack.z.data):
-            sl1 = level1_stack.sel(z=zindex)
-            sn = noise_stack.sel(z=zindex)
-            lmout = cost_function.find_minima(sl1, sn, gmf)  # <- Take CPU time
-            lmout = lmout.sortby('cost')
-            # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
-            lmoutmap[ii] = lmout
+            })
+
+        with multiprocessing.Pool() as pool:
+            lmoutmap = pool.map(task, input_mp)
+
+#        lmoutmap = [None] * level1_stack.z.size
+#        for ii, zindex in enumerate(level1_stack.z.data):
+#            sl1 = level1_stack.sel(z=zindex)
+#            sn = noise_stack.sel(z=zindex)
+#            lmout = cost_function.find_minima(sl1, sn, gmf_doppler, gmf_nrcs)  # <- Take CPU time
+#            lmout = lmout.sortby('cost')
+#            # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
+#            lmoutmap[ii] = lmout
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap = lmmap.set_index(z=list_L1s0)
         sol = lmmap.unstack(dim='z')

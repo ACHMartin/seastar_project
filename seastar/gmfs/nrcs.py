@@ -44,7 +44,7 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
         #                   )
         pol_val = seastar.utils.tools.polarizationStr2Val(L1.Polarization)
 
-        if gmf.name == 'nscat4ds':
+        if gmf['name'] == 'nscat4ds':
             nrcs_data = nscat4ds(
                 aux_geo.WindSpeed.values,
                 relative_wind_direction.values,
