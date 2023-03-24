@@ -13,7 +13,7 @@ from seastar.retrieval import cost_function, ambiguity_removal
 
 # import pdb # pdb.set_trace() # where we want to start to debug
 
-def task(element):
+def find_minima_parallel_task(element):
     """
     Parallel processing task
     
@@ -139,7 +139,8 @@ def run_find_minima(level1, noise, gmf):
     """
     list_L1s0 = list(level1.Sigma0.dims)
     list_L1s0.remove('Antenna')
-
+    
+    # Vectorize input data for parallel implementation
     if len(list_L1s0) > 1:  # 2d or more
         level1_stack = level1.stack(z=tuple(list_L1s0))
         noise_stack = noise.stack(z=tuple(list_L1s0))
@@ -151,18 +152,10 @@ def run_find_minima(level1, noise, gmf):
                 'gmf': gmf,
 
             })
-
+        
         with multiprocessing.Pool() as pool:
-            lmoutmap = pool.map(task, input_mp)
+            lmoutmap = pool.map(find_minima_parallel_task, input_mp)
 
-#        lmoutmap = [None] * level1_stack.z.size
-#        for ii, zindex in enumerate(level1_stack.z.data):
-#            sl1 = level1_stack.sel(z=zindex)
-#            sn = noise_stack.sel(z=zindex)
-#            lmout = cost_function.find_minima(sl1, sn, gmf_doppler, gmf_nrcs)  # <- Take CPU time
-#            lmout = lmout.sortby('cost')
-#            # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
-#            lmoutmap[ii] = lmout
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap = lmmap.set_index(z=list_L1s0)
         sol = lmmap.unstack(dim='z')
