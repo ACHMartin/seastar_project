@@ -121,9 +121,11 @@ def sol2level2(sol):
 
     return level2
 
+
 def run_find_minima(level1, noise, gmf):
     """
     Run find minima on xD dimension DataSet.
+
     Parameters
     ----------
     level1 : ``xarray.Dataset``
@@ -134,12 +136,13 @@ def run_find_minima(level1, noise, gmf):
     Returns
     -------
     sol : ``xarray.Dataset``
-        x dimension dataset of find_minima output containing among other ".x = [u,v,c_u,c_v]" and ".cost"
+        x dimension dataset of find_minima output containing among other
+        ".x = [u,v,c_u,c_v]" and ".cost"
         with dimension along "Ambiguities" of size=4 by construction.
     """
     list_L1s0 = list(level1.Sigma0.dims)
     list_L1s0.remove('Antenna')
-    
+
     # Vectorize input data for parallel implementation
     if len(list_L1s0) > 1:  # 2d or more
         level1_stack = level1.stack(z=tuple(list_L1s0))
@@ -152,7 +155,7 @@ def run_find_minima(level1, noise, gmf):
                 'gmf': gmf,
 
             })
-        
+
         with multiprocessing.Pool() as pool:
             lmoutmap = pool.map(find_minima_parallel_task, input_mp)
 
@@ -160,16 +163,20 @@ def run_find_minima(level1, noise, gmf):
         lmmap = lmmap.set_index(z=list_L1s0)
         sol = lmmap.unstack(dim='z')
     elif len(list_L1s0) == 1:  # 1d
-        length = level1[list_L1s0[0]].size
-        lmoutmap = [None] * length
-        for ii in range(length):
-            sl1 = level1.isel({list_L1s0[0]: ii})
-            sn = noise.isel({list_L1s0[0]: ii})
-            lmout = cost_function.find_minima(sl1, sn, gmf)
-            lmout = lmout.sortby('cost')
-            # lmout = ambiguity_removal.solve_ambiguity(lmout, ambiguity)
-            lmoutmap[ii] = lmout
-        sol = xr.concat(lmoutmap, dim=list_L1s0[0])
+        dim_name = [d for d in list_L1s0][0]
+        list_len = [level1.dims[d] for d in list_L1s0][0]
+        input_mp = [None] * list_len
+        for ii in range(list_len):
+            input_mp[ii] = dict({
+                'level1': level1.isel({i: ii for i in list_L1s0}),
+                'noise': noise.isel({i: ii for i in list_L1s0}),
+                'gmf': gmf,
+            })
+        with multiprocessing.Pool() as pool:
+            lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+
+        sol = xr.concat(lmoutmap, dim=dim_name)
+        sol = sol.set_index({dim_name: dim_name})
     else:  # single pixel
         sol = cost_function.find_minima(level1, noise, gmf)
         sol = sol.sortby('cost')
