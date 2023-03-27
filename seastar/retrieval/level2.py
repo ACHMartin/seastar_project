@@ -163,13 +163,13 @@ def run_find_minima(level1, noise, gmf):
         lmmap = lmmap.set_index(z=list_L1s0)
         sol = lmmap.unstack(dim='z')
     elif len(list_L1s0) == 1:  # 1d
-        dim_name = [d for d in list_L1s0][0]
-        list_len = [level1.dims[d] for d in list_L1s0][0]
-        input_mp = [None] * list_len
-        for ii in range(list_len):
+        dim_name = list_L1s0[0]
+        dim_length = len(level1[list_L1s0[0]])
+        input_mp = [None] * dim_length
+        for ii in range(dim_length):
             input_mp[ii] = dict({
-                'level1': level1.isel({i: ii for i in list_L1s0}),
-                'noise': noise.isel({i: ii for i in list_L1s0}),
+                'level1': level1.isel({dim_name: ii}),
+                'noise': noise.isel({dim_name: ii}),
                 'gmf': gmf,
             })
         with multiprocessing.Pool() as pool:
