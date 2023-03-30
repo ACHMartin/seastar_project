@@ -11,6 +11,31 @@ from shapely.geometry import Point
 from scipy.ndimage import binary_erosion as erode
 # import seastar
 
+
+def add_version(ds, attr='seastar_version'):
+    """
+    Add code version to dataset.
+
+    Reads the _version.py file in the seastar main repository and adds
+    the __version__ number as an attribute.
+
+    Parameters
+    ----------
+    ds : ``xarray.Dataset``
+        Dataset processed with the seastar package.
+    attr : ``str``, optional
+        Name of the attribute to write the `__version__` number to.
+        The default is 'seastar_version'.
+
+    Returns
+    -------
+    ds : ``xarray.Dataset``
+        Dataset processed with the seastar package.
+    """
+    from _version import __version__
+    ds.attrs[attr] = __version__
+    return ds
+
 def currentVelDir2UV(vel, cdir):
     """
     Compute current vector components from direction and magnitude.
@@ -466,7 +491,8 @@ def da2py(v, include_dims=False):
 
 
 def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
-                                      erode_scale = 3, coastline_selection=0,):
+                                      erode_scale = 3, coastline_selection=0,
+                                      quiet=False):
     """
     Compute land mask.
 
@@ -504,6 +530,8 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
         The default behaviour is the first identified coastline within 
         `boundary` is used to generate the `mask`, corresponding to the largest
         coastline within the `boundary` by internal area.
+    quiet : ``bool``, optional
+        Quiet mode, supressing console output. Default is False.
 
     Raises
     ------
@@ -532,13 +560,15 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
     coast_polygons = dict()
     m, n = lon_skip.shape
     mask = np.full((m, n), False)
-    print('Scanning GSHHS dataset for coastlines within boundary...')
+    if not quiet:
+        print('Scanning GSHHS dataset for coastlines within boundary...')
     coast = cfeature.GSHHSFeature(scale='full')\
         .intersecting_geometries(boundary)
     for k, polygon in enumerate(coast):
         coast_polygons[k] = polygon
     if bool(coast_polygons):
-        print(coast_polygons)
+        if not quiet:
+            print(coast_polygons)
         if type(coastline_selection) is int:
             coastline_selection = [coastline_selection]
         if np.max(coastline_selection) > k:
@@ -553,17 +583,20 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
     
         
         count = 0
-        print('Performing search...')
+        if not quiet:
+            print('Performing search...')
         for i in range(m):
             for j in range(n):
                 count = count + 1
                 if not int(np.mod(count, ((m*n) / 10))):
-                    print(int((count / (m*n)) * 100), '% complete')
+                    if not quiet:
+                        print(int((count / (m*n)) * 100), '% complete')
                 for k in coast_polygons.keys():
                     mask[i, j] = mask[i, j] or\
                        Point(lon_skip[i, j], lat_skip[i, j])\
                        .within(coast_polygons[k])
-        print('...done')
+        if not quiet:
+            print('...done')
     if erosion:
         mask = erode(mask, structure=erode_structure)
     mask = xr.DataArray(data=mask.astype(int))
@@ -579,7 +612,7 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
                                 da.latitude.values),
                             method='nearest'
                             )
-    mask = xr.DataArray(data=new_data.T,
+    mask = xr.DataArray(data=new_data,
                         dims=da.dims,
                         coords=da.coords)
     return mask

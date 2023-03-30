@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb 15 12:11:54 2023
+Version of the codebase
 
-@author: davidmccann
+`__version__` with format YYYY.MM.x, where x is the release version
+
 """
-__version__= '0.1.1'
+__version__ = '2023.03.0'
