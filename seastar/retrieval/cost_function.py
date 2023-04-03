@@ -72,12 +72,15 @@ def fun_residual(variables, level1, noise, gmf):
     model_rsv_list = [None] * level1.Antenna.size
     for aa, ant in enumerate(level1.Antenna.data):
         # print(aa, ant)
-        model_rsv_list[aa] = seastar.gmfs.doppler.compute_total_surface_motion(level1.sel(Antenna=ant), geo, gmf=gmf['doppler']['name'])
+        model_rsv_list[aa] = seastar.gmfs.doppler\
+            .compute_total_surface_motion(level1.sel(Antenna=ant),
+                                          geo,
+                                          gmf=gmf['doppler']['name'])
         # print(model_rsv_list[aa])
     model['RSV'] = xr.concat(model_rsv_list, dim='Antenna')
     # in future it should be: model['RSV'] = seastar.gmfs.doppler.compute_total_surface_motion(level1, geo, gmf=gmf.doppler) without the loop on antennas
 
-    model['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf=gmf['nrcs'])
+    model['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf['nrcs'])
 
     res = ( level1 - model ) / noise # DataSet with RSV and Sigma0 fields
 
@@ -231,7 +234,10 @@ def optimizeResults2dataset(lmout, x0, level1):
     d['Observables'] = {"dims": "Observables", "data": np.array(['sigma0', 'RSV'])}
     # d['fun_variables'] = {"dims": "fun_variables", "data": range(8)}
     d['Antenna'] = {"dims": "Antenna", "data": level1.Antenna.data}
-    d['fun_variables'] = {"dims": ("Observables", "Antenna"), "data": np.array([range(0,4), range(4,8)])}
+    d['fun_variables'] = {"dims": ("Observables", "Antenna"),
+                          "data": np.array([range(0,len(d['Antenna']['data'])),
+                                            range(len(d['Antenna']['data']), len(d['Antenna']['data'])*len(d['Observables']['data']))])
+                          }
 
     # import variables with dimension
     dims_variables = {
