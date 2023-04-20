@@ -1,6 +1,6 @@
 
 def printXarrayAttributeKeys(data_xr):
-    """Dummy function that prints the xrray attribute keys
+    """Dummy function that prints the xarray attribute keys
     to the console.
 
     :param data_xr: the data to be processed
