@@ -47,4 +47,4 @@ In the terminal window opened in the **seastar_project** directory enter the fol
 ## 3. Documentation
 
 [readthedocs](https://seastar-project.readthedocs.io/en/latest/)
-[SeaSTAR](/docs/build/html/index.html)
+[SeaSTAR](/docs/html/index.html)
