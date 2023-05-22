@@ -1,7 +1,7 @@
 ##### SeaSTAR
 
 <p align="left">
-  <img src="/docs/source/_static/images/SeaSTAR_logo.jpg" width="500">
+  <img src="/docs/source/_static/images/SeaSTAR_logo.png" width="500">
 </p>
 
 This is the package repository for the ESA Earth Explorer 11 candidate mission 'SeaStar'.
