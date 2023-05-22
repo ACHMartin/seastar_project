@@ -1,0 +1,546 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Utilities &#8212; Seastar 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" href="_static/css/functions.css" type="text/css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Self-test" href="tests.html" />
+    <link rel="prev" title="L2 Processing" href="retrieval.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tests.html" title="Self-test"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="retrieval.html" title="L2 Processing"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Utilities</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="utilities">
+<h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h1>
+<section id="module-seastar.utils.readers">
+<span id="data-readers"></span><h2>Data readers<a class="headerlink" href="#module-seastar.utils.readers" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.readers.findNetCDFilepaths">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.readers.</span></span><span class="sig-name descname"><span class="pre">findNetCDFilepaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recursive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.readers.findNetCDFilepaths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of netCDF files fom a given directory with
+a recursive option.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory_path</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) – path to the directory to look in</p></li>
+<li><p><strong>recursive</strong> (<code class="docutils literal notranslate"><span class="pre">boolean</span></code>, optional) – whether to search in sub-directories</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of file paths with ‘.nc’ extension that were found</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">list</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.readers.readNetCDFFile">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.readers.</span></span><span class="sig-name descname"><span class="pre">readNetCDFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">netCFD_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.readers.readNetCDFFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a netCDF file and returns it as an xarray.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>netCFD_path</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) – path to the netCDF file</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if file cannot be read as netCDF and         returns <code class="docutils literal notranslate"><span class="pre">None</span></code> object</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>xrray read from the netCDF file</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">xarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-seastar.utils.tools">
+<span id="tools"></span><h2>Tools<a class="headerlink" href="#module-seastar.utils.tools" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.EarthRelativeSpeedDir2all">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">EarthRelativeSpeedDir2all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.EarthRelativeSpeedDir2all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a dictionary with Earth Relative wind to Ocean Surface Wind</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mydict</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – a dictionary with [‘EarthRelativeWindSpeed’], [‘EarthRelativeWindDirection’], [‘CurrentVelocity’], [‘CurrentDirection’] elements</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mydict</strong> – a dictionary with previous fields + OceanSurfaceWind elements</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.add_version">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">add_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'seastar_version'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.add_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add code version to dataset.</p>
+<p>Reads the _version.py file in the seastar main repository and adds
+the __version__ number as an attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – Dataset processed with the seastar package.</p></li>
+<li><p><strong>attr</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>, optional) – Name of the attribute to write the <cite>__version__</cite> number to.
+The default is ‘seastar_version’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ds</strong> – Dataset processed with the seastar package.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.compute_land_mask_from_GSHHS">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">compute_land_mask_from_GSHHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">da</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">erosion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">erode_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coastline_selection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.compute_land_mask_from_GSHHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute land mask.</p>
+<p>Computes a boolean mask with size, coords and dims corresponding to a
+supplied xarray.DataArray, with mask values = True where the point lies
+within the coastline from the GSHHS global coastline dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>da</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – xarray.DataArray to compute the land mask for. Must contain
+<cite>longitude</cite> and <cite>latitude</cite> coordinates as well as
+coords and dims to align the new <cite>mask</cite> to.</p></li>
+<li><p><strong>boundary</strong> (<code class="docutils literal notranslate"><span class="pre">list</span></code>, optional) – Optional boundary to check for the presence of coastlines in the GSHHS
+dataset. Supply <cite>boundary</cite> in the form:
+<cite>[min(long), max(long), min(lat), max(lat)]</cite>.
+The default boundary will be set to the minimum and maximum extent of
+the <cite>longitude</cite> and <cite>latitude</cite> data present in the coords of <cite>da</cite>.</p></li>
+<li><p><strong>skip</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, optional) – Speed-up factor in degrees longitude / latitude. The default is 1/1000.
+Lower than 1/250 resolution will result in a coarsening of the computed
+<cite>mask</cite>.</p></li>
+<li><p><strong>erosion</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, optional) – Boolean switch to trigger binary erosion of the resulting <cite>mask</cite>.
+The default is False.</p></li>
+<li><p><strong>erode_scale</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code>, optional) – Scale for the array-like structure used for optional binary erosion.
+When default is used but <cite>erosion=True</cite> then a
+<cite>erode_scale</cite> of 3 is assumed.</p></li>
+<li><p><strong>coastline_selection</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">list</span></code>, optional) – Manual choice of which identified coastlines present within the
+<cite>boundary</cite> are used in the generation of the <cite>mask</cite>.
+Choice is a key or list of keys of type <code class="docutils literal notranslate"><span class="pre">int</span></code>. The default is 0.
+The default behaviour is the first identified coastline within
+<cite>boundary</cite> is used to generate the <cite>mask</cite>, corresponding to the largest
+coastline within the <cite>boundary</cite> by internal area.</p></li>
+<li><p><strong>quiet</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, optional) – Quiet mode, supressing console output. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – ‘longitude and latitude missing from input dataset’.
+    ‘coastline_selection out of bounds of identified coastlines within
+    boundary’</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>mask</strong> – An xr.DataArray containing an array-like boolean mask of land pixels.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">array</span></code>, <code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.compute_relative_wind_direction">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">compute_relative_wind_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">windDirection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookDirection</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.compute_relative_wind_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute relative wind direction.</p>
+<p>Compute angle between radar beam and wind direction (degrees)
+0 degrees = up-wind
+180 degrees = down-wind
+90, -90 degrees = cross-wind</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>windDirection</strong> (array, <code class="docutils literal notranslate"><span class="pre">float</span></code>) – Wind direction (degrees N) in wind convention.</p></li>
+<li><p><strong>lookDirection</strong> (array, <code class="docutils literal notranslate"><span class="pre">float</span></code>) – Antenna look direction (degrees N) in oceanographic convention</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>relative_wind_direction</strong> – Angle between radar beam and wind direction (degrees)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array, <code class="docutils literal notranslate"><span class="pre">float</span></code></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Be aware of the difference in direction convention between the wind in
+<code class="docutils literal notranslate"><span class="pre">windDirection</span></code> and antenna look direction in <code class="docutils literal notranslate"><span class="pre">lookDirection</span></code>.</p>
+<p>The wind direction is in wind convention (degrees N), i.e. the
+direction from where the wind is blowing: e.g., a wind direction of
+0 degrees corresponds to a wind blowing from the North.</p>
+<p>The antenna look direction is in oceanographic convention(degrees N),
+i.e., the direction to where the antenna is looking: e.g., a look direction
+of 0 degrees is looking North and with a wind direction of 0 degrees is
+looking Up-Wind.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.currentUV2VelDir">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">currentUV2VelDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.currentUV2VelDir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert u,v vector components to velocity and direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – u vector component in positive East direction</p></li>
+<li><p><strong>v</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – v vector component in positive North direction</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>vel</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Magnitude of the converted vector with same units as <cite>u</cite> and <cite>v</cite></p></li>
+<li><p><strong>cdir</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Direction of the converted vector (degrees)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.currentVelDir2UV">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">currentVelDir2UV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.currentVelDir2UV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute current vector components from direction and magnitude.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vel</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Magnitude of current (m/s).</p></li>
+<li><p><strong>cdir</strong> (<cite>float`</cite>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Direction of current (degrees N) in oceanographic convention.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>u</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – u component (positive East) of current vector.</p></li>
+<li><p><strong>v</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – v component (positive North) of current vector..</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="seastar.utils.tools.dotdict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">dotdict</span></span><a class="headerlink" href="#seastar.utils.tools.dotdict" title="Permalink to this definition">¶</a></dt>
+<dd><p>dot.notation access to dictionary attributes</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.find_coincident_looks">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">find_coincident_looks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_l1_star</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">star_pattern_tracks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_time_triplets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rounding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.find_coincident_looks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find coincident looks in star pattern.</p>
+<p>Function to find the file list indices of antenna datasets containing
+data in coincident look directions within the SEASTARex star pattern
+on May 22nd 2022.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds_l1_star</strong> (<code class="docutils literal notranslate"><span class="pre">dict</span></code>) – Dictionary of antenna L1 datasets.</p></li>
+<li><p><strong>star_pattern_tracks</strong> (<code class="docutils literal notranslate"><span class="pre">dict</span></code>) – Dictionary of track names and their associated file indices</p></li>
+<li><p><strong>rounding</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, optional) – Look direction rounding number in degrees. The default is 10.</p></li>
+<li><p><strong>d_precision</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, optional) – Precision of look direction comparison in degrees. The default is 5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>look_files</strong> – Dictionary of look direction (degrees) in the star pattern as keys and
+matching tuples of (Track, Antenna)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">dict</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.list_duplicates">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">list_duplicates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.list_duplicates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find indices of duplicate entries in list.</p>
+<p>Finds the indicies of duplicate list entries and returns a generator object
+that can be sorted to create a list of [(seq, index)].</p>
+<p>Suggested use: sorted(list_duplicates(seq))</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>seq</strong> (<code class="docutils literal notranslate"><span class="pre">list</span></code>) – DESCRIPTION.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>key</strong> (same as in <cite>seq</cite>) – List of entries in <cite>seq</cite></p></li>
+<li><p><strong>locs</strong> (<code class="docutils literal notranslate"><span class="pre">list</span></code> of <code class="docutils literal notranslate"><span class="pre">int</span></code>) – List of indexes of duplicate entries of <cite>key</cite> in <cite>seq</cite></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.polarizationStr2Val">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">polarizationStr2Val</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">da</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.polarizationStr2Val" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform Polarization string (‘VV’ or ‘HH’) towards values (1, 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>da</strong> (<cite>DataArray</cite>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>DataArray</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.polarizationVal2Str">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">polarizationVal2Str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">da</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.polarizationVal2Str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform Polarization values (1, 2) to string (‘VV’ or ‘HH’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>da</strong> (<cite>DataArray</cite>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><cite>DataArray</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.wavenumber2wavelength">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">wavenumber2wavelength</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wavenumber</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.wavenumber2wavelength" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert wavenumber to wavelength.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wavenumber</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – Wavenumber (rad / m)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>wavelength</strong> – Wavelength (m)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">float</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.wgs2utm_v3">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">wgs2utm_v3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">utmzone</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">utmhemi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.wgs2utm_v3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert WGS84 coordinates into UTM coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lat</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – WGS84 Latitude scalar, vector or array in decimal degrees.</p></li>
+<li><p><strong>lon</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – WGS84 Longitude scalar, vector or array in decimal degrees.</p></li>
+<li><p><strong>utmzone</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) – UTM longitudinal zone. Scalar or same size as <code class="docutils literal notranslate"><span class="pre">Lat</span></code> and <code class="docutils literal notranslate"><span class="pre">Lon</span></code>.</p></li>
+<li><p><strong>utmhemi</strong> (<cite>str</cite>) – UTM hemisphere as a single character, ‘N’ or ‘S’, or array of ‘N’ or
+‘S’ characters of same size as <code class="docutils literal notranslate"><span class="pre">Lat</span></code> and <code class="docutils literal notranslate"><span class="pre">Lon</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – UTM Easting (m)</p></li>
+<li><p><strong>y</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – UTM Northing (m)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Author: <br /> Alexandre Schimel, MetOcean Solutions Ltd. New Zealand
+<br /> Adapted to python by: <br /> David McCann, National Oceanography Centre, U.K.
+<br /> From the original author:
+<br /> I downloaded and tried deg2utm.m from Rafael Palacios but found
+differences of up to 1m with my reference converters in southern
+hemisphere so I wrote my own code based on “Map Projections - A
+Working Manual” by J.P. Snyder (1987). Quick quality control performed
+only by comparing with LINZ converter and Chuck Taylor’s on a
+few test points, so use results with caution. Equations not suitable
+for a latitude of +/- 90 deg.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.windCurrentUV2all">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">windCurrentUV2all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mydict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.windCurrentUV2all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a dictionary with [‘u’], [‘v’], [‘c_u’], [‘c_v’] elements to
+a full dictionary with vis_u, vis_v, vis_wspd, vis_wdir, c_vel, c_dir</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mydict</strong> (<em>dict</em><em> or </em><a class="reference internal" href="#seastar.utils.tools.dotdict" title="seastar.utils.tools.dotdict"><em>dotdict</em></a>) – a dictionary with [‘u’], [‘v’], [‘c_u’], [‘c_v’] elements</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mydict</strong> – a dictionary with [‘u’], [‘v’], [‘c_u’], [‘c_v’] elements</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict or <a class="reference internal" href="#seastar.utils.tools.dotdict" title="seastar.utils.tools.dotdict">dotdict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.windSpeedDir2UV">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">windSpeedDir2UV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wspd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wdir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.windSpeedDir2UV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert wind speed and direction to u,v vector components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wspd</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Magnitude of wind (m/s).</p></li>
+<li><p><strong>wdir</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Direction of wind (degrees N) in wind convention.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>u</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – u component (positive East) of wind vector (m/s)</p></li>
+<li><p><strong>v</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – v component (positive North) of wind vector (m/s)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Wind input direction (<code class="docutils literal notranslate"><span class="pre">wdir</span></code>) is in wind convention format, i.e. the
+direction the wind is blowing from in degrees from North. A <code class="docutils literal notranslate"><span class="pre">wdir</span></code>
+value of 0 corresponds to a wind blowing from North.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.utils.tools.windUV2SpeedDir">
+<span class="sig-prename descclassname"><span class="pre">seastar.utils.tools.</span></span><span class="sig-name descname"><span class="pre">windUV2SpeedDir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.utils.tools.windUV2SpeedDir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert wind u,v vector components to wind speed and direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – u component (positive East) of wind vector (m/s)</p></li>
+<li><p><strong>v</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – v component (positive North) of wind vector (m/s)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>wspd</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Magnitude of wind (m/s).</p></li>
+<li><p><strong>wdir</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Direction of wind (degrees N) in wind convention.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Wind input direction (<code class="docutils literal notranslate"><span class="pre">wdir</span></code>) is in wind convention format, i.e. the
+direction the wind is blowing from in degrees from North. A <code class="docutils literal notranslate"><span class="pre">wdir</span></code>
+value of 0 corresponds to a wind blowing from North.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Utilities</a><ul>
+<li><a class="reference internal" href="#module-seastar.utils.readers">Data readers</a></li>
+<li><a class="reference internal" href="#module-seastar.utils.tools">Tools</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="retrieval.html"
+                          title="previous chapter">L2 Processing</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="tests.html"
+                          title="next chapter">Self-test</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/utils.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tests.html" title="Self-test"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="retrieval.html" title="L2 Processing"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Utilities</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Adrien Martin, David McCann.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>

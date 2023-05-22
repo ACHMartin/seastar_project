@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Performance assesment &#8212; Seastar 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" href="_static/css/functions.css" type="text/css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Self-test" href="tests.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tests.html" title="Self-test"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Performance assesment</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="performance-assesment">
+<h1>Performance assesment<a class="headerlink" href="#performance-assesment" title="Permalink to this headline">¶</a></h1>
+<section id="module-seastar.performance.scene_generation">
+<span id="scene-generation"></span><h2>Scene generation<a class="headerlink" href="#module-seastar.performance.scene_generation" title="Permalink to this headline">¶</a></h2>
+<p>Created on February 2023</p>
+<p>&#64;author: admartin, dlmccann</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.performance.scene_generation.create_scene_dataset">
+<span class="sig-prename descclassname"><span class="pre">seastar.performance.scene_generation.</span></span><span class="sig-name descname"><span class="pre">create_scene_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inst</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.performance.scene_generation.create_scene_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scene generation function of geophysical parameters (direct models) and acquisition geometry</p>
+<p>Can be run with:
+- a single point
+- a swath of datapoints
+- a 2D field without geographical coordinate
+- a 2D field WITH geographical coordinate</p>
+<p>To Be Discussed: we need to link the ground truth grid with the instrument grid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geo</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – Truth in term of:
+- geophysical parameters: WindSpeed, WindDirection, CurrentVel, CurrentDir, others (waves)
+- geographic coordinates: longitude, latitude (optional?)</p></li>
+<li><p><strong>inst</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
+geometry: antenna, incidence angle, azimuth look direction
+uncertainty on: NRCS, (Doppler? or RSV?)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>level1</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – L1 measurements dataset with data: Sigma0 (NRCS), RSV (Radial Surface Velocity) &lt;= truth + noise
+and coordinates: longitude, latitude, antenna, incidence angle, azimuth look direction
+and attributes: (if needed)
+L1.shape (antenna, across, along)</p></li>
+<li><p><strong>noise</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – same as truth but with noise values and longitude and latitude</p></li>
+<li><p><em>truth</em> – same as geo but with direct model measurements and longitude, latitude
+- direct model measurements: NRCS, RSV (including attributes concerning the model used and its attributes)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.performance.scene_generation.generate_wind_field_from_single_measurement">
+<span class="sig-prename descclassname"><span class="pre">seastar.performance.scene_generation.</span></span><span class="sig-name descname"><span class="pre">generate_wind_field_from_single_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wind_direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">da</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.performance.scene_generation.generate_wind_field_from_single_measurement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate 2D fields of wind velocity and direction.</p>
+<p>Generate 2D fields of wind velocity u10 (m/s) and direction (degrees) in
+wind convention from single observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u10</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – Wind velocity at 10m above sea surface (m/s)</p></li>
+<li><p><strong>wind_direction</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – Wind direction (degrees N) in wind convention</p></li>
+<li><p><strong>da</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – DataArray in form (shape, coords, dims) to return wind field in</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>u10Image</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – 2D field of u10 wind velocities (m/s)</p></li>
+<li><p><strong>WindDirectionImage</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – 2D field of wind directions (degrees N)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.performance.scene_generation.noise_generation">
+<span class="sig-prename descclassname"><span class="pre">seastar.performance.scene_generation.</span></span><span class="sig-name descname"><span class="pre">noise_generation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.performance.scene_generation.noise_generation" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>truth</strong> – </p></li>
+<li><p><strong>noise</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.performance.scene_generation.satellite_looking_geometry">
+<span class="sig-prename descclassname"><span class="pre">seastar.performance.scene_generation.</span></span><span class="sig-name descname"><span class="pre">satellite_looking_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.performance.scene_generation.satellite_looking_geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computed satellite looking geometry as function of given parameters</p>
+<p>Should work for:
+- a point
+- a swath 1D
+- 2D field?</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>geometry</strong> – with all values filled</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.performance.scene_generation.truth_fct">
+<span class="sig-prename descclassname"><span class="pre">seastar.performance.scene_generation.</span></span><span class="sig-name descname"><span class="pre">truth_fct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gmf</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.performance.scene_generation.truth_fct" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Should work for all dimension; same behavior than xarray with dimension between geo and inst</p>
+</div></blockquote>
+<dl>
+<dt>Parameters</dt><dd><dl>
+<dt>geo<span class="classifier"><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></span></dt><dd><p>Truth in term of:
+- geophysical parameters: WindSpeed, WindDirection, CurrentVel, CurrentDir, others (waves)
+- geographic coordinates: longitude, latitude (optional?)</p>
+</dd>
+<dt>inst<span class="classifier"><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></span></dt><dd><p>Antenna is required
+Instrument characteristics for: (every pixel?, or constant for a given swath, or constant everywhere)
+geometry: antenna, incidence angle, azimuth look direction
+uncertainty on: NRCS, (Doppler? or RSV?)</p>
+</dd>
+</dl>
+<dl>
+<dt>truth<span class="classifier"><code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code> list</span></dt><dd><dl class="simple">
+<dt>with WindSpeed, wdir, cvel, cdir, u, v, c_u, c_v, vis_u, vis_v,</dt><dd><p>sigma0, RSV</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.performance.scene_generation.uncertainty_fct">
+<span class="sig-prename descclassname"><span class="pre">seastar.performance.scene_generation.</span></span><span class="sig-name descname"><span class="pre">uncertainty_fct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uncertainty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.performance.scene_generation.uncertainty_fct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computed and Filled in all the uncertainty parameters</p>
+<p>Should work for:
+- a point
+- same dimension for truth and uncertainty 1D, 2D, xD (with antenna?)
+- dimension different for truth and uncertainty</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>truth</strong> – </p></li>
+<li><p><strong>uncertainty</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>uncertainty</strong> – with all values filled</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Performance assesment</a><ul>
+<li><a class="reference internal" href="#module-seastar.performance.scene_generation">Scene generation</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="tests.html"
+                          title="previous chapter">Self-test</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/performance.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tests.html" title="Self-test"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Performance assesment</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Adrien Martin, David McCann.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>

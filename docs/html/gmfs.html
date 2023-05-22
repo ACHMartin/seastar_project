@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Geophysical Model Functions (GMFs) &#8212; Seastar 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" href="_static/css/functions.css" type="text/css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="L2 Processing" href="retrieval.html" />
+    <link rel="prev" title="OSCAR L1 Processing" href="level1.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="retrieval.html" title="L2 Processing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="level1.html" title="OSCAR L1 Processing"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Geophysical Model Functions (GMFs)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="geophysical-model-functions-gmfs">
+<h1>Geophysical Model Functions (GMFs)<a class="headerlink" href="#geophysical-model-functions-gmfs" title="Permalink to this headline">¶</a></h1>
+<section id="module-seastar.gmfs.doppler">
+<span id="doppler"></span><h2>Doppler<a class="headerlink" href="#module-seastar.gmfs.doppler" title="Permalink to this headline">¶</a></h2>
+<p>Module to compute Doppler shift variables from airborne SAR imagery.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.doppler.compute_radial_current">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.doppler.</span></span><span class="sig-name descname"><span class="pre">compute_radial_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_vel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_current_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inci</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.doppler.compute_radial_current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Radial and Radial Surface Current from known Current and acquisition geometry.</p>
+<p>Input parameters u10, phi and inc must be in identical sizes and formats.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>current_vel</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Current Velocity (m/s)</p></li>
+<li><p><strong>rel_current_dir</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Angle between current and look directions (degrees)</p></li>
+<li><p><strong>inci</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Incidence angle of radar beam (degrees from nadir).</p></li>
+<li><p><strong>#</strong> – </p></li>
+<li><p><strong>Raises</strong> (<em>#</em>) – </p></li>
+<li><p><strong>------</strong> (<em>#</em>) – </p></li>
+<li><p><strong>Exception</strong> (<em>#</em>) – </p></li>
+<li><p><strong>parameters.</strong> (<em>#     Exception for inconsistency in sizes of input</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>u_rsc</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Radial Surface Current (m/s)</p></li>
+<li><p><strong>u_r</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Radial Current (m/s) in the slant direction directly towards the radar.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.doppler.compute_total_surface_motion">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.doppler.</span></span><span class="sig-name descname"><span class="pre">compute_total_surface_motion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gmf</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.doppler.compute_total_surface_motion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the total surface motion (or RVL, …? TODO need to agree on the naming)
+including Wind-wave Artefact Surface Velocity (WASV)
++ surface current.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>L1</strong> (<em>xarray.Dataset</em>) – A Dataset containing IncidenceAngleImage, AntennaAzimuthImage and
+Polarization.</p></li>
+<li><p><strong>aux_geo</strong> (<em>xarray.Dataset</em>) – A Dataset containing WindSpeed, WindDirection, CurrentVelocity, CurrentDirection</p></li>
+<li><p><strong>gmf</strong> (<em>str</em>) – Option for geophysical model function. ‘mouche12’, ‘yurovsky19’
+with kwargs for options.</p></li>
+<li><p><strong>**kwargs</strong> (<em>TYPE</em>) – Optional arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Exception raised if LookDirection is not in the form of a 2D array.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>da</strong> – A DataArray containing the Radial Velocity for
+the given geophysical and geometric conditions.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.doppler.compute_wasv">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.doppler.</span></span><span class="sig-name descname"><span class="pre">compute_wasv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gmf</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.doppler.compute_wasv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the Wind-wave Artefact Surface Velocity (WASV).</p>
+<p>Compute the Wind-wave Artefact Surface Velocity (WASV) for ‘L1’ data
+as function of geophysical conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>L1</strong> (<em>xarray.Dataset</em>) – A Dataset containing IncidenceAngleImage, AntennaAzimuthImage and
+Polarization</p></li>
+<li><p><strong>aux_geo</strong> (<em>xarray.Dataset</em>) – A Dataset containing WindSpeed, WindDirection.</p></li>
+<li><p><strong>gmf</strong> (<em>str</em>) – Option for geophysical model function. ‘mouche12’, ‘yurovsky19’
+with kwargs for options.</p></li>
+<li><p><strong>**kwargs</strong> (<em>TYPE</em>) – Optional arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Exception raised if LookDirection is not in the form of a 2D array.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>ds_wa</strong> – A Dataset containing the Wind Artefact Surface Velocity (WASV) for
+the given geophysical and geometric conditions.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.doppler.convertDoppler2Velocity">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.doppler.</span></span><span class="sig-name descname"><span class="pre">convertDoppler2Velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inci</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.doppler.convertDoppler2Velocity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert Doppler shift to surface velocity.</p>
+<p>Convert Doppler shift (Hz) to surface velocity (m/s)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq_GHz</strong> (<em>float</em>) – Central electromagnetic frequency (GHz).</p></li>
+<li><p><strong>dop</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Doppler shift (Hz).</p></li>
+<li><p><strong>inci</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Incidence angle (degrees from nadir).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Exception for central frequency not being in GHz.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>los_vel</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Line-of-sight velocity (m/s).</p></li>
+<li><p><strong>surf_vel</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Surface velocity (m/s).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.doppler.mouche12">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.doppler.</span></span><span class="sig-name descname"><span class="pre">mouche12</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pol</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.doppler.mouche12" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Doppler shift due to wind from Mouche (2012).</p>
+<p>Compute the Doppler shift due to the wind using the geophysical model
+function of Mouche (2012). Input parameters u10, phi and inc must be in
+identical sizes and formats.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u10</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Wind speed (m/s) at 10m above sea surface.</p></li>
+<li><p><strong>phi</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – <dl class="simple">
+<dt>Angle between wind and look directions (degrees) in range 0 (upwind) :</dt><dd><p>90 (crosswind) : 180 (downwind).</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>inc</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Incidence angle of radar beam (degrees from nadir).</p></li>
+<li><p><strong>pol</strong> (<em>str</em>) – Polarisation of radar beam (HH or VV).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Exception for inconsistency in sizes of input parameters.
+    Exception for polarisation out of range of (HH,VV).</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dop</strong> – Doppler shift (GHz) due to geophysical and geometric conditions.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.doppler.yurovsky19">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.doppler.</span></span><span class="sig-name descname"><span class="pre">yurovsky19</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swh_sw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega_sw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi_sw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.015</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambdar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.008</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_ws</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_sw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0625</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zerocrosswind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.doppler.yurovsky19" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Doppler shift due to wind using Yurovsky (2019).</p>
+<p>Compute Doppler shift due to the geophysical model function of
+Yurovsky (2019).</p>
+<p>KaDOP computes sea surface Doppler spectrum centroid for VV and HH
+polarizations, DCvv and DChh, based on the empirical MTF
+[10.1109/TGRS.2017.2787459] DC is expressed in m/s,
+DC[m/s]= DC[Hz]*lambda/2, where lambda is the radar wavelength.
+By default, the DC is estimated for Pierson-Moskowitz (PM),
+[10.1029/JZ069i024p05181]
+Wind sea spectrum without swell. If significant wave height (SWH)
+and peak frequency (omega) are known, they can be specified explicitly.
+Swell can be added independently by specifying its SWH and omega,
+no swell by default.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Incidence angle (degrees from nadir) in the range (0:60).</p></li>
+<li><p><strong>phi</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – <dl class="simple">
+<dt>Angle between wind and look directions (degrees) in range 0 (upwind) :</dt><dd><p>90 (crosswind) : 180 (downwind).</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>u</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Wind speed (m/s) at 10m above sea surface.</p></li>
+<li><p><strong>swh_sw</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – Swell significant wave hight (m). The default is 0.</p></li>
+<li><p><strong>omega_sw</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – Swell peak radial frequency (rad/s). The default is 0.</p></li>
+<li><p><strong>phi_sw</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – Radar-to-swell relative direction (degrees). The default is 0.</p></li>
+<li><p><strong>drift</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – Wind-drift coefficient. The default is 0.015 (1.5% U).</p></li>
+<li><p><strong>lambdar</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – Radar wavelength (m). The default is 0.008 (Ka-band).</p></li>
+<li><p><strong>beta_ws</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – 3rd moment of Wind Sea spectrum (Pierson-Moskowitz) parameter.
+The default is 0.20.</p></li>
+<li><p><strong>beta_sw</strong> (<em>TYPE</em><em>, </em><em>optional</em>) – 3rd moment of Swell spectrum parameter. The default is 0.0625.</p></li>
+<li><p><strong>zerocrosswind</strong> (<em>bool</em><em>, </em><em>optional</em>) – If this parameter set to 1, the MTFwindsea is replaced by
+MTFswell (crosswind is zeroed). The default is False.</p></li>
+<li><p><strong>**kwargs</strong> (<em>TYPE</em>) – DESCRIPTION.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>VV</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Sea surface Doppler Velocity for VV polarization</p></li>
+<li><p><strong>HH</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Sea surface Doppler Velocity centroid for HH polarization</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-seastar.gmfs.nrcs">
+<span id="nrcs"></span><h2>NRCS<a class="headerlink" href="#module-seastar.gmfs.nrcs" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.nrcs.compute_nrcs">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.nrcs.</span></span><span class="sig-name descname"><span class="pre">compute_nrcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">L1_combined</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gmf</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.nrcs.compute_nrcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Normalized Radar Cross Section (nrcs).</p>
+<p>Compute NRCS (Sigma0) using incidence angle, antenna polarization and
+windspeed/direction data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>L1_combined</strong> (<code class="docutils literal notranslate"><span class="pre">xr.Dataset</span></code>) – Dataset containing IncidenceAngleImage and antenna polarization data</p></li>
+<li><p><strong>aux_geo</strong> (<code class="docutils literal notranslate"><span class="pre">xr.Dataset</span></code>) – Geophysical parameter dataset containing wind speed and direction data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>nrcs</strong> – Dataset of computed Normalized Radar Cross Section DataArrays,
+arranged along a dimension corresponding to antenna position</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xr.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.gmfs.nrcs.nscat4ds">
+<span class="sig-prename descclassname"><span class="pre">seastar.gmfs.nrcs.</span></span><span class="sig-name descname"><span class="pre">nscat4ds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pol</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.gmfs.nrcs.nscat4ds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute sigma0 due to wind.
+<a class="reference external" href="mailto:admartin&#37;&#52;&#48;noc&#46;ac&#46;uk">admartin<span>&#64;</span>noc<span>&#46;</span>ac<span>&#46;</span>uk</a> adapted from
+(c) 2017 Anton Verhoef, KNMI Royal Netherlands Meteorological Institute</p>
+<p>Input parameters u10, phi, inc and pol must be in
+identical sizes and formats.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u10</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Wind speed (m/s) at 10m above sea surface.
+GMF built for wind speed ranging from 0.2 m/s to 50 m/s.</p></li>
+<li><p><strong>phi</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – <dl class="simple">
+<dt>Angle between wind and look directions (degrees) in range 0 (upwind) :</dt><dd><p>90 (crosswind) : 180 (downwind).</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>inc</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Incidence angle of radar beam (degrees from nadir).
+GMF built for incidence angle ranging from 16° to 66°.</p></li>
+<li><p><strong>pol</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Polarisation of radar beam (1 for VV, 2 for HH).
+Any value between 1 and 2 will be a linear interpolation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Exception for inconsistency in sizes of input parameters.
+    Exception for polarisation out of range of (1,2) for (VV,HH).</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>sigma0</strong> – NRCS due to geophysical and geometric conditions of
+the same size as the input.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Geophysical Model Functions (GMFs)</a><ul>
+<li><a class="reference internal" href="#module-seastar.gmfs.doppler">Doppler</a></li>
+<li><a class="reference internal" href="#module-seastar.gmfs.nrcs">NRCS</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="level1.html"
+                          title="previous chapter">OSCAR L1 Processing</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="retrieval.html"
+                          title="next chapter">L2 Processing</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/gmfs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="retrieval.html" title="L2 Processing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="level1.html" title="OSCAR L1 Processing"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Geophysical Model Functions (GMFs)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Adrien Martin, David McCann.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>

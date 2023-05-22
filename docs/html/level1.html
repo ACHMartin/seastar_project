@@ -1,0 +1,475 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>OSCAR L1 Processing &#8212; Seastar 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+    <link rel="stylesheet" href="_static/css/functions.css" type="text/css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Geophysical Model Functions (GMFs)" href="gmfs.html" />
+    <link rel="prev" title="Seastar documentation" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gmfs.html" title="Geophysical Model Functions (GMFs)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Seastar documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">OSCAR L1 Processing</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-seastar.oscar.level1">
+<span id="oscar-l1-processing"></span><h1>OSCAR L1 Processing<a class="headerlink" href="#module-seastar.oscar.level1" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.add_central_electromagnetic_wavenumber">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">add_central_electromagnetic_wavenumber</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.add_central_electromagnetic_wavenumber" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate wavenumber of the central electromagnetic frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset</p></li>
+<li><p><strong>ds.CentralFreq</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Central radar frequency (Hz)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset</p></li>
+<li><p><strong>ds.CentralWavenumber</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Central radar wavenumber (rad / m)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.check_antenna_polarization">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">check_antenna_polarization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.check_antenna_polarization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check polarization and standardize format.</p>
+<p>Check the Tx and Rx polarization variables in an OSCAR dataset and
+create a new ‘Polarization’ variable in a standard ‘HH’, ‘VV’ style
+format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset containing Tx and Rx polarization strings</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Polarization</strong> – Antenna polarization in ‘HH’, ‘VV’ format</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_SLC_Master_Slave">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_SLC_Master_Slave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_SLC_Master_Slave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute SLC master/slave complex images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset</p></li>
+<li><p><strong>ds.SigmaSLCMaster</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Master SLC image</p></li>
+<li><p><strong>ds.SigmaSLCSlave</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code>) – Slave SLC image</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_antenna_azimuth_direction">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_antenna_azimuth_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_heading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_antenna_azimuth_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate antenna azimuth relative to North in degrees.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset with “SquintImage” as a required field</p></li>
+<li><p><strong>antenna</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) – ‘Fore’ Fore beam pair, ‘Aft’ Aft beam pair</p></li>
+<li><p><strong>return_heading</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>) – Option to return OrbitHeadingImage variable, default=False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>AntennaAzimuthImage</strong> (<code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code>) – Antenna beam azimuth of each image pixel (degrees from North)</p></li>
+<li><p><strong>OrbitHeadingImage</strong> (<code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code>, optional) – Aircraft heading of each image pixel (degrees from North)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Exception</strong> – Raises exception if <cite>antenna</cite> not in <cite>[‘Fore’, ‘Aft’, ‘Mid’]</cite></p></li>
+<li><p><strong>Exception</strong> – Raises exception if <cite>SquintImage</cite> not present in input <cite>ds</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_antenna_baseline">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_antenna_baseline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">antenna_baseline</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_antenna_baseline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add antenna baseline to dataset if not already present.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset</p></li>
+<li><p><strong>baseline</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – Antenna baseline (m)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset in netCDF format</p></li>
+<li><p><strong>ds.Baseline</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) – Antenna baseline distance (m)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_multilooking_Master_Slave">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_multilooking_Master_Slave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vars_to_send</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Intensity',</span> <span class="pre">'Interferogram',</span> <span class="pre">'Coherence']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_multilooking_Master_Slave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute  multilooking Master/Slave L1b image products.</p>
+<p>Computes multilooking ATI variables from L1 variables present in an
+<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>. As a minimum must contain the following 2D
+<a href="#id1"><span class="problematic" id="id2">``</span></a>xarray.DataArray``s:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>SigmaImageSingleLookRealPart</cite></p></li>
+<li><p><cite>SigmaImageSingleLookImaginaryPart</cite></p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Optionally, <cite>ds</cite> must include:</dt><dd><ul class="simple">
+<li><p><cite>SigmaImageSingleLookRealPartSlave</cite></p></li>
+<li><p><cite>SigmaImageSingleLookImaginaryPartSlave</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR L1a dataset</p></li>
+<li><p><strong>window</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) – Integer averaging window size. The default is 3.</p></li>
+<li><p><strong>vars_to_send</strong> (<em>list</em>) – default: vars_to_send = [‘Intensity, Interferogram’, ‘Coherence’]
+can in addition take among: ‘IntensityAvgComplexMasterSlave’,
+‘IntensityAvgMaster’, ‘IntensityAvgSlave’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ds_out</strong> – Dataset containing computed L1b variables</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Exception</strong> – Raises exception if <cite>vars_to_send</cite> is not within:
+        [‘Intensity’, ‘Interferogram’, ‘Coherence’,
+         ‘IntensityAvgComplexMasterSlave’, ‘IntensityAvgMaster’,
+         ‘IntensityAvgSlave’]</p></li>
+<li><p><strong>Exception</strong> – Raises exception if <cite>SigmaImageSingleLookRealPart</cite> is not a 2D variable</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_radial_surface_current">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_radial_surface_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gmf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mouche12'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_radial_surface_current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute radial surface current (RSC).</p>
+<p>Compute radial surface current (RSC) from radial surface velocity (RSV)
+and the wind artifact surface velocity (WASV) from:</p>
+<blockquote>
+<div><p>RSC = RSV - WASV</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level1</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – L1 dataset</p></li>
+<li><p><strong>aux</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – Dataset containing geophysical wind data</p></li>
+<li><p><strong>gmf</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>, optional) – Choice of geophysical model function to compute the WASV.
+The default is ‘mouche12’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rsc</strong> – Radial Surface Current</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.DataArray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_radial_surface_velocity">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_radial_surface_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_ml</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_radial_surface_velocity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute radial surface velocity from SAR interferogram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds_L1a</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR L1a dataset</p></li>
+<li><p><strong>ds_ml</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR L1b dataset of computed multilooking variables</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>RadialSuraceVelocity</strong> – Surface velocity (m/s) along a radar beam radial</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Raises exception if <cite>IncidenceAngleImage</cite> not present in input dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.compute_time_lag_Master_Slave">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">compute_time_lag_Master_Slave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.compute_time_lag_Master_Slave" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute time lag tau between Master/Slave images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – OSCAR SAR dataset containing orbit, time and baseline information</p></li>
+<li><p><strong>options</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) – Time lag computation method. The default is ‘from_SAR_time’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>TimeLag</strong> – Time lag tau between Master/Slave images (s)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Raises exception if <cite>options</cite> not in the form ‘from_SAR_time’,
+    ‘from_aircraft_velocity’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.fill_missing_variables">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">fill_missing_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.fill_missing_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill missing variables in OSCAR datasets.</p>
+<p>Identified variables that exist in one antenna dataset but not in
+others and creates NaN-filled variables in their place to aid with
+the L1 processing chain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">dict</span></code>) – OSCAR data stored as a dict with antenna number as keys and loaded
+data in <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code> format as values</p></li>
+<li><p><strong>antenna_ident</strong> (<code class="docutils literal notranslate"><span class="pre">list</span></code>) – List of antenna identifiers in the form [‘Fore’, ‘Mid’, ‘Aft’],
+corresponding to the data and keys stored in <cite>ds</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ds_dict</strong> – OSCAR data stored as a dict with antenna number as keys and loaded
+data in <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code> format as values</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">dict</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.init_auxiliary">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">init_auxiliary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wind_direction</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.init_auxiliary" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Dataset containing WindSpeed, WindDirection,</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.init_level2">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">init_level2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.init_level2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise level2 dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dsa</strong> (<em>xarray.Dataset</em>) – OSCAR SAR dataset for the aft antenna pair</p></li>
+<li><p><strong>dsf</strong> (<em>xarray.Dataset</em>) – OSCAR SAR dataset for the fore antenna pair</p></li>
+<li><p><strong>dsm</strong> (<em>xarray.Dataset</em>) – OSCAR SAR dataset for the mid antenna</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>level2</strong> (<em>xarray.Dataset</em>) – OSCAR SAR L2 processing dataset</p></li>
+<li><p><strong>level2.RadialSurfaceVelocity</strong> (<em>xarray.DataArray</em>) – Radial surface velocities (m/s) for the Fore and Aft antennas
+with corresponding dimension ‘Antenna’ and Coords [‘Fore’,’Aft’]</p></li>
+<li><p><strong>level2.LookDirection</strong> (<em>xarray.DataArray</em>) – Antenna look direction (degrees N) for the Fore and Aft antennas
+with corresponding dimension ‘Antenna’ and Coords [‘Fore’,’Aft’]</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.merge_beams">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">merge_beams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antenna_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.merge_beams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge three beams into single dataset.</p>
+<p>Generate a combined-look-direction OSCAR L1 dataset from separate
+look directions and add a corresponding ‘Antenna’ dimension and coordinate.</p>
+<p>Adds <cite>longitude</cite> and <cite>latitude</cite> coordinates to merged dataset.</p>
+<p>Requires a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of OSCAR L1 <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>, containing the
+<a href="#id3"><span class="problematic" id="id4">``</span></a>xarray.DataArray``s <cite>LonImage</cite> and <cite>LatImage</cite>. These arrays must be 2D,
+with only two dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">dict</span></code>) – OSCAR data stored as a dict with antenna number as keys and loaded
+data in <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code> format as values</p></li>
+<li><p><strong>antenna_ident</strong> (<code class="docutils literal notranslate"><span class="pre">list</span></code>) – List of antenna identifiers in the form [‘Fore’, ‘Mid’, ‘Aft’],
+corresponding to the data and keys stored in <cite>ds</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ds_level1</strong> – OSCAR dataset with combined look directions</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.replace_dummy_values">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">replace_dummy_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">9999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.replace_dummy_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace dummy values.</p>
+<p>Removes dummy values from dataset variables and replaces with a set value.
+Default dummy value is -9999 and default replacement is NaN.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code>) – Dataset containing variables with dummy values to replace.</p></li>
+<li><p><strong>dummy_val</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code>, optional) – Dummy value to replace. The default is -9999.</p></li>
+<li><p><strong>replace</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code>, optional) – Constant value to replace Dummy values with. The default is NaN</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ds</strong> – Dataset with variables scrubbed for <cite>dummy_val</cite> and replaced with
+<cite>replace</cite></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seastar.oscar.level1.track_title_to_datetime">
+<span class="sig-prename descclassname"><span class="pre">seastar.oscar.level1.</span></span><span class="sig-name descname"><span class="pre">track_title_to_datetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#seastar.oscar.level1.track_title_to_datetime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Track title to datetime conversion.</p>
+<p>Converts the Title attribute of an OSCAR .netcdf dataset to
+numpy.datetime64 format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>title</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) – Dataset title in the form “Track : YYYYMMDDTHHMMSS”</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>track_time</strong> – Time in numpy.datetime64 format</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">np.datetime64</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">Seastar documentation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="gmfs.html"
+                          title="next chapter">Geophysical Model Functions (GMFs)</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/level1.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gmfs.html" title="Geophysical Model Functions (GMFs)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Seastar documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Seastar 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">OSCAR L1 Processing</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Adrien Martin, David McCann.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>
