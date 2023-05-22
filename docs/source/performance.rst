@@ -3,5 +3,5 @@ Performance assesment
 
 Scene generation
 ----------------
-.. automodule:: seastar.performance
+.. automodule:: seastar.performance.scene_generation
    :members:

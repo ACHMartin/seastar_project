@@ -1,10 +1,10 @@
-##### Seastar
+##### SeaSTAR
 
 <p align="left">
-  <img src="/docs/images/seastar_img3.jpg" width="500">
+  <img src="/docs/source/_static/images/SeaSTAR_logo.jpg" width="500">
 </p>
 
-general project info can go here
+This is the package repository for the ESA Earth Explorer 11 candidate mission 'SeaStar'.
 
 
 ## 1. Installation
@@ -47,3 +47,4 @@ In the terminal window opened in the **seastar_project** directory enter the fol
 ## 3. Documentation
 
 [readthedocs](https://seastar-project.readthedocs.io/en/latest/)
+[SeaSTAR documentation](/docs/build/html/index.html)
