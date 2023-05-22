@@ -193,7 +193,7 @@ def uncertainty_fct( truth, uncertainty):
     return uncerty, noise
 
 
-def noise_generation(truth, noise):
+def noise_generation(truth, noise,seed=None):
     """
 
     :param truth:
@@ -203,7 +203,7 @@ def noise_generation(truth, noise):
 
     level1 = noise.drop_vars(noise.data_vars)
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=seed)
     level1['Sigma0'] = truth.Sigma0 \
                        + noise.Sigma0 * rng.standard_normal(size=truth.Sigma0.shape) # Draw samples from a standard Normal distribution (mean=0, stdev=1).
     level1['RSV'] = truth.RSV \
