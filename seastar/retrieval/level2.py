@@ -234,10 +234,10 @@ def compute_current_magnitude_and_direction(level1, level2):
 
     direction = np.degrees(np.arctan2((u_1 + u_2), (v_1 + v_2)))
     ind_pos = direction < 0
-    direction_corrected = np.mod(-xr.where(ind_pos,
+    direction_corrected = np.mod(xr.where(ind_pos,
                                  180 + (180 - np.abs(direction)),
                                  direction
-                                 ) + 90,
+                                 ),
                                  360)
 
     level2['CurrentDirection'] = direction_corrected
