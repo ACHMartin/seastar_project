@@ -77,7 +77,8 @@ def ambiguity_sort_by_cost(lmout):
     index : ``xarray.DataArray``
         a dataArray index. Can be applied directly to lmout with lmout.isel(Ambiguities=index_cost)
     """
-    index = lmout.cost.argmin(dim='Ambiguities')
+    cost = xr.where(np.isnan(lmout.cost), np.inf, lmout.cost)
+    index = cost.argmin(dim='Ambiguities')
     return index
 
 
