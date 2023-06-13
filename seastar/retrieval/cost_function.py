@@ -10,7 +10,6 @@ import xarray as xr
 from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict, da2py
-import sys
 
 # import seastar.gmfs.doppler
 # import pdb # pdb.set_trace() # where we want to start to debug
