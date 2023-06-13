@@ -10,6 +10,7 @@ import xarray as xr
 from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict, da2py
+import sys
 
 # import seastar.gmfs.doppler
 # import pdb # pdb.set_trace() # where we want to start to debug
@@ -118,22 +119,28 @@ def find_minima(level1_pixel, noise_pixel, gmf):
     lmout = [None] * 4
     # find the first minimum with begin current = 0
     lmout_dict = least_squares(
-        seastar.retrieval.cost_function.fun_residual,
-        init[0].x0,
-        args=(level1_pixel, noise_pixel, gmf),
-        **opt
-    )
-    lmout[0] = optimizeResults2dataset(lmout_dict, init[0].x0, level1_pixel)
-
-    # find the 3 ambiguities and run the minimisation to find the 3 minima
-    init[1:3] = find_initial_values(lmout[0].x, level1_pixel, gmf)
-    for ii in [1,2,3]:
-        lmout_dict = least_squares(
             seastar.retrieval.cost_function.fun_residual,
-            init[ii].x0,
+            init[0].x0,
             args=(level1_pixel, noise_pixel, gmf),
             **opt
-        )
+            )
+    
+    lmout[0] = optimizeResults2dataset(lmout_dict, init[0].x0, level1_pixel)
+    # find the 3 ambiguities and run the minimisation to find the 3 minima
+    init[1:3] = find_initial_values(lmout[0].x, level1_pixel, gmf)
+
+    lmout_dict_first_ambiguity = lmout_dict.copy()    
+    for ii in [1,2,3]:
+        try:
+            lmout_dict = least_squares(
+                seastar.retrieval.cost_function.fun_residual,
+                init[ii].x0,
+                args=(level1_pixel, noise_pixel, gmf),
+                **opt
+                )
+        except ValueError:
+            print('Infeasible x0, setting variables to NaN', flush=True)
+            lmout_dict = create_null_lmout_dict(lmout_dict_first_ambiguity)
         lmout[ii] = optimizeResults2dataset(lmout_dict, init[ii].x0, level1_pixel)
 
     dslmout = xr.concat(lmout, dim='Ambiguities')
@@ -141,6 +148,40 @@ def find_minima(level1_pixel, noise_pixel, gmf):
     dslmout = dslmout.assign_coords(level1_pixel.coords)
 
     return dslmout
+
+
+def create_null_lmout_dict(lmout_dict):
+    """
+    Create null lmout dict.
+
+    Creates a null output from least-squares fitting in the event of x0 being
+    found to be infeasible (out of bounds). Uses the output from the first
+    minima as input and returns a copy with all variables set to NaN, along
+    with a message and fail flag.
+
+    Parameters
+    ----------
+    lmout_dict : ``dict``
+        Dict output from scipy.optimize.least_squares.
+
+    Returns
+    -------
+    lmout_null : ``dict``
+        copy of `lmout_dict` with variables changed to NaN.
+
+    """
+    lmout_null = lmout_dict.copy()
+    for var in lmout_dict.keys():
+        if isinstance(lmout_dict[var], np.ndarray):
+            lmout_null[var] = np.full(lmout_dict[var].shape, np.NaN)
+        else:
+            lmout_null[var] = np.NaN
+
+    lmout_null['message'] = 'x0 found to be infeasible and out of bounds'
+    lmout_null['success'] = False
+    return lmout_null
+
+
 
 def x2uvcucv(x):
     """

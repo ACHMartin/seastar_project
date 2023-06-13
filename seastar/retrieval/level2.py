@@ -122,7 +122,7 @@ def sol2level2(sol):
     return level2
 
 
-def run_find_minima(level1, noise, gmf):
+def run_find_minima(level1, noise, gmf, serial=False):
     """
     Run find minima on xD dimension DataSet.
 
@@ -155,9 +155,11 @@ def run_find_minima(level1, noise, gmf):
                 'gmf': gmf,
 
             })
-
-        with multiprocessing.Pool() as pool:
-            lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+        if serial:
+            lmoutmap = map(find_minima_parallel_task, input_mp)
+        else:
+            with multiprocessing.Pool() as pool:
+                lmoutmap = pool.map(find_minima_parallel_task, input_mp)
 
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap = lmmap.set_index(z=list_L1s0)
@@ -172,8 +174,11 @@ def run_find_minima(level1, noise, gmf):
                 'noise': noise.isel({dim_name: ii}),
                 'gmf': gmf,
             })
-        with multiprocessing.Pool() as pool:
-            lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+        if serial:
+            lmoutmap = map(find_minima_parallel_task, input_mp)
+        else:
+            with multiprocessing.Pool() as pool:
+                lmoutmap = pool.map(find_minima_parallel_task, input_mp)
 
         sol = xr.concat(lmoutmap, dim=dim_name)
         sol = sol.set_index({dim_name: dim_name})
