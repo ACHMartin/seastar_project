@@ -5,4 +5,6 @@ Version of the codebase
 `__version__` with format YYYY.MM.x, where x is the release version
 
 """
-__version__ = '2023.06.0'
+
+__version__ = '2023.06.1'
+

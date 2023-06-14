@@ -146,9 +146,9 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         )
 
     ind = dict()
-    if L1.Polarization.size > 1:
-        for pol_str in ['VV', 'HH']:
-            ind[pol_str] = (L1.Polarization == pol_str).values
+    #if L1.Polarization.size > 1:
+    for pol_str in ['VV', 'HH']:
+        ind[pol_str] = (L1.Polarization == pol_str).values
 
     if gmf == 'mouche12':
         if L1.Polarization.size == 1:
