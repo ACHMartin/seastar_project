@@ -34,8 +34,8 @@ def level1_geo_dataset(gmf_mouche):
                           ),
             #             Sigma0=( ['across','along','Antenna'], np.full([5, 6,4], 1.01) ),
             #             dsig0=( ['across','along','Antenna'], np.full([5, 6,4], 0.05) ),
-            #             RVL=( ['across','along','Antenna'], np.full([5, 6,4], 0.5) ),
-            #             drvl=( ['across','along','Antenna'], np.full([5, 6,4], 0.01) ),
+            #             RSV=( ['across','along','Antenna'], np.full([5, 6,4], 0.5) ),
+            #             dRSV=( ['across','along','Antenna'], np.full([5, 6,4], 0.01) ),
         ),
         coords=dict(
             across=np.arange(0, 5),
@@ -69,7 +69,7 @@ def level1_geo_dataset(gmf_mouche):
 
     # TODO warning should be relative wind, not absolute wind
     level1['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf_mouche.nrcs) * 1.001
-    level1['RVL'] = xr.concat([
+    level1['RSV'] = xr.concat([
         seastar.gmfs.doppler.compute_total_surface_motion(
             level1.sel(Antenna=ant),
             geo,
@@ -77,13 +77,13 @@ def level1_geo_dataset(gmf_mouche):
         ) for ant in level1.Antenna.data],
         'Antenna',
         join='outer')
-    # Add NaN for RVL for the mid antennas
-    level1.RVL[1, :, :] = np.full([5, 6], np.nan)
-    level1.RVL[2, :, :] = np.full([5, 6], np.nan)
+    # Add NaN for RSV for the mid antennas
+    level1.RSV[1, :, :] = np.full([5, 6], np.nan)
+    level1.RSV[2, :, :] = np.full([5, 6], np.nan)
     # Noise
     noise = level1.drop_vars([var for var in level1.data_vars])
     noise['Sigma0'] = level1.Sigma0 * 0.05
-    noise['RVL'] = level1.RVL * 0.05
+    noise['RSV'] = level1.RSV * 0.05
 
     # TODO, we shouldn't do this, it should be fixed value, without calling a function
     return dict({'level1': level1, 'geo': geo, 'noise': noise})
@@ -107,7 +107,7 @@ def test_fun_residual(level1_geo_dataset, gmf_mouche):
         np.array([-3.0, -3.2, -3.2, -3.7,
                   -7.4,  0. ,  0. , -2.4 ]),
         rtol=0.1,
-    )  # cost values for Sigma0, then RVL
+    )  # cost values for Sigma0, then RSV
 
 
 def test_find_minima(level1_geo_dataset, gmf_mouche):
