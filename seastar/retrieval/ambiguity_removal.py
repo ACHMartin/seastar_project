@@ -40,7 +40,7 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
 
     mytruth = xr.Dataset()
     (mytruth['EarthRelativeWindU'], mytruth['EarthRelativeWindV']) = \
-        seastar.utils.tools.windSpeedDir2UV(truth.WindSpeed, truth.WindDirection)
+        seastar.utils.tools.windSpeedDir2UV(truth.EarthRelativeWindSpeed, truth.EarthRelativeWindDirection)
     (mytruth['CurrentU'], mytruth['CurrentV']) = \
         seastar.utils.tools.currentVelDir2UV(truth.CurrentVelocity, truth.CurrentDirection)
     mytruth['x'] = xr.concat(

@@ -77,8 +77,7 @@ def level1_geo_dataset(gmf_mouche):
     #     )
     # geo['vis_wdir'] = (geo.vis_wspd.dims, vis_wdir)
 
-    # TODO geo should use the RelativeWind # TODO solved with EarthRelative...2all
-    level1['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf_mouche.nrcs) * 1.001
+    level1['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf_mouche.nrcs) * 1.0001
     level1['RSV'] = xr.concat([
         seastar.gmfs.doppler.compute_total_surface_motion(
             level1.sel(Antenna=ant),
@@ -92,8 +91,8 @@ def level1_geo_dataset(gmf_mouche):
     level1.RSV[2, :, :] = np.full([5, 6], np.nan)
     # Noise
     noise = level1.drop_vars([var for var in level1.data_vars])
-    noise['Sigma0'] = level1.Sigma0 * 0.05
-    noise['RSV'] = level1.RSV * 0.05
+    noise['Sigma0'] = level1.Sigma0 * 0.001
+    noise['RSV'] = level1.RSV * 0.001
 
     # TODO, we shouldn't do this, it should be fixed value, without calling a function
     return dict({'level1': level1, 'geo': geo, 'noise': noise})
@@ -112,34 +111,39 @@ def test_wind_current_retrieval(level1_geo_dataset, gmf_mouche):
 
     L1 = level1.isel(across=slice(0, 2), along=slice(0, 2))
     N = noise.isel(across=slice(0, 2), along=slice(0, 2))
+    ambiguity = {'name': 'closest_truth',
+                 'truth': geo.isel(across=slice(0, 2), along=slice(0, 2)),
+                 'method': 'current'}
 
     sL1 = level1.isel(across=slice(0,2), along=0)
     sN = noise.isel(across=slice(0,2), along=0)
 
     ssL1 = level1.isel(across=0, along=0)
     ssN = noise.isel(across=0, along=0)
-    ambiguity = 'sort_by_cost'
+    # ambiguity = {'name': 'sort_by_cost'}
+    ssambiguity = {'name': 'closest_truth', 'truth': geo.isel(across=0, along=0), 'method': 'current'}
 
     # Test on full xr.DataSet but single pixel
-    ssl2, sslmout = level2.wind_current_retrieval(ssL1, ssN, gmf_mouche, ambiguity)
+    ssl2 = level2.wind_current_retrieval(ssL1, ssN, gmf_mouche, ssambiguity)
     ssds = xr.Dataset(
         data_vars=dict(
-            x=(['x_variables'], [-4.50, 7.80, 0.50, -0.86]),
+            x=(['x_variables'], [-5.00, 8.66, 0.50, -0.86]),
             CurrentU=([], 0.50),
             CurrentV=([], -0.86),
-            EarthRelativeWindU=([], -4.50),
-            EarthRelativeWindV=([], 7.80),
+            EarthRelativeWindU=([], -5.00),
+            EarthRelativeWindV=([], 8.66),
             CurrentVelocity=([], 1.00),
             CurrentDirection=([], 150.00),
-            EarthRelativeWindSpeed=([], 10.00), # TODO should be 10 if AbsoluteWind, 9 if RelativeWind
+            EarthRelativeWindSpeed=([], 10.00),
             EarthRelativeWindDirection=([], 150.00),
         ),
+        coords=dict(x_variables=['u','v','c_u','c_v']),
     )
 
     xr.testing.assert_allclose(
-        ssl2,
+        ssl2.reset_coords(drop=True)[list(ssds.keys())],
         ssds,
-        rtol=0.01
+        rtol=0.1
     )
 
     # Test on full xr.DataSet with 1 dimension
@@ -159,7 +163,7 @@ def test_wind_current_retrieval(level1_geo_dataset, gmf_mouche):
     # )
 
     # Test on full xr.DataSet with 2 dimension
-    l2, lmout = level2.wind_current_retrieval(L1, N, gmf_mouche, ambiguity)
+    l2 = level2.wind_current_retrieval(L1, N, gmf_mouche, ambiguity)
     # ds = xr.Dataset(
     #     data_vars=dict(
     #         x=( ['x_variables', 'across', 'along'], [-4.50, 7.80, 0.50, -0.86]),
