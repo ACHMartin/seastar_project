@@ -40,8 +40,7 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
                                         'instead in order to remove this warning.\n'
                                         '"Wind" are been used here as "OceanSurfaceWind" i.e. '
                                         'relative to the surface motion',
-                                category=DeprecationWarning,
-                                module=user_ns.get("__name__"))
+                                category=DeprecationWarning,)
 
     nrcs = xr.Dataset()
     for antenna in L1_combined.Antenna.data:

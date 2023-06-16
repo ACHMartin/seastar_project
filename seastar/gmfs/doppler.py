@@ -149,8 +149,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
                                         'instead in order to remove this warning.\n'
                                         '"Wind" are been used here as "OceanSurfaceWind" i.e. '
                                         'relative to the surface motion',
-                                category=DeprecationWarning,
-                                module=user_ns.get("__name__"))
+                                category=DeprecationWarning,)
 
 
     relative_wind_direction =\
