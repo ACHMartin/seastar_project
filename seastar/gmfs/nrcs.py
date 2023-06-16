@@ -12,14 +12,14 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
     Compute Normalized Radar Cross Section (nrcs).
 
     Compute NRCS (Sigma0) using incidence angle, antenna polarization and
-    windspeed/direction data.
+    OceanSurfaceWindSpeed/direction data.
 
     Parameters
     ----------
     L1_combined : ``xr.Dataset``
         Dataset containing IncidenceAngleImage and antenna polarization data
     aux_geo : ``xr.Dataset``
-        Geophysical parameter dataset containing wind speed and direction data
+        Geophysical parameter dataset containing OceanSurfaceWindSpeed and Direction data
 
     Returns
     -------
@@ -28,13 +28,28 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
         arranged along a dimension corresponding to antenna position
 
     """
+
+    # Initialisation / test
+    if 'OceanSurfaceWindSpeed' not in aux_geo.keys():
+        import warnings
+        aux_geo['OceanSurfaceWindSpeed'] = aux_geo['WindSpeed']
+        aux_geo['OceanSurfaceWindDirection'] = aux_geo['WindDirection']
+        warnings.filterwarnings('default',
+                                message='"WindSpeed" and "WindDirection" fields are deprecated. '
+                                        'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
+                                        'instead in order to remove this warning.\n'
+                                        '"Wind" are been used here as "OceanSurfaceWind" i.e. '
+                                        'relative to the surface motion',
+                                category=DeprecationWarning,
+                                module=user_ns.get("__name__"))
+
     nrcs = xr.Dataset()
     for antenna in L1_combined.Antenna.data:
         L1 = L1_combined.sel(Antenna=antenna)
         L1, aux_geo = xr.align(L1, aux_geo, join="outer")
         relative_wind_direction =\
             seastar.utils.tools.compute_relative_wind_direction(
-                aux_geo.WindDirection,
+                aux_geo.OceanSurfaceWindDirection,
                 L1.AntennaAzimuthImage
                 )
         # ind = {'VV': 1, 'HH': 2}
@@ -46,7 +61,7 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
 
         if gmf['name'] == 'nscat4ds':
             nrcs_data = nscat4ds(
-                aux_geo.WindSpeed.values,
+                aux_geo.OceanSurfaceWindSpeed.values,
                 relative_wind_direction.values,
                 L1.IncidenceAngleImage.values,
                 pol_val.values

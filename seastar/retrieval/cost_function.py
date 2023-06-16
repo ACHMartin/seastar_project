@@ -56,8 +56,8 @@ def fun_residual(variables, level1, noise, gmf):
 
     geo = xr.Dataset(
         data_vars=dict(
-            WindSpeed=(level1.isel(Antenna=0).IncidenceAngleImage.dims, vis_wspd),
-            WindDirection=(level1.isel(Antenna=0).IncidenceAngleImage.dims, vis_wdir),
+            OceanSurfaceWindSpeed=(level1.isel(Antenna=0).IncidenceAngleImage.dims, vis_wspd),
+            OceanSurfaceWindDirection=(level1.isel(Antenna=0).IncidenceAngleImage.dims, vis_wdir),
             CurrentVelocity=(level1.isel(Antenna=0).IncidenceAngleImage.dims, c_vel),
             CurrentDirection=(level1.isel(Antenna=0).IncidenceAngleImage.dims, c_dir),
         ),

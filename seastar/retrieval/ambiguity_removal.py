@@ -27,7 +27,7 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
          coordinates "x_variables" = [u,v,c_u,c_v]; "Ambiguities";
     truth : ``xarray.Dataset``
         Have to contain the following geophysical parameters:
-        WindSpeed, WindDirection, CurrentVelocity, CurrentDirection, others (waves)
+        EarthRelativeWindSpeed, EarthRelativeWindDirection, CurrentVelocity, CurrentDirection, others (waves)
         Should be in the same dimension as lmout
     windcurrentratio : ``float``
         ratio to combine the distance between wind and current. Default value of 10
@@ -39,12 +39,12 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
     """
 
     mytruth = xr.Dataset()
-    (mytruth['WindU'], mytruth['WindV']) = \
+    (mytruth['EarthRelativeWindU'], mytruth['EarthRelativeWindV']) = \
         seastar.utils.tools.windSpeedDir2UV(truth.WindSpeed, truth.WindDirection)
     (mytruth['CurrentU'], mytruth['CurrentV']) = \
         seastar.utils.tools.currentVelDir2UV(truth.CurrentVelocity, truth.CurrentDirection)
     mytruth['x'] = xr.concat(
-        [mytruth['WindU'], mytruth['WindV'], mytruth['CurrentU'], mytruth['CurrentV']],
+        [mytruth['EarthRelativeWindU'], mytruth['EarthRelativeWindV'], mytruth['CurrentU'], mytruth['CurrentV']],
         'x_variables'
     )
 
