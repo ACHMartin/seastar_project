@@ -43,10 +43,10 @@ def find_minima_parallel_task(element):
 
 def wind_current_retrieval(level1, noise, gmf, ambiguity):
     """
-    Compute ocean surface WIND and CURRENT magnitude and direction
+    Compute ocean surface and earth relative WIND and CURRENT magnitude and direction
     by minimisation of a cost function.
 
-    Compute Ocean Surface Vector Wind (OSVW) in (m/s) and
+    Compute Ocean Surface Vector Wind (OSVW) and Earth Relative (ERW) in (m/s) and
     direction (degrees N) in the meteorological convention (coming from).
     Assumed neutral wind at 10m.
 
@@ -71,9 +71,14 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
     level2.CurrentDirection : ``xarray.DataArray``
         Surface current direction (degrees N) in oceanographic convention
         (going to)
-    level2.WindSpeed : ``xarray.DataArray``
+    level2.EarthRelativeWindSpeed : ``xarray.DataArray``
+        EarthRelative Wind Speed (m/s)
+    level2.EarthRelativeWindDirection : ``xarray.DataArray``
+        EarthRelative Wind Direction (degrees N) in meteorologic convention
+        (coming from)
+    level2.OceanSurfaceWindSpeed : ``xarray.DataArray``
         Ocean Surface Wind Speed (m/s)
-    level2.WindDirection : ``xarray.DataArray``
+    level2.OceanSurfaceWindDirection : ``xarray.DataArray``
         Ocean Surface Wind Direction (degrees N) in meteorologic convention
         (coming from)
     """
@@ -87,7 +92,9 @@ def wind_current_retrieval(level1, noise, gmf, ambiguity):
 
 def sol2level2(sol):
     """
-    Convert solution.x into WindU, WindV, WindSpeed, WindCurrent, CurrentU, V, Velocity, Direction
+    Convert solution.x into EarthRelativeWindU, EarthRelativeWindV, EarthRelativeWindSpeed, EarthRelativeWindDirection,
+    same for OceanSurfaceWindU, V, Speed, Direction and
+     CurrentU, V, Velocity, Direction
 
     Parameters
     ----------
@@ -102,27 +109,15 @@ def sol2level2(sol):
     level2['cost'] = sol.cost
     level2['CurrentU'] = level2.x.sel(x_variables='c_u')
     level2['CurrentV'] = level2.x.sel(x_variables='c_v')
-    level2['WindU'] = level2.x.sel(x_variables='u')
-    level2['WindV'] = level2.x.sel(x_variables='v')
+    level2['EarthRelativeWindU'] = level2.x.sel(x_variables='u')
+    level2['EarthRelativeWindV'] = level2.x.sel(x_variables='v')
 
-    [level2['CurrentVelocity'], cdir] = \
-        seastar.utils.tools.currentUV2VelDir(
-            level2['CurrentU'],
-            level2['CurrentV']
-        )
-    level2['CurrentDirection'] = (level2.CurrentVelocity.dims, cdir)
-
-    [level2['WindSpeed'], wdir] = \
-        seastar.utils.tools.windUV2SpeedDir(
-            level2['WindU'],
-            level2['WindV']
-        )
-    level2['WindDirection'] = (level2.WindSpeed.dims, wdir)
+    level2 = seastar.utils.tools.EarthRelativeUV2all(level2)
 
     return level2
 
 
-def run_find_minima(level1, noise, gmf):
+def run_find_minima(level1, noise, gmf, serial=False):
     """
     Run find minima on xD dimension DataSet.
 
@@ -155,9 +150,11 @@ def run_find_minima(level1, noise, gmf):
                 'gmf': gmf,
 
             })
-
-        with multiprocessing.Pool() as pool:
-            lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+        if serial:
+            lmoutmap = map(find_minima_parallel_task, input_mp)
+        else:
+            with multiprocessing.Pool() as pool:
+                lmoutmap = pool.map(find_minima_parallel_task, input_mp)
 
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap = lmmap.set_index(z=list_L1s0)
@@ -172,8 +169,11 @@ def run_find_minima(level1, noise, gmf):
                 'noise': noise.isel({dim_name: ii}),
                 'gmf': gmf,
             })
-        with multiprocessing.Pool() as pool:
-            lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+        if serial:
+            lmoutmap = map(find_minima_parallel_task, input_mp)
+        else:
+            with multiprocessing.Pool() as pool:
+                lmoutmap = pool.map(find_minima_parallel_task, input_mp)
 
         sol = xr.concat(lmoutmap, dim=dim_name)
         sol = sol.set_index({dim_name: dim_name})
