@@ -181,6 +181,46 @@ def EarthRelativeSpeedDir2all(ds):
 
     return ds
 
+def EarthRelativeUV2all(ds):
+    """
+    Convert a dictionary with Earth Relative wind to Ocean Surface Wind
+
+    Parameters
+    ----------
+    mydict : ``xarray.Dataset``
+        a dictionary with ['EarthRelativeWindU'], ['EarthRelativeWindV'], ['CurrentU'], ['CurrentV'] elements
+    Returns
+    -------
+    mydict : ``xarray.Dataset``
+        a dictionary with previous fields + OceanSurfaceWind elements
+    """
+
+    ds['OceanSurfaceWindU'] = ds['EarthRelativeWindU'] - ds['CurrentU']
+    ds['OceanSurfaceWindV'] = ds['EarthRelativeWindV'] - ds['CurrentV']
+
+    [ds['OceanSurfaceWindSpeed'], oswdir ] = \
+        windUV2SpeedDir(
+            ds['OceanSurfaceWindU'],
+            ds['OceanSurfaceWindV']
+        )
+    ds['OceanSurfaceWindDirection'] = ( ds['OceanSurfaceWindSpeed'].dims, oswdir)
+
+    [ds['EarthRelativeWindSpeed'], erwdir] = \
+        windUV2SpeedDir(
+            ds['EarthRelativeWindU'],
+            ds['EarthRelativeWindV']
+        )
+    ds['EarthRelativeWindDirection'] = ( ds['EarthRelativeWindSpeed'].dims, erwdir)
+
+    [ds['CurrentVelocity'], cdir] = \
+        currentUV2VelDir(
+            ds['CurrentU'],
+            ds['CurrentV']
+        )
+    ds['CurrentDirection'] = ( ds['CurrentVelocity'].dims, cdir)
+
+    return ds
+
 def windCurrentUV2all(mydict):
     """
     Convert a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements to

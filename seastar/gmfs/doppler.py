@@ -21,7 +21,7 @@ def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
         A Dataset containing IncidenceAngleImage, AntennaAzimuthImage and
         Polarization.
     aux_geo : xarray.Dataset
-        A Dataset containing WindSpeed, WindDirection, CurrentVelocity, CurrentDirection
+        A Dataset containing OceanSurfaceWindSpeed, OceanSurfaceWindDirection, CurrentVelocity, CurrentDirection
     gmf : str
         Option for geophysical model function. 'mouche12', 'yurovsky19'
         with kwargs for options.
@@ -108,7 +108,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         A Dataset containing IncidenceAngleImage, AntennaAzimuthImage and
         Polarization
     aux_geo : xarray.Dataset
-        A Dataset containing WindSpeed, WindDirection.
+        A Dataset containing OceanSurfaceWindSpeed, OceanSurfaceWindDirection.
     gmf : str
         Option for geophysical model function. 'mouche12', 'yurovsky19'
         with kwargs for options.
@@ -139,9 +139,19 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     # TODO I really think we might be able just to test L1 and geo are aligned and whatever the dimension
     L1, aux_geo = xr.align(L1, aux_geo, join="outer")
 
+    if 'OceanSurfaceWindSpeed' not in aux_geo.keys():
+        import logging
+        aux_geo['OceanSurfaceWindSpeed'] = aux_geo['WindSpeed']
+        aux_geo['OceanSurfaceWindDirection'] = aux_geo['WindDirection']
+        logging.warning('"WindSpeed" and "WindDirection" fields are deprecated. '
+                        'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
+                        'instead in order to remove this warning.\n'
+                        '"Wind" are been used here as "OceanSurfaceWind" i.e. relative to the surface motion'
+                        )
+
     relative_wind_direction =\
         seastar.utils.tools.compute_relative_wind_direction(
-            aux_geo.WindDirection,
+            aux_geo.OceanSurfaceWindDirection,
             L1.AntennaAzimuthImage
         )
 
@@ -153,7 +163,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     if gmf == 'mouche12':
         if L1.Polarization.size == 1:
             dop_c = mouche12(
-                aux_geo.WindSpeed.values,
+                aux_geo.OceanSurfaceWindSpeed.values,
                 relative_wind_direction.values,
                 L1.IncidenceAngleImage.values,
                 L1.Polarization.data,
@@ -163,7 +173,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
             for pol_str in ('VV', 'HH'):
                 if ind[pol_str].any():
                     dop_c[ind[pol_str]] = mouche12(
-                        aux_geo.WindSpeed.values[ind[pol_str]],
+                        aux_geo.OceanSurfaceWindSpeed.values[ind[pol_str]],
                         relative_wind_direction.values[ind[pol_str]],
                         L1.IncidenceAngleImage.values[ind[pol_str]],
                         pol_str,
@@ -189,7 +199,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         [dc['VV'], dc['HH']] = yurovsky19(
             L1.IncidenceAngleImage,
             relative_wind_direction,
-            aux_geo.WindSpeed,
+            aux_geo.OceanSurfaceWindSpeed,
             lambdar=central_wavelength,
             **kwargs
         )

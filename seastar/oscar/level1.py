@@ -609,8 +609,8 @@ def init_auxiliary(level1, u10, wind_direction):
                                                     wind_direction,
                                                     level1)
     aux = xr.Dataset()
-    aux['WindSpeed'] = WindSpeed
-    aux['WindDirection'] = WindDirection
+    aux['EarthRelativeWindSpeed'] = WindSpeed
+    aux['EarthRelativeWindDirection'] = WindDirection
 
     return aux
 
