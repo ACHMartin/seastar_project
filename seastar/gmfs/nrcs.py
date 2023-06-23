@@ -31,16 +31,14 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
 
     # Initialisation / test
     if 'OceanSurfaceWindSpeed' not in aux_geo.keys():
-        import warnings
+        import logging
         aux_geo['OceanSurfaceWindSpeed'] = aux_geo['WindSpeed']
         aux_geo['OceanSurfaceWindDirection'] = aux_geo['WindDirection']
-        warnings.filterwarnings('default',
-                                message='"WindSpeed" and "WindDirection" fields are deprecated. '
-                                        'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
-                                        'instead in order to remove this warning.\n'
-                                        '"Wind" are been used here as "OceanSurfaceWind" i.e. '
-                                        'relative to the surface motion',
-                                category=DeprecationWarning,)
+        logging.warning('"WindSpeed" and "WindDirection" fields are deprecated. '
+                        'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
+                        'instead in order to remove this warning.\n'
+                        '"Wind" are been used here as "OceanSurfaceWind" i.e. relative to the surface motion'
+                        )
 
     nrcs = xr.Dataset()
     for antenna in L1_combined.Antenna.data:
