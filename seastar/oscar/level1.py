@@ -317,7 +317,7 @@ def compute_multilooking_Master_Slave(ds, window=3,
 
     ds_out.IntensityAvgMaster.attrs['long_name'] = \
         'Intensity Master'
-    ds_out.Intensity.attrs['description'] = \
+    ds_out.IntensityAvgMaster.attrs['description'] = \
         'Average absolute single look complex image intensity for Master SLC (|M^2|)'
     ds_out.IntensityAvgMaster.attrs['units'] = ''
 
@@ -337,6 +337,8 @@ def compute_multilooking_Master_Slave(ds, window=3,
 
     ds_out.IntensityAvgSlave.attrs['long_name'] = \
         'Intensity Slave'
+    ds_out.IntensityAvgSlave.attrs['description'] = \
+        'Average absolute single look complex image intensity for Slave SLC (|S^2|)'
     ds_out.IntensityAvgSlave.attrs['units'] = ''
     ds_out.Coherence.attrs['long_name'] = \
         'Coherence'
