@@ -6,5 +6,5 @@ Version of the codebase
 
 """
 
-__version__ = '2023.06.2'
+__version__ = '2023.07.1'
 
