@@ -662,3 +662,17 @@ def lin2db(lin):
 
 def db2lin(db):
     return 10**(db/10)
+
+def reduce_0_360_to_0_180(input_degree):
+    """
+    Convert the direction range 0-360 to 0-180 assuming a symetry around zero. Useful for GMFs in Sigma0 or WASV.
+
+    Parameters
+    ----------
+    input_degree : ``numpy``, ``xarray``
+
+    Returns
+    -------
+    output in the same format as the input
+    """
+    return( np.abs(((input_degree + 180) % 360) - 180) )
