@@ -140,17 +140,14 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     L1, aux_geo = xr.align(L1, aux_geo, join="outer")
 
     if 'OceanSurfaceWindSpeed' not in aux_geo.keys():
-        import warnings
+        import logging
         aux_geo['OceanSurfaceWindSpeed'] = aux_geo['WindSpeed']
         aux_geo['OceanSurfaceWindDirection'] = aux_geo['WindDirection']
-        warnings.filterwarnings('default',
-                                message='"WindSpeed" and "WindDirection" fields are deprecated. '
-                                        'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
-                                        'instead in order to remove this warning.\n'
-                                        '"Wind" are been used here as "OceanSurfaceWind" i.e. '
-                                        'relative to the surface motion',
-                                category=DeprecationWarning,)
-
+        logging.warning('"WindSpeed" and "WindDirection" fields are deprecated. '
+                        'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
+                        'instead in order to remove this warning.\n'
+                        '"Wind" are been used here as "OceanSurfaceWind" i.e. relative to the surface motion'
+                        )
 
     relative_wind_direction =\
         seastar.utils.tools.compute_relative_wind_direction(
