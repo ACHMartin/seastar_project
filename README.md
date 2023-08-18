@@ -29,6 +29,18 @@ Create a new environment named `seastar` with all the required packages and acti
 
 To confirm that you have successfully activated `seastar`, your terminal command line prompt should now start with `(seatar)`.
 
+### 1.3 Optional: Add the path of the seastar_project into your conda pythonpath
+To permanently include packages or folder into the `PYTHONPATH` of an Anaconda 
+environment, activate the Conda environment and use `conda develop` to add the 
+path permanently to the `PYTHONPATH` of the Conda environment.
+```
+(seastar)>>> conda develop /PATH/TO/seastar_project
+```
+you should get the following prints on screen:
+```
+added /PATH/TO/seastar_project
+completed operation for: /PATH/TO/seastar_project
+```
 
 ## 2. Running the code
 

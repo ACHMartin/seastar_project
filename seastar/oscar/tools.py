@@ -152,3 +152,4 @@ def identify_antenna_location_from_filename(file_path, file_time_triplets):
         file_name = file_list[file_time_triplets[i]]
         antenna_id.append(antenna_identifiers[file_name.split('_')[5][0]])
     return antenna_id
+
