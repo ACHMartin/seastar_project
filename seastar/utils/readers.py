@@ -1,3 +1,4 @@
+"""Functions for input/output and file reading."""
 import os
 import glob
 import configparser
@@ -69,18 +70,18 @@ def findNetCDFilepaths(directory_path, recursive=False):
 
 
 def readNetCDFFile(netCFD_path):
-    """Reads a netCDF file and returns it as an xarray.
+    """
+    Read a netCDF file and returns it as an `xarray.Dataset`.
 
     :param netCFD_path: path to the netCDF file
     :type netCFD_path: ``str``
 
-    :raises: ``ValueError`` if file cannot be read as netCDF and \
+    :raises: ``ValueError`` if file cannot be read as netCDF and
         returns ``None`` object
 
     :return: xrray read from the netCDF file
     :rtype: ``xarray``
     """
-
     data_xr = None
     try:
         data_xr = xr.open_dataset(netCFD_path)
@@ -89,4 +90,3 @@ def readNetCDFFile(netCFD_path):
         print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
 
     return data_xr
-

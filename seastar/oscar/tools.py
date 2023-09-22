@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Feb 16 16:26:52 2023
-
-@author: davidmccann
-"""
+"""Functions for the processing of OSCAR airbone data."""
 import os
 import numpy as np
 from seastar.utils.readers import readNetCDFFile

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Sep 16 16:48:48 2022
-
-@author: admartin, dlmccann
-"""
+"""Functions to compute Level-2 (L2) products."""
 import multiprocessing
 import numpy as np
 import xarray as xr
@@ -13,10 +9,11 @@ from seastar.retrieval import cost_function, ambiguity_removal
 
 # import pdb # pdb.set_trace() # where we want to start to debug
 
+
 def find_minima_parallel_task(element):
     """
-    Parallel processing task
-    
+    Parallel processing task.
+
     Defines the task to be passed to multiprocessing.map() for MPI
 
     Parameters
@@ -126,14 +123,15 @@ def run_find_minima(level1, noise, gmf, serial=False):
     level1 : ``xarray.Dataset``
         L1 observables noisy dataset (Sigma0, RSV, geometry)
     noise : ``xarray.Dataset``
-        Defined noise with data_vars "Sigma0", "RSV" on the same grid as level1
+        Defined noise with data_vars `Sigma0`, `RSV` on the same grid as ``level1``
     gmf : ``dict``
+        Geophysical Model Function
     Returns
     -------
     sol : ``xarray.Dataset``
         x dimension dataset of find_minima output containing among other
-        ".x = [u,v,c_u,c_v]" and ".cost"
-        with dimension along "Ambiguities" of size=4 by construction.
+        `.x = [u,v,c_u,c_v]` and `.cost`
+        with dimension along `Ambiguities` of size=4 by construction.
     """
     list_L1s0 = list(level1.Sigma0.dims)
     list_L1s0.remove('Antenna')

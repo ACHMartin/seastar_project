@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Functions to compute Level-1 (L1) data products."""
 import numpy as np
 import xarray as xr
 import scipy as sp
@@ -221,10 +222,7 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, window=3,
-                                      vars_to_send=['Intensity',
-                                                    'Interferogram',
-                                                    'Coherence']):
+def compute_multilooking_Master_Slave(ds, window=3, vars_to_send=['Intensity', 'Interferogram', 'Coherence']):
     """
     Compute  multilooking Master/Slave L1b image products.
 
@@ -246,7 +244,7 @@ def compute_multilooking_Master_Slave(ds, window=3,
     vars_to_send:  list
         default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
         can in addition take among: 'IntensityAvgComplexMasterSlave',
-        'IntensityAvgMaster', 'IntensityAvgSlave'
+            'IntensityAvgMaster', 'IntensityAvgSlave'
 
     Returns
     -------
@@ -346,8 +344,8 @@ def compute_multilooking_Master_Slave(ds, window=3,
         'Coherence between master/slave antenna pair'
     ds_out.Coherence.attrs['units'] = ''
 
-
     return ds_out[list(vars_to_send)]
+
 
 def compute_local_coordinates(ds):
     lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
