@@ -8,7 +8,8 @@ import os
 import numpy as np
 from seastar.utils.readers import readNetCDFFile
 from seastar.utils.tools import list_duplicates
-
+from scipy import interpolate
+import xarray as xr
 
 def load_OSCAR_data(file_path, file_inds):
     """
@@ -152,3 +153,41 @@ def identify_antenna_location_from_filename(file_path, file_time_triplets):
         file_name = file_list[file_time_triplets[i]]
         antenna_id.append(antenna_identifiers[file_name.split('_')[5][0]])
     return antenna_id
+
+
+def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
+    """
+    Co-locate data by lat/lon coordinates.
+
+    Co-locates data from once set of lat/lon coordinates to another.
+
+    Parameters
+    ----------
+    data_in : `xr.DataArray`, `array`
+        Data at points to be co-locoated
+    latitude : `array` of `float`
+        Array of latitude coordinates
+    longitude : `array` of `float`
+        Array of longitude coordinates
+    ds_out : `xr.DataArray`
+        `xr.DataArray` with lat and lon coordinates to co-locate the data to.
+
+    Returns
+    -------
+    colocated_var : `xr.DataArray`
+        Data array of co-located data
+
+    """
+    new_data = interpolate.griddata(
+                            points=(np.ravel(longitude),
+                                    np.ravel(latitude)),
+                            values=(np.ravel(data_in)),
+                            xi=(ds_out.longitude.values,
+                                ds_out.latitude.values),
+                            )
+    colocated_var = xr.DataArray(
+                        data=new_data,
+                        dims=ds_out.dims,
+                        coords=ds_out.coords
+                        )
+    return colocated_var
