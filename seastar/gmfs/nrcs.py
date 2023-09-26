@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-
+"""Functions to compute Normalised Radar Cross Section data."""
 import numpy as np
 import xarray as xr
 from scipy.interpolate import interpn
@@ -19,7 +19,8 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
     L1_combined : ``xr.Dataset``
         Dataset containing IncidenceAngleImage and antenna polarization data
     aux_geo : ``xr.Dataset``
-        Geophysical parameter dataset containing OceanSurfaceWindSpeed and Direction data
+        Geophysical parameter dataset containing OceanSurfaceWindSpeed and
+        Direction data
 
     Returns
     -------
@@ -28,13 +29,12 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
         arranged along a dimension corresponding to antenna position
 
     """
-
     # Initialisation / test
     if 'OceanSurfaceWindSpeed' not in aux_geo.keys():
         import logging
         aux_geo['OceanSurfaceWindSpeed'] = aux_geo['WindSpeed']
         aux_geo['OceanSurfaceWindDirection'] = aux_geo['WindDirection']
-        logging.warning('"WindSpeed" and "WindDirection" fields are deprecated. '
+        logging.warning('"WindSpeed" and "WindDirection" fields are deprecated.'
                         'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
                         'instead in order to remove this warning.\n'
                         '"Wind" are been used here as "OceanSurfaceWind" i.e. relative to the surface motion'
