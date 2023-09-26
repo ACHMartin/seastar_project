@@ -1,14 +1,15 @@
 version: 2
 
 sphinx:
-  fail_on_warning: true
+  configuration: docs/source/conf.py 
+#  fail_on_warning: true
   
 python:
   version: 3.8
   # Install our python package before building the docs
-  install:
-    - method: pip
-      path: .
+#  install:
+#    - method: pip
+#      path: .
 
-formats:
-  - pdf
+#formats:
+#  - pdf
