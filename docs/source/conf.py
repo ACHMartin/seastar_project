@@ -13,7 +13,8 @@
 import os
 import sys
 
-autodoc_mock_imports = ["numpy", "xarray", "scipy", "utm", "pytest", "cartopy"]
+autodoc_mock_imports = ["numpy", "xarray", "scipy", "utm", "pytest", "cartopy",
+                        "shapely"]
 
 sys.path.insert(0, os.path.abspath('../..'))
 print(os.path.abspath('../..'))
