@@ -1,5 +1,5 @@
-L2 Processing
-=============
+Level-2 (L2) Processing
+=======================
 
 Currents
 --------
@@ -11,10 +11,6 @@ Ambiguity removal
 .. automodule:: seastar.retrieval.ambiguity_removal
    :members:
 
-Auxiliary
----------
-.. automodule:: seastar.retrieval.auxiliary
-   :members:
    
 Cost function
 -------------

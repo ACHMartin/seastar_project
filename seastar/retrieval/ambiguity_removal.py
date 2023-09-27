@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on February 2023
-
-@author: admartin, dlmccann
-"""
+"""Functions for ambiguitay removal of simultaneous retrieval data products."""
 
 import numpy as np
 import xarray as xr
@@ -17,25 +13,34 @@ import pdb
 
 def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
     """
-    Define a dictionary (windcurrent, wind, current) of indexes for lmout.x on Ambiguities closest to the Truth.
-    Closest distances are defined as euclidian distance on the wind only (wind), current only (current)
-    or combining distance between wind and current using the given windcurrentratio (windcurrent).
+    Find ambiguity closest to truth.
+
+    Define a dictionary (windcurrent, wind, current) of indexes for lmout.x
+    on Ambiguities closest to the Truth. Closest distances are defined as
+    euclidian distance on the wind only (wind), current only (current) or
+    combining distance between wind and current using the given windcurrent
+    ratio (windcurrent).
+ 
     Parameters
     ----------
     lmout : ``xarray.Dataset``
-        Have to contain the following ".x" data_vars and
-         coordinates "x_variables" = [u,v,c_u,c_v]; "Ambiguities";
+        Have to contain the following `.x` data_vars and
+         coordinates `x_variables` = [u,v,c_u,c_v]; `Ambiguities`;
     truth : ``xarray.Dataset``
         Have to contain the following geophysical parameters:
-        EarthRelativeWindSpeed, EarthRelativeWindDirection, CurrentVelocity, CurrentDirection, others (waves)
+        EarthRelativeWindSpeed, EarthRelativeWindDirection,
+        CurrentVelocity, CurrentDirection, others (waves)
         Should be in the same dimension as lmout
     windcurrentratio : ``float``
-        ratio to combine the distance between wind and current. Default value of 10
+        ratio to combine the distance between wind and current.
+        Default value of 10
     Returns
     -------
     index : ``dict`` of ``xarray.DataArray``
-        with keys "windcurrent", "wind", "current" corresponding on which quantity the distance is calculated
-        combining dataArray. Can be applied directly to lmout with lmout.isel(Ambiguities=ind['windcurrent'])
+        with keys `windcurrent`, `wind`, `current` corresponding on
+        which quantity the distance is calculated combining dataArray.
+        Can be applied directly to lmout with
+        ``lmout.isel(Ambiguities=ind['windcurrent'])``
     """
 
     mytruth = xr.Dataset()
@@ -67,15 +72,19 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
 
 def ambiguity_sort_by_cost(lmout):
     """
+    Find ambiguity by cost.
+
     Return an indexes for lmout on Ambiguities for the smallest cost.
+
     Parameters
     ----------
     lmout : ``xarray.Dataset``
-        Have to contain the following ".cost" data_vars
+        Have to contain the following `.cost` data_vars
     Returns
     -------
     index : ``xarray.DataArray``
-        a dataArray index. Can be applied directly to lmout with lmout.isel(Ambiguities=index_cost)
+        a dataArray index. Can be applied directly to lmout with
+        ``lmout.isel(Ambiguities=index_cost)``
     """
     cost = xr.where(np.isnan(lmout.cost), np.inf, lmout.cost)
     index = cost.argmin(dim='Ambiguities')
@@ -85,20 +94,23 @@ def ambiguity_sort_by_cost(lmout):
 
 def solve_ambiguity(lmout, ambiguity):
     """
+    Solve ambiguity.
+
     Send back the solution after resolving the ambiguities following
     the algorithm defined in the ambiguity dictionary.
+
     Parameters
     ----------
     lmout : ``xarray.Dataset``
         dataset of N dimension with required fields, .x and .cost
         and required coords: Ambiguities, x_variables
     ambiguity : ``dict``
-        Dictionary with keys 'name':
-        - name == 'sort_by_cost'
-        - name == 'closest_truth'
-            'truth' HAVE to be in the dict.
-            optional 'method' within 'windcurrent' (default), 'wind', 'current'
-            optional 'windcurrentratio' default == 10
+        Dictionary with keys `name`:
+        - name = `sort_by_cost`
+        - name = `closest_truth`
+            `truth` HAVE to be in the dict.
+            optional `method` within `windcurrent` (default), `wind`, `current`
+            optional `windcurrentratio` default = 10
     Returns
     ----------
     sol : ``xarray.Dataset``

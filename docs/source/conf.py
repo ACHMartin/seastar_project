@@ -12,13 +12,17 @@
 #
 import os
 import sys
+
+autodoc_mock_imports = ["numpy", "xarray", "scipy", "utm", "pytest", "cartopy",
+                        "shapely"]
+
 sys.path.insert(0, os.path.abspath('../..'))
 print(os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Seastar'
-copyright = '2022, Adrien Martin, David McCann'
+project = 'SeaSTAR'
+copyright = '2023, Adrien Martin, David McCann'
 author = 'Adrien Martin, David McCann'
 
 # The full version, including alpha/beta/rc tags

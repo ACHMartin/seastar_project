@@ -73,12 +73,6 @@ def compute_radial_current(current_vel, rel_current_dir, inci):
     inci : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Incidence angle of radar beam (degrees from nadir).
 
-    #
-    # Raises
-    # ------
-    # Exception
-    #     Exception for inconsistency in sizes of input parameters.
-
     Returns
     -------
     u_rsc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``

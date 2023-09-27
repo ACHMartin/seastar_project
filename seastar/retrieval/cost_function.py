@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on December 2022
-
-@author: admartin, dlmccann
-"""
+"""Functions to define and compute the cost function for simultaneous retrieval."""
 
 import numpy as np
 import xarray as xr
@@ -25,12 +21,12 @@ def fun_residual(variables, level1, noise, gmf):
     variables : ``numpy.array`` others...
         [u, v, c_u, c_v]; u, v, c_u, c_v being floats
     level1 : ``xarray.Dataset``
-        level1 dataset with "Antenna" as a dimension, with the mandatory following fields:
-         "IncidenceAngleImage", "RSV", "Sigma0"
+        level1 dataset with ``Antenna`` as a dimension, with the mandatory following fields:
+         ``IncidenceAngleImage``, ``RSV``, ``Sigma0``
     noise : ``xarray.Dataset``
-        Noise DataSet with fields "RSV" and "Sigma0" of the same size as level1
+        Noise DataSet with fields ``RSV`` and ``Sigma0`` of the same size as level1
     gmf: dict or dotdict
-        dictionary with gmf['nrcs']['name'] and gmf['doppler']['name'] items.
+        dictionary with `gmf['nrcs']['name']` and `gmf['doppler']['name']` items.
         cf compute_nrcs and compute_wasv for the gmf input
     Returns
     -------
@@ -98,8 +94,38 @@ def fun_residual(variables, level1, noise, gmf):
 
     return np.where(np.isfinite(out), out, 0)
 
-def find_minima(level1_pixel, noise_pixel, gmf):
 
+def find_minima(level1_pixel, noise_pixel, gmf):
+    """
+    Perform least squares minimisation.
+
+    Function to find the minima of the residual function at a Level-1 pixel
+    using least squares.
+
+    Parameters
+    ----------
+    level1_pixel : ``xarray.Dataset``
+        level1 dataset at a pixel with ``Antenna`` as a dimension, with the 
+        mandatory following fields: ``IncidenceAngleImage``, ``RSV``, ``Sigma0``
+    noise_pixel : ``xarray.Dataset``
+        Noise DataSet at a pixel with fields ``RSV`` and ``Sigma0``
+        of the same size as level1
+    gmf : ``dict`` or ``dotdict``
+        dictionary with `gmf['nrcs']['name']` and `gmf['doppler']['name']` items.
+        cf compute_nrcs and compute_wasv for the gmf input
+
+    Returns
+    -------
+    dslmout : ``xarray.Dataset``
+        Dataset output of least squares minimisation.
+    
+    Raises
+    ------
+    Exception
+        Exception raised if intial value ``x0`` is out of bounds for the
+        least squares minimisation
+
+    """
     opt = {
         'method': 'trf', # Trust Region Reflective algorithm, particularly suitable for large sparse problems with bounds. Generally robust method.
         'xtol':  1e-3, # Tolerance for termination by the change of the independent variables
@@ -161,7 +187,7 @@ def create_null_lmout_dict(lmout_dict):
     Parameters
     ----------
     lmout_dict : ``dict``
-        Dict output from scipy.optimize.least_squares.
+        Dict output from `scipy.optimize.least_squares`.
 
     Returns
     -------

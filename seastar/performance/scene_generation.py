@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Created on February 2023
-
-@author: admartin, dlmccann
-"""
+"""Functions to generate seastar scenes."""
 
 import numpy as np
 import xarray as xr
 from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict
-
-# import seastar.gmfs.doppler
-import pdb
 
 
 def create_scene_dataset(geo, inst):
@@ -52,7 +45,6 @@ def create_scene_dataset(geo, inst):
         same as geo but with direct model measurements and longitude, latitude
         - direct model measurements: NRCS, RSV (including attributes concerning the model used and its attributes)
     """
-
     gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
     gmf['doppler'] = dotdict({'name': 'mouche12'})
 

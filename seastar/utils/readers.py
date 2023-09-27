@@ -1,3 +1,4 @@
+"""Functions for input/output and file reading."""
 import os
 import glob
 import configparser
@@ -6,13 +7,18 @@ import platform
 from configparser import ConfigParser
 
 
-def _set_file_paths():
+def _read_config(config_file='config.ini'):
     """
-    Set file paths.
+    Read configuration file.
 
-    Sets file paths for local machine using the output of platform.node() as
-    the device name. Device names and local paths for each device are stored in
-    ../config.ini
+    Reads configuration file local machine using the output of platform.node()
+    as the device name. Device names and config parameters for each device are
+    stored in ../config.ini
+
+    Parameters
+    ----------
+    config_file : ``str``, optional
+        File name of the config file
 
     Raises
     ------
@@ -21,81 +27,23 @@ def _set_file_paths():
 
     Returns
     -------
-    local_paths : ``dict`` of ``str``
-        Dict of file paths with their variable identifiers as keys and local
-        paths as values in ``str`` format.
+    configuration : ``dict``
+        Dict of configuration parameters with their variable identifiers as
+        keys.
 
     """
     device_name = platform.node()
     print('Device name = ' + device_name)
     print('Setting local paths...')
     config = ConfigParser()
-    config.read('config.ini')
+    config.read(config_file)
     if device_name not in config.sections():
-        raise Exception('Device name not in config.ini. Please check device'
+        raise Exception('Device name not in config file. Please check device'
                         'name and file paths are entered into config and try'
                         ' again.')
-    local_paths = dict(config.items(platform.node()))
-
-    return local_paths
-
-
-def _read_DAR_config(date):
-    """
-    Read DAR track name config.
-
-    Reads the seastarex_DAR_config.ini file containing names for aquisition
-    as a dict with keys equalling track names and values equalling the file
-    list number for loading.
-
-    Parameters
-    ----------
-    date : ``str``, ``int``
-        Date of aquisition in the form YYYYMMDD
-
-    Raises
-    ------
-    Exception
-        Raises exception if data aquisition date not present in
-        seastarex_DAR_config.ini
-
-    Returns
-    -------
-    DAR_tracks : ``dict``
-        Dict of {track names : file number}. File numbers of type ``int``.
-        Track names capitalised.
-
-    """
-    if type(date) is not str:
-        date = str(date)
-    config = ConfigParser()
-    config_path = os.path.join('seastar', 'oscar', 'seastarex_DAR_config.ini')
-    config.read(config_path)
-    if date not in config.sections():
-        raise Exception('Date not present in seastarex_DAR_config.ini.'
-                        'Please check config file')
-    DAR_tracks = dict(config.items(date))
-    DAR_tracks = {str.capitalize(k): int(v) for k, v in DAR_tracks.items()}
-    return DAR_tracks
-
-
-def _readConfig(config_file_path):
-    """Reads the configuration ini file.
-
-    :param config_file_path: path to the configuration file
-    :type config_file_path: ``str``
-
-    :return: the configuration object read from the lconfiguration file
-    :rtype: ``configparser``
-
-    :meta private:
-    """
-
-    configuration = configparser.ConfigParser()
-    configuration.read(config_file_path)
+    configuration = dict(config.items(platform.node()))
 
     return configuration
-
 
 def findNetCDFilepaths(directory_path, recursive=False):
     """Returns a list of netCDF files fom a given directory with
@@ -122,18 +70,18 @@ def findNetCDFilepaths(directory_path, recursive=False):
 
 
 def readNetCDFFile(netCFD_path):
-    """Reads a netCDF file and returns it as an xarray.
+    """
+    Read a netCDF file and returns it as an `xarray.Dataset`.
 
     :param netCFD_path: path to the netCDF file
     :type netCFD_path: ``str``
 
-    :raises: ``ValueError`` if file cannot be read as netCDF and \
+    :raises: ``ValueError`` if file cannot be read as netCDF and
         returns ``None`` object
 
     :return: xrray read from the netCDF file
     :rtype: ``xarray``
     """
-
     data_xr = None
     try:
         data_xr = xr.open_dataset(netCFD_path)
@@ -142,4 +90,3 @@ def readNetCDFFile(netCFD_path):
         print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
 
     return data_xr
-
