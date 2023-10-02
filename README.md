@@ -1,6 +1,4 @@
-## SeaSTAR 
-
-<p align="left">
+<p align="center">
   <img src="/docs/source/_static/images/seastar.png" width="500">
 </p>
 Welcome to the SeaSTAR Project software repository,
