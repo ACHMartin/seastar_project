@@ -1,9 +1,9 @@
-##### Seastar
+## SeaSTAR 
 
 <p align="left">
-  <img src="/docs/source/_static/images/banner.png" width="500">
+  <img src="seastar_project/docs/source/_static/images/COMMS1375 SEASTAR - LOGO 1 FULL COLOUR V1.png" width="500">
 </p>
-
+seastar_project/docs/source/_static/images/COMMS1375 SEASTAR - LOGO 1 FULL COLOUR V1.png
 Welcome to the SeaSTAR Project software repository,
 tailored for the Ocean Surface Current Airborne Radar demonstrator (OSCAR). 
 
