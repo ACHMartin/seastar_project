@@ -12,7 +12,6 @@
 #
 import os
 import sys
-
 autodoc_mock_imports = ["numpy", "xarray", "scipy", "utm", "pytest", "cartopy",
                         "shapely"]
 
@@ -40,6 +39,17 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
 ]
+
+# -- Options for LaTeX output ---------------------------------------------
+latex_engine = 'pdflatex'
+latex_elements = {
+    'babel': '\\usepackage[shorthands=off]{babel}',
+    'preamble': r'''
+    \usepackage{makeidx}
+    \usepackage[columns=2]{idxlayout}
+    \makeindex
+    '''
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
