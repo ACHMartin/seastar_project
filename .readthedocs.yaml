@@ -2,8 +2,10 @@ version: 2
 
 sphinx:
   configuration: docs/source/conf.py 
+  builder: html
 #  fail_on_warning: true
-  
+build:
+  os: "ubuntu-22.04"
 python:
   version: 3.8
   # Install our python package before building the docs
