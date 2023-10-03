@@ -1,16 +1,6 @@
-SeaSTAR documentation
-=====================
-=====================
-
-Function documentation for the SeaSTAR project. 
-
 .. toctree::
+    introduction
     level1
     gmfs
     retrieval
     utils
-    performance
-
-
-
-
