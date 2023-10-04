@@ -67,7 +67,7 @@ The different steps are as below:
 
 ### 1.1 Download the **seastar_project** repository
 
-Navigate to the latest release `(v1.0)` on the RHS of the root project page and download and unzip the source code.
+Navigate to the latest release `(v2023.10.0)` on the RHS of the root project page and download and unzip the source code.
 
 
 ### 1.2 Create an environment with Anaconda
