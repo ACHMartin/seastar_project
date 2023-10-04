@@ -36,7 +36,10 @@ software (PenWP-OSCAR) or from external data (e.g. Numerical Weather Prediction 
 The different steps are as below:
 
 1. *Pre-processing* using Matlab scripts to compute and add Incidence Angle and
-   antenna Squint fields to the data files  (Level-1p to Level-1a).
+   antenna Squint fields to the data files  (Level-1p to Level-1a):
+```
+      matlab/metasensing/add_inc_and_squint_to_netcdf_batch.m
+```
 
 2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using functions
    in the *oscar.level1* module:
