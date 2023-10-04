@@ -38,8 +38,7 @@ The different steps are as below:
 1. *Pre-processing* using Matlab scripts to compute and add Incidence Angle and
    antenna Squint fields to the data files  (Level-1p to Level-1a).
 
-2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using
-   functions in the *oscar.level1* module::
+2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using functions in the *oscar.level1* module::
 
       seastar.oscar.level1.compute_SLC_Master_Slave()
    
