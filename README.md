@@ -1,28 +1,28 @@
 <p align="center">
   <img src="/docs/source/_static/images/seastar.png" width="500">
 </p>
-Welcome to the SeaSTAR Project software repository,
+Welcome to the **SeaSTAR** Project software repository,
 tailored for the Ocean Surface Current Airborne Radar demonstrator (OSCAR). 
 
-SeaSTAR is a new Earth Explorer mission concept dedicated to observing fast-evolving small-scale
+**SeaSTAR** is a new Earth Explorer mission concept dedicated to observing fast-evolving small-scale
 ocean surface dynamics in all coastal seas, shelf seas and marginal ice zones. Its science goals are:
 
-1.  To understand the role of fast-evolving small-scale ocean dynamics in mediating exchanges between
-land, the cryosphere, the atmosphere, the marine biosphere and the deep ocean.
+1. To understand the role of fast-evolving small-scale ocean dynamics in mediating exchanges between
+   land, the cryosphere, the atmosphere, the marine biosphere and the deep ocean.
 
-2.  To determine the ocean circulation and dominant transport pathways in the global coastal,
-shelf and marginal ice zones.
+2. To determine the ocean circulation and dominant transport pathways in the global coastal,
+   shelf and marginal ice zones.
 
-3.  To improve understanding of coastal, shelf and marginal ice zones contributions to the global
-climate system.
+3. To improve understanding of coastal, shelf and marginal ice zones contributions to the global
+   climate system.
 
-SeaSTAR has been selected as an ESA Earth Explorer 11 candidate to proceed to phase 0
+**SeaSTAR** has been selected as an ESA Earth Explorer 11 candidate to proceed to phase 0
 in competition with 3 other candidates.
 
 OSCAR is the airborne demonstrator of SeaSTAR and has been developed by MetaSensing under the
-framework of ESA contract 4000116401/16/NL/BJ.
+framework of ESA contract *4000116401/16/NL/BJ*.
 
-This software has been developed to be applicable to a wide range of SeaSTAR studies including the
+This software has been developed to be applicable to a wide range of **SeaSTAR** studies including the
 processing of OSCAR data from Level-1p (as delivered by MetaSensing before pre-processing) to Level-2
 (Wind and Current map per airborne track). The processing, in short, consists of multilooking,
 calculation of the Radial Surface Velocity (RSV) from the interferogram, application of calibration
@@ -35,15 +35,29 @@ software (PenWP-OSCAR) or from external data (e.g. Numerical Weather Prediction 
 
 The different steps are as below:
 
-1. Pre-processing using Matlab scripts to compute and add Incidence Angle and
-antenna Squint fields to the data files  (Level-1p to Level-1a)
+1. *Pre-processing* using Matlab scripts to compute and add Incidence Angle and
+   antenna Squint fields to the data files  (Level-1p to Level-1a).
 
-2. Multilooking, computation of the Radial Surface Velocity (L1a to L1b)
+2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using
+   functions in the *oscar.level1* module::
 
-3. Residual calibration and coarsening (averaging) to required ground resolution (L1b to L1c)
+      seastar.oscar.level1.compute_SLC_Master_Slave()
+   
+      seastar.oscar.level1.compute_multilooking_Master_Slave()
+   
+      seastar.oscar.level1.compute_time_lag_Master_Slave()
+   
+      seastar.oscar.level1.compute_radial_surface_velocity()
+  
+3. *Residual calibration* and coarsening (averaging) to required ground resolution (L1b to L1c).
 
-4. Retrieval of TSCV and OSVW using simultaenous inversion, or computation of TSCV using
-sequential inversion and ancilliary OSVW data
+4. *Retrieval of TSCV and OSVW* using *simultaenous inversion*, or computation of TSCV using
+   *sequential inversion* and ancilliary OSVW data, using functions in the *retrieval.level2*
+   module (simultaneous) or the *oscar.level1* module (sequential)::
+   
+       seastar.retrieval.level2.wind_current_retrieval()
+       
+       seastar.oscar.level1.compute_radial_surface_current()
 
 
 ## 1. Installation
