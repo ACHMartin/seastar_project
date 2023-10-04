@@ -38,8 +38,9 @@ The different steps are as below:
 1. *Pre-processing* using Matlab scripts to compute and add Incidence Angle and
    antenna Squint fields to the data files  (Level-1p to Level-1a).
 
-2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using functions in the *oscar.level1* module::
-
+2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using functions
+   in the *oscar.level1* module:
+```
       seastar.oscar.level1.compute_SLC_Master_Slave()
    
       seastar.oscar.level1.compute_multilooking_Master_Slave()
@@ -47,17 +48,17 @@ The different steps are as below:
       seastar.oscar.level1.compute_time_lag_Master_Slave()
    
       seastar.oscar.level1.compute_radial_surface_velocity()
-  
+```
 3. *Residual calibration* and coarsening (averaging) to required ground resolution (L1b to L1c).
 
 4. *Retrieval of TSCV and OSVW* using *simultaenous inversion*, or computation of TSCV using
    *sequential inversion* and ancilliary OSVW data, using functions in the *retrieval.level2*
-   module (simultaneous) or the *oscar.level1* module (sequential)::
-   
+   module (simultaneous) or the *oscar.level1* module (sequential):
+```  
        seastar.retrieval.level2.wind_current_retrieval()
        
        seastar.oscar.level1.compute_radial_surface_current()
-
+```
 
 ## 1. Installation
 
