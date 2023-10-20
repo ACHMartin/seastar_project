@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Adrien"
+  given-names: "Martin"
+  orcid: "https://orcid.org/0000-0003-1859-7442"
+- family-names: "David"
+  given-names: "McCann"
+  orcid: "https://orcid.org/0000-0003-4428-700X"
+title: "SeaSTAR project"
+version: 2023.10.2
+doi: 10.5281/zenodo.10022422
+date-released: 2023-10-20
+url: "https://github.com/ACHMartin/seastar_project"
