@@ -176,16 +176,16 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
     cost_function : ``function``
         Function to calculate the cost of the ambiguities.
         Must take single cell from `lmout`, a box around it from `initial` as input, weight
-        and return toal cost for all for ambiguities
+        and return total cost for all for ambiguities
     pass_number : ``int``, optional
         Number of passes to iterate through the dataset
-        Default value of 2
+        Default is 2
     weight : ``int``, optional
         Weight for the cost function
-        Default value of 5
+        Default is 5
     box_size : ``int``, optional
         Size of the box around the cell
-        Default value of 3
+        Default is 3
     Returns
     -------
     L2: ``xarray.Dataset``

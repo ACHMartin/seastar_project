@@ -3,8 +3,7 @@
 import pytest
 import numpy as np
 import xarray as xr
-import seastar.retrieval.spatial_ambiguity_selection\
-    as spatial_ambiguity_selection
+import seastar.retrieval.spatial_ambiguity_selection as spatial_ambiguity_selection
 
 
 @pytest.fixture
