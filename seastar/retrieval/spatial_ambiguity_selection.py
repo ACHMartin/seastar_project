@@ -1,12 +1,13 @@
 import numpy as np
 import xarray as xr
 
+
 def squared_Euclidian_distance(L2_sel, L2_neighbours, weight):
     """
     Calculates cost using squared Euclidian distance
-    
+
     The cost is the squared Euclidian distance between each ambiguity of the cell and its neighbours, it's a sum of current distance*weight and wind distance
-    
+
     Parameters
     ----------
     L2_sel : ``xarray.dataset``
@@ -28,7 +29,7 @@ def squared_Euclidian_distance(L2_sel, L2_neighbours, weight):
     for i in range(cross_range_size):
         for j in range(ground_range_size):
             L2_comp_neighbour = L2_neighbours.isel(CrossRange=i, GroundRange=j)
-            if np.isnan(L2_comp_neighbour.CurrentU.values) == False:
+            if not np.isnan(L2_comp_neighbour.CurrentU.values):
                 for iambiguity in range(0, 4):  # iterate through all 4 ambiguities
                     # find cost for current
                     current_distance = (L2_sel.sel(Ambiguities=iambiguity).CurrentU.values-L2_comp_neighbour.CurrentU.values)**2+(
@@ -45,7 +46,7 @@ def squared_Euclidian_distance(L2_sel, L2_neighbours, weight):
 def Euclidian_distance(L2_sel, L2_neighbours, weight):
     """
     Calculates cost using squared Euclidian distance
-    
+
     The cost is the squared Euclidian distance between each ambiguity of the cell and its neighbours, it is a sum of current distance*weight and wind distance
     Parameters
     ----------
@@ -68,7 +69,7 @@ def Euclidian_distance(L2_sel, L2_neighbours, weight):
     for i in range(cross_range_size):
         for j in range(ground_range_size):
             L2_comp_neighbour = L2_neighbours.isel(CrossRange=i, GroundRange=j)
-            if np.isnan(L2_comp_neighbour.CurrentU) == False:
+            if not np.isnan(L2_comp_neighbour.CurrentU):
                 for iambiguity in range(0, 4):  # iterate through all 4 ambiguities
                     # find cost for current
                     current_distance = ((L2_sel.sel(Ambiguities=iambiguity).CurrentU.values-L2_comp_neighbour.CurrentU.values)**2+(
@@ -80,6 +81,7 @@ def Euclidian_distance(L2_sel, L2_neighbours, weight):
                         wind_distance
     total_cost = xr.where(np.isnan(total_cost), np.inf, total_cost)
     return total_cost
+
 
 def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function, weight=5, box_size=3):
     """
@@ -115,7 +117,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function, wei
     """
     radius = int((box_size-1)/2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
-    if np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values) == False:
+    if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
         total_cost = cost_function(L2_sel, initial.isel(
             CrossRange=slice(i_x-radius, i_x+radius+1), GroundRange=slice(i_y-radius, i_y+radius+1)), weight)
         selected_ambiguity = total_cost.argmin()
@@ -157,7 +159,7 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function, pass_number
     def select_and_replace_ambiguity(i, j):
         selected_ambiguity = single_cell_ambiguity_selection(
             lmout, initial, i, j, cost_function=cost_function, weight=weight, box_size=box_size)
-        if np.isnan(selected_ambiguity) == False:
+        if not np.isnan(selected_ambiguity):
             initial.loc[dict(CrossRange=initial.CrossRange.isel(CrossRange=i), GroundRange=initial.GroundRange.isel(
                 GroundRange=j))] = lmout.isel(CrossRange=i, GroundRange=j).isel(Ambiguities=selected_ambiguity)
 
@@ -170,14 +172,14 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function, pass_number
         print('Pass', n+1)
         # Pass A: iterate vertically
         j = halfway_ground_range
-        while (j >= 0):  # iterate across track
+        while j >= 0:  # iterate across track
             for i in range(0, cross_range_size):  # iterate along track
                 select_and_replace_ambiguity(i, j)
-            if (j == ground_range_size-1):
+            if j == ground_range_size-1:
                 j = halfway_ground_range-1
             elif j >= halfway_ground_range:
                 j += 1
-            elif (j < halfway_ground_range):
+            elif j < halfway_ground_range:
                 j -= 1
         # Pass B: iterate horizontally
         for i in range(0, cross_range_size):  # iterate along track
