@@ -164,8 +164,12 @@ def solve_ambiguity(lmout, ambiguity):
             ambiguity['passnumber'] = 2
         if 'box_size' not in ambiguity:
             ambiguity['box_size'] = 3
-        sol = solve_ambiguity_spatial_selection(
-            lmout, ambiguity['initial solution'], cost_function=ambiguity['costfunction'], pass_number=ambiguity['passnumber'], weight=ambiguity['windcurrentratio'], box_size=ambiguity['box_size'])
+        sol = solve_ambiguity_spatial_selection(lmout,
+                                                ambiguity['initial solution'],
+                                                cost_function=ambiguity['costfunction'],
+                                                pass_number=ambiguity['passnumber'],
+                                                weight=ambiguity['windcurrentratio'],
+                                                box_size=ambiguity['box_size'])
     else:
         raise Exception(
             "ambiguity['name'] should be 'sort_by_cost', 'closest_truth', or 'spatial_selection'")
