@@ -6,16 +6,20 @@ def squared_Euclidian_distance(L2_sel, L2_neighbours, weight):
     """
     Calculates cost using squared Euclidian distance
 
-    The cost is the squared Euclidian distance between each ambiguity of the cell and its neighbours, it's a sum of current distance*weight and wind distance
+    The cost is the squared Euclidian distance
+    between each ambiguity of the cell and its neighbours:
+    a sum of current distance*weight and wind distance
 
     Parameters
     ----------
     L2_sel : ``xarray.dataset``
         OSCAR L2 dataset containing the cell of interest and its ambiguities
-        Must have 'Ambiguities' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'Ambiguities' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     L2_neighbours : ``xarray.dataset``
         OSCAR L2 dataset containing the neighbours of the cell of interest
-        Must have 'CrossRange' and 'GroundRange' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'CrossRange' and 'GroundRange' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     weight : ``float``
         Weight for the current cost
     Return:
@@ -30,13 +34,20 @@ def squared_Euclidian_distance(L2_sel, L2_neighbours, weight):
         for j in range(ground_range_size):
             L2_comp_neighbour = L2_neighbours.isel(CrossRange=i, GroundRange=j)
             if not np.isnan(L2_comp_neighbour.CurrentU.values):
-                for iambiguity in range(0, 4):  # iterate through all 4 ambiguities
-                    # find cost for current
-                    current_distance = (L2_sel.sel(Ambiguities=iambiguity).CurrentU.values-L2_comp_neighbour.CurrentU.values)**2+(
-                        L2_sel.sel(Ambiguities=iambiguity).CurrentV.values-L2_comp_neighbour.CurrentV.values)**2
-                    # find cost for wind
-                    wind_distance = (L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindU.values-L2_comp_neighbour.EarthRelativeWindU.values)**2+(
-                        L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindV.values-L2_comp_neighbour.EarthRelativeWindV.values)**2
+                # iterate through all 4 ambiguities
+                for iambiguity in range(0, 4):
+                    current_distance = (
+                        L2_sel.sel(Ambiguities=iambiguity).CurrentU.values
+                        - L2_comp_neighbour.CurrentU.values)**2+(
+                        L2_sel.sel(Ambiguities=iambiguity).CurrentV.values
+                        - L2_comp_neighbour.CurrentV.values)**2
+                    wind_distance = (
+                        L2_sel.sel(
+                            Ambiguities=iambiguity).EarthRelativeWindU.values
+                        - L2_comp_neighbour.EarthRelativeWindU.values)**2+(
+                        L2_sel.sel(
+                            Ambiguities=iambiguity).EarthRelativeWindV.values
+                        - L2_comp_neighbour.EarthRelativeWindV.values)**2
                     total_cost[iambiguity] += weight*current_distance + \
                         wind_distance
     total_cost = xr.where(np.isnan(total_cost), np.inf, total_cost)
@@ -45,17 +56,20 @@ def squared_Euclidian_distance(L2_sel, L2_neighbours, weight):
 
 def Euclidian_distance(L2_sel, L2_neighbours, weight):
     """
-    Calculates cost using squared Euclidian distance
+    Calculates cost using Euclidian distance
 
-    The cost is the squared Euclidian distance between each ambiguity of the cell and its neighbours, it is a sum of current distance*weight and wind distance
-    Parameters
+    The cost is the Euclidian distance
+    between each ambiguity of the cell and its neighbours:
+    a sum of current distance*weight and wind distance
     ----------
     L2_sel : ``xarray.dataset``
         OSCAR L2 dataset containing the cell of interest and its ambiguities.
-        Must have 'Ambiguities' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'Ambiguities' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     L2_neighbours : xarray dataset
         OSCAR L2 dataset containing the neighbours of the cell of interest
-        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     weight : float
         Weight for the current cost
     Returns
@@ -70,20 +84,29 @@ def Euclidian_distance(L2_sel, L2_neighbours, weight):
         for j in range(ground_range_size):
             L2_comp_neighbour = L2_neighbours.isel(CrossRange=i, GroundRange=j)
             if not np.isnan(L2_comp_neighbour.CurrentU):
-                for iambiguity in range(0, 4):  # iterate through all 4 ambiguities
+                # iterate through all 4 ambiguities
+                for iambiguity in range(0, 4):
                     # find cost for current
-                    current_distance = ((L2_sel.sel(Ambiguities=iambiguity).CurrentU.values-L2_comp_neighbour.CurrentU.values)**2+(
-                        L2_sel.sel(Ambiguities=iambiguity).CurrentV.values-L2_comp_neighbour.CurrentV.values)**2)**0.5
+                    current_distance = (
+                        (L2_sel.sel(Ambiguities=iambiguity).CurrentU.values
+                         - L2_comp_neighbour.CurrentU.values)**2+(
+                            L2_sel.sel(Ambiguities=iambiguity).CurrentV.values
+                            - L2_comp_neighbour.CurrentV.values)**2)**0.5
                     # find cost for wind
-                    wind_distance = ((L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindU.values-L2_comp_neighbour.EarthRelativeWindU.values)**2+(
-                        L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindV.values-L2_comp_neighbour.EarthRelativeWindV.values)**2)*0.5
+                    wind_distance = (
+                        (L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindU.values
+                         - L2_comp_neighbour.EarthRelativeWindU.values)**2+(
+                            L2_sel.sel(
+                                Ambiguities=iambiguity).EarthRelativeWindV.values
+                            - L2_comp_neighbour.EarthRelativeWindV.values)**2)*0.5
                     total_cost[iambiguity] += weight*current_distance + \
                         wind_distance
     total_cost = xr.where(np.isnan(total_cost), np.inf, total_cost)
     return total_cost
 
 
-def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function, weight=5, box_size=3):
+def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
+                                    weight=5, box_size=3):
     """
     Selects the ambiguity with the lowest cost function value based on a box around the cell
 
@@ -92,17 +115,21 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function, wei
     lmout : ``xarray.dataset``
         OSCAR L2 lmout dataset
         This dataset contains the ambiguities to be selected from.
-        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     initial : ``xarray.dataset``
         OSCAR L2 dataset
         This dataset contains the initial solution to compare the ambiguities to.
-        Must have 'CrossRange' and 'GroundRange' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'CrossRange' and 'GroundRange' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     i_x : ``int``
         Index of the `CrossRange` dimension
     i_j : ``int``
         Index of the `GroundRange` dimension
     cost_function : ``function``
-        Function to calculate the cost of the ambiguities. Must take single cell from `lmout`, a box around it from `initial` as input, weight and return toal cost for all for ambiguities
+        Function to calculate the cost of the ambiguities.
+        Must take single cell from `lmout`, a box around it from `initial` as input, weight
+        and return toal cost for all for ambiguities
     weight : ``int``, optional
         Weight for the cost function
         Default is 5
@@ -118,15 +145,19 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function, wei
     radius = int((box_size-1)/2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
-        total_cost = cost_function(L2_sel, initial.isel(
-            CrossRange=slice(i_x-radius, i_x+radius+1), GroundRange=slice(i_y-radius, i_y+radius+1)), weight)
+        total_cost = cost_function(
+            L2_sel, initial.isel(
+                CrossRange=slice(i_x-radius, i_x+radius+1),
+                GroundRange=slice(i_y-radius, i_y+radius+1)),
+            weight)
         selected_ambiguity = total_cost.argmin()
     else:
         selected_ambiguity = np.nan
     return selected_ambiguity
 
 
-def solve_ambiguity_spatial_selection(lmout, initial, cost_function, pass_number=2, weight=5, box_size=3):
+def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
+                                      pass_number=2, weight=5, box_size=3):
     """
     Solves the ambiguity of the L2_lmout dataset using the spatial selection method
 
@@ -135,13 +166,17 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function, pass_number
     lmout : ``xarray.Dataset``
         OSCAR L2 lmout dataset
         This dataset contains the ambiguities to be selected from.
-        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     initial : ``xarray.dataset``
         OSCAR L2 dataset
         This dataset contains the initial solution to compare the ambiguities to.
-        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions, and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
+        Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
+        and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     cost_function : ``function``
-        Function to calculate the cost of the ambiguities. Must take single cell from `lmout`, a box around it from `initial` as input, weight and return toal cost for all for ambiguities
+        Function to calculate the cost of the ambiguities.
+        Must take single cell from `lmout`, a box around it from `initial` as input, weight
+        and return toal cost for all for ambiguities
     pass_number : ``int``, optional
         Number of passes to iterate through the dataset
         Default value of 2
@@ -157,11 +192,25 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function, pass_number
         OSCAR L2 dataset with solved ambiguities
     """
     def select_and_replace_ambiguity(i, j):
+        # select ambiguity with the lowest cost
         selected_ambiguity = single_cell_ambiguity_selection(
-            lmout, initial, i, j, cost_function=cost_function, weight=weight, box_size=box_size)
+            lmout,
+            initial,
+            i,
+            j,
+            cost_function=cost_function,
+            weight=weight,
+            box_size=box_size)
+        # replace with the selected ambiguity if it is not nan
         if not np.isnan(selected_ambiguity):
-            initial.loc[dict(CrossRange=initial.CrossRange.isel(CrossRange=i), GroundRange=initial.GroundRange.isel(
-                GroundRange=j))] = lmout.isel(CrossRange=i, GroundRange=j).isel(Ambiguities=selected_ambiguity)
+            initial.loc[{
+                'CrossRange': initial.CrossRange.isel(CrossRange=i),
+                'GroundRange': initial.GroundRange.isel(GroundRange=j)
+            }] = lmout.isel(
+                CrossRange=i,
+                GroundRange=j,
+                Ambiguities=selected_ambiguity
+            )
 
     # initialize arrays
     cross_range_size = lmout.CrossRange.sizes['CrossRange']
