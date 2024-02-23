@@ -115,8 +115,8 @@ def solve_ambiguity(lmout, ambiguity):
             optional `method` within `windcurrent` (default), `wind`, `current`
             optional `windcurrentratio` default = 10
         - name = `spatial_selection`
-            `costfunction` HAVE to be in the dict.
-            `initial solution` HAVE to be in the dict.
+            `costfunction` HAVE to be in the dict
+            `initial solution` HAVE to be in the dict
             optional 'windcurrentratio' default = 5
             optional 'passnumber' default = 2
             optional 'box_size' default = 3
@@ -127,7 +127,7 @@ def solve_ambiguity(lmout, ambiguity):
     """
     if 'name' not in ambiguity:
         raise Exception(
-            "'name' should be provided with value between 'sort_by_cost' or 'closest_truth'")
+            "'name' should be provided with value between 'sort_by_cost', 'closest_truth', or 'spatial_selection'")
 
     if ambiguity['name'] == 'sort_by_cost':
         index = ambiguity_sort_by_cost(lmout)
