@@ -1,5 +1,5 @@
 import pytest
-import seastar.tests.retrieval.test_spatial_ambiguity_selection as test_spatial_ambiguity_selection
+import seastar.retrieval.spatial_ambiguity_selection as spatial_ambiguity_selection
 import numpy as np
 import xarray as xr
 
@@ -77,14 +77,14 @@ def lmout():
 
 def test_squared_Euclidian_distance(L2, lmout_single):
     # Test the squared Euclidian distance cost function
-    cost = test_spatial_ambiguity_selection.squared_Euclidian_distance(
+    cost = spatial_ambiguity_selection.squared_Euclidian_distance(
         lmout_single, L2, 1)
     assert (cost == [144., 36., 0., 36.]).all()
 
 
 def test_Euclidian_distance(L2, lmout_single):
     # Test the Euclidian distance cost function
-    cost = test_spatial_ambiguity_selection.Euclidian_distance(
+    cost = spatial_ambiguity_selection.Euclidian_distance(
         lmout_single, L2, 1)
     assert (cost == [54., 18., 0., 18.]).all()
 
@@ -94,16 +94,16 @@ def cost(L2_sel, L2_neighbours, weight):
 
 
 @pytest.mark.parametrize("i_x, i_y", [(0, 0), (3, 2), (3, 3), (4, 2), (4, 3)])
-def test_select_ambiguity_with_lowest_cost(lmout, initial, i_x, i_y):
+def test_single_cell_ambiguity_selection(lmout, initial, i_x, i_y):
     # Test the selection of ambiguity with the lowest cost
-    selected_ambiguity = test_spatial_ambiguity_selection.select_ambiguity_with_lowest_cost(
+    selected_ambiguity = spatial_ambiguity_selection.single_cell_ambiguity_selection(
         lmout, initial, i_x, i_y, cost, weight=2, box_size=3)
     assert selected_ambiguity == 2
 
 
-def test_solve_ambiguity(lmout, initial):
+def test_solve_ambiguity_spatial_selection(lmout, initial):
     # Test the solve ambiguity function
-    L2_solved = test_spatial_ambiguity_selection.solve_ambiguity(
+    L2_solved = spatial_ambiguity_selection.solve_ambiguity_spatial_selection(
         lmout, initial, cost, pass_number=1, weight=5, box_size=3)
     ones = np.ones((5, 4))
     assert (L2_solved.CurrentU.values == ones).all()
