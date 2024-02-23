@@ -3,7 +3,8 @@
 import pytest
 import numpy as np
 import xarray as xr
-import seastar.retrieval.spatial_ambiguity_selection as spatial_ambiguity_selection
+import seastar.retrieval.spatial_ambiguity_selection\
+    as spatial_ambiguity_selection
 
 
 @pytest.fixture
@@ -54,13 +55,17 @@ def lmout_single():
 def initial():
     """Create a sample L2 OSCAR dataset"""
     values = np.zeros((5, 4))
-    return xr.Dataset(data_vars=dict(CurrentU=(["CrossRange", "GroundRange"], values),
-                                     CurrentV=(
-                                         ["CrossRange", "GroundRange"], values),
-                                     EarthRelativeWindU=(
-                                         ["CrossRange", "GroundRange"], values),
-                                     EarthRelativeWindV=(["CrossRange", "GroundRange"], values)),
-                      coords=dict(CrossRange=np.arange(5), GroundRange=np.arange(4)))
+    return xr.Dataset(
+        data_vars={
+            'CurrentU': (["CrossRange", "GroundRange"], values),
+            'CurrentV': (["CrossRange", "GroundRange"], values),
+            'EarthRelativeWindU': (["CrossRange", "GroundRange"], values),
+            'EarthRelativeWindV': (["CrossRange", "GroundRange"], values)
+        },
+        coords={
+            'CrossRange': np.arange(5),
+            'GroundRange': np.arange(4)
+        })
 
 
 @pytest.fixture
@@ -68,13 +73,20 @@ def lmout():
     """Create a sample L2 OSCAR dataset"""
     values = np.zeros((4, 5, 4))
     values[2, :, :] = np.ones((5, 4))
-    return xr.Dataset(data_vars=dict(CurrentU=(["Ambiguities", "CrossRange", "GroundRange"], values),
-                                     CurrentV=(
-                                         ["Ambiguities", "CrossRange", "GroundRange"], values),
-                                     EarthRelativeWindU=(
-                                         ["Ambiguities", "CrossRange", "GroundRange"], values),
-                                     EarthRelativeWindV=(["Ambiguities", "CrossRange", "GroundRange"], values)),
-                      coords=dict(Ambiguities=np.arange(4), CrossRange=np.arange(5), GroundRange=np.arange(4)))
+    return xr.Dataset(
+        data_vars={
+            'CurrentU': (["Ambiguities", "CrossRange", "GroundRange"], values),
+            'CurrentV': (["Ambiguities", "CrossRange", "GroundRange"], values),
+            'EarthRelativeWindU': (
+                ["Ambiguities", "CrossRange", "GroundRange"], values),
+            'EarthRelativeWindV': (
+                ["Ambiguities", "CrossRange", "GroundRange"], values)
+        },
+        coords={
+            'Ambiguities': np.arange(4),
+            'CrossRange': np.arange(5),
+            'GroundRange': np.arange(4)
+        })
 
 
 def test_squared_Euclidian_distance(L2, lmout_single):
@@ -99,8 +111,9 @@ def cost(L2_sel, L2_neighbours, weight):
 @pytest.mark.parametrize("i_x, i_y", [(0, 0), (3, 2), (3, 3), (4, 2), (4, 3)])
 def test_single_cell_ambiguity_selection(lmout, initial, i_x, i_y):
     """Test the selection of ambiguity with the lowest cost"""
-    selected_ambiguity = spatial_ambiguity_selection.single_cell_ambiguity_selection(
-        lmout, initial, i_x, i_y, cost, weight=2, box_size=3)
+    selected_ambiguity =\
+        spatial_ambiguity_selection.single_cell_ambiguity_selection(
+            lmout, initial, i_x, i_y, cost, weight=2, box_size=3)
     assert selected_ambiguity == 2
 
 
