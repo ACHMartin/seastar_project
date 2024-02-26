@@ -90,16 +90,16 @@ def lmout():
         })
 
 
-def test_squared_Euclidian_distance(L2_small2D, lmout):
+def test_calculate_squared_Euclidian_distance_to_neighbours(L2_small2D, lmout):
     """Test the squared Euclidian distance cost function"""
-    total_cost = spatial_ambiguity_selection.squared_Euclidian_distance(
+    total_cost = spatial_ambiguity_selection.calculate_squared_Euclidian_distance_to_neighbours(
         lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, 1)
     assert (total_cost == [324., 144., 36., 0.]).all()
 
 
-def test_Euclidian_distance(L2_small2D, lmout):
+def test_calculate_Euclidian_distance_to_neighbours(L2_small2D, lmout):
     """Test the Euclidian distance cost function"""
-    total_cost = spatial_ambiguity_selection.Euclidian_distance(
+    total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
         lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, 1)
     assert (total_cost == [117., 54., 18., 0.]).all()
 
