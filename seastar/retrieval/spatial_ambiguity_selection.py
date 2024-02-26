@@ -89,15 +89,15 @@ def Euclidian_distance(L2_sel, L2_neighbours, weight):
                     # find cost for current
                     current_distance = (
                         (L2_sel.sel(Ambiguities=iambiguity).CurrentU.values
-                         - L2_comp_neighbour.CurrentU.values)**2+(
-                            L2_sel.sel(Ambiguities=iambiguity).CurrentV.values
+                         - L2_comp_neighbour.CurrentU.values)**2
+                        + (L2_sel.sel(Ambiguities=iambiguity).CurrentV.values
                             - L2_comp_neighbour.CurrentV.values)**2)**0.5
                     # find cost for wind
                     wind_distance = (
                         (L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindU.values
-                         - L2_comp_neighbour.EarthRelativeWindU.values)**2+(
-                            L2_sel.sel(
-                                Ambiguities=iambiguity).EarthRelativeWindV.values
+                         - L2_comp_neighbour.EarthRelativeWindU.values)**2
+                        + (L2_sel.sel(
+                            Ambiguities=iambiguity).EarthRelativeWindV.values
                             - L2_comp_neighbour.EarthRelativeWindV.values)**2)*0.5
                     total_cost[iambiguity] += weight*current_distance + \
                         wind_distance
@@ -106,7 +106,7 @@ def Euclidian_distance(L2_sel, L2_neighbours, weight):
 
 
 def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
-                                    weight=5, box_size=3):
+                                    weight, box_size):
     """
     Selects the ambiguity with the lowest cost function value based on a box around the cell
 
@@ -135,6 +135,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
         Default is 5
     box_size : ``int``, optional
         Size of the box around the cell
+        Must be an odd number
         Default is 3
 
     Returns
@@ -142,7 +143,9 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
     selected_ambiguity: ``int``
         Index of the selected ambiguity
     """
-    radius = int((box_size-1)/2)
+    if box_size % 2 == 0:
+        raise ValueError('Box size must be an odd number')
+    radius = np.int_((box_size-1)/2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
         total_cost = cost_function(
@@ -215,7 +218,7 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
     # initialize arrays
     cross_range_size = lmout.CrossRange.sizes['CrossRange']
     ground_range_size = lmout.GroundRange.sizes['GroundRange']
-    halfway_ground_range = int(ground_range_size/2)
+    halfway_ground_range = np.round(ground_range_size/2).astype(int)
 
     for n in range(pass_number):  # repeat passes
         print('Pass', n+1)
