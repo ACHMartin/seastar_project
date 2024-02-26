@@ -68,7 +68,7 @@ def calculate_squared_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, we
     return calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight, method='squared')
 
 def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
-                                    weight, box_size):
+                                    weight, window):
     """
     Selects the ambiguity with the lowest cost function value based on a box around the cell
 
@@ -95,7 +95,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
     weight : ``int``, optional
         Weight for the cost function
         Default is 5
-    box_size : ``int``, optional
+    window : ``int``, optional
         Size of the box around the cell
         Must be an odd number
         Default is 3
@@ -105,9 +105,9 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
     selected_ambiguity: ``int``
         Index of the selected ambiguity
     """
-    if box_size % 2 == 0:
+    if window % 2 == 0:
         raise ValueError('Box size must be an odd number')
-    radius = np.int_((box_size-1)/2)
+    radius = np.int_((window-1)/2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
         total_cost = cost_function(
@@ -122,7 +122,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
 
 
 def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
-                                      pass_number=2, weight=5, box_size=3):
+                                      pass_number=2, weight=5, window=3):
     """
     Solves the ambiguity of the L2_lmout dataset using the spatial selection method
 
@@ -148,7 +148,7 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
     weight : ``int``, optional
         Weight for the cost function
         Default is 5
-    box_size : ``int``, optional
+    window : ``int``, optional
         Size of the box around the cell
         Default is 3
     Returns
@@ -165,7 +165,7 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
             j,
             cost_function=cost_function,
             weight=weight,
-            box_size=box_size)
+            window=window)
         # replace with the selected ambiguity if it is not nan
         if not np.isnan(selected_ambiguity):
             initial.loc[{

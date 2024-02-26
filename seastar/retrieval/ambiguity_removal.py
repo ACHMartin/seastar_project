@@ -119,7 +119,7 @@ def solve_ambiguity(lmout, ambiguity):
             `initial solution` HAVE to be in the dict
             optional 'windcurrentratio' default = 10
             optional 'iterationnumber' default = 2
-            optional 'box_size' default = 3
+            optional 'window' default = 3
     Returns
     ----------
     sol : ``xarray.Dataset``
@@ -164,14 +164,14 @@ def solve_ambiguity(lmout, ambiguity):
             raise Exception("ambiguity.windcurrentratio should be positive")
         if 'iterationnumber' not in ambiguity:
             ambiguity['iterationnumber'] = 2
-        if 'box_size' not in ambiguity:
-            ambiguity['box_size'] = 3
+        if 'window' not in ambiguity:
+            ambiguity['window'] = 3
         sol = solve_ambiguity_spatial_selection(lmout,
                                                 ambiguity['initial solution'],
                                                 cost_function=ambiguity['costfunction'],
                                                 pass_number=ambiguity['iterationnumber'],
                                                 weight=ambiguity['windcurrentratio'],
-                                                box_size=ambiguity['box_size'])
+                                                window=ambiguity['window'])
     else:
         raise Exception(
             "ambiguity['name'] should be 'sort_by_cost', 'closest_truth', or 'spatial_selection'")

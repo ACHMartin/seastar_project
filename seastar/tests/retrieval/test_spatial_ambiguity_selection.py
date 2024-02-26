@@ -114,13 +114,13 @@ def test_single_cell_ambiguity_selection(lmout, initial, i_x, i_y):
     """Test the selection of ambiguity with the lowest cost"""
     selected_ambiguity =\
         spatial_ambiguity_selection.single_cell_ambiguity_selection(
-            lmout, initial, i_x, i_y, cost, weight=2, box_size=3)
+            lmout, initial, i_x, i_y, cost, weight=1, window=3)
     assert selected_ambiguity == 2
 
 
 def test_solve_ambiguity_spatial_selection(lmout, initial):
     """Test the solve ambiguity function"""
     L2_solved = spatial_ambiguity_selection.solve_ambiguity_spatial_selection(
-        lmout, initial, cost, pass_number=1, weight=5, box_size=3)
+        lmout, initial, cost, pass_number=1, weight=1, window=3)
     correct = np.full((5, 4), 2)
     assert (L2_solved.CurrentU.values == correct).all()
