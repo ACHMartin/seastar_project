@@ -117,8 +117,8 @@ def solve_ambiguity(lmout, ambiguity):
         - name = `spatial_selection`
             `costfunction` HAVE to be in the dict
             `initial solution` HAVE to be in the dict
-            optional 'windcurrentratio' default = 5
-            optional 'passnumber' default = 2
+            optional 'windcurrentratio' default = 10
+            optional 'iterationnumber' default = 2
             optional 'box_size' default = 3
     Returns
     ----------
@@ -157,17 +157,17 @@ def solve_ambiguity(lmout, ambiguity):
             raise Exception(
                 "ambiguity['initial solution'] HAVE to be provided for spatial_selection method")
         if 'windcurrentratio' not in ambiguity:
-            ambiguity['windcurrentratio'] = 5
+            ambiguity['windcurrentratio'] = 10
         elif not ambiguity['windcurrentratio'] > 0:
             raise Exception("ambiguity.windcurrentratio should be positive")
-        if 'passnumber' not in ambiguity:
-            ambiguity['passnumber'] = 2
+        if 'iterationnumber' not in ambiguity:
+            ambiguity['iterationnumber'] = 2
         if 'box_size' not in ambiguity:
             ambiguity['box_size'] = 3
         sol = solve_ambiguity_spatial_selection(lmout,
                                                 ambiguity['initial solution'],
                                                 cost_function=ambiguity['costfunction'],
-                                                pass_number=ambiguity['passnumber'],
+                                                pass_number=ambiguity['iterationnumber'],
                                                 weight=ambiguity['windcurrentratio'],
                                                 box_size=ambiguity['box_size'])
     else:
