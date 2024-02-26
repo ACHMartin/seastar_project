@@ -7,7 +7,7 @@ import seastar.retrieval.spatial_ambiguity_selection as spatial_ambiguity_select
 
 
 @pytest.fixture
-def L2():
+def L2_small2D():
     """Create a sample L2 OSCAR dataset"""
     values = np.array([[3, 3, 3], [3, 3, 3], [3, 3, 3]])
     return xr.Dataset(
@@ -71,7 +71,9 @@ def initial():
 def lmout():
     """Create a sample L2 OSCAR dataset"""
     values = np.zeros((4, 5, 4))
-    values[2, :, :] = np.ones((5, 4))
+    values[1, :, :] = np.full((5, 4), 1)
+    values[2, :, :] = np.full((5, 4), 2)
+    values[3, :, :] = np.full((5, 4), 3)
     return xr.Dataset(
         data_vars={
             'CurrentU': (["Ambiguities", "CrossRange", "GroundRange"], values),
@@ -88,18 +90,18 @@ def lmout():
         })
 
 
-def test_squared_Euclidian_distance(L2, lmout_single):
+def test_squared_Euclidian_distance(L2_small2D, lmout):
     """Test the squared Euclidian distance cost function"""
     total_cost = spatial_ambiguity_selection.squared_Euclidian_distance(
-        lmout_single, L2, 1)
-    assert (total_cost == [144., 36., 0., 36.]).all()
+        lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, 1)
+    assert (total_cost == [324., 144., 36., 0.]).all()
 
 
-def test_Euclidian_distance(L2, lmout_single):
+def test_Euclidian_distance(L2_small2D, lmout):
     """Test the Euclidian distance cost function"""
     total_cost = spatial_ambiguity_selection.Euclidian_distance(
-        lmout_single, L2, 1)
-    assert (total_cost == [54., 18., 0., 18.]).all()
+        lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, 1)
+    assert (total_cost == [117., 54., 18., 0.]).all()
 
 
 def cost(L2_sel, L2_neighbours, weight):
@@ -120,5 +122,5 @@ def test_solve_ambiguity_spatial_selection(lmout, initial):
     """Test the solve ambiguity function"""
     L2_solved = spatial_ambiguity_selection.solve_ambiguity_spatial_selection(
         lmout, initial, cost, pass_number=1, weight=5, box_size=3)
-    ones = np.ones((5, 4))
-    assert (L2_solved.CurrentU.values == ones).all()
+    correct = np.full((5, 4), 2)
+    assert (L2_solved.CurrentU.values == correct).all()
