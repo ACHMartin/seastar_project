@@ -152,7 +152,9 @@ def solve_ambiguity(lmout, ambiguity):
     elif ambiguity['name'] == 'spatial_selection':
         if 'costfunction' not in ambiguity:
             raise Exception(
-                "ambiguity['costfunction'] HAVE to be provided for spatial_selection method")
+                "ambiguity['costfunction'] HAVE to be provided for spatial_selection method"
+                "Must take single cell from `lmout`, a box around it from `initial` as input, weight"
+                "and return total cost for all for ambiguities")
         elif 'initial solution' not in ambiguity:
             raise Exception(
                 "ambiguity['initial solution'] HAVE to be provided for spatial_selection method")
