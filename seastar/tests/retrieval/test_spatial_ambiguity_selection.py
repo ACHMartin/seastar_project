@@ -90,18 +90,37 @@ def lmout():
         })
 
 
-def test_calculate_squared_Euclidian_distance_to_neighbours(L2_small2D, lmout):
-    """Test the squared Euclidian distance cost function"""
-    total_cost = spatial_ambiguity_selection.calculate_squared_Euclidian_distance_to_neighbours(
-        lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, 1)
-    assert (total_cost == [324., 144., 36., 0.]).all()
-
-
 def test_calculate_Euclidian_distance_to_neighbours(L2_small2D, lmout):
-    """Test the Euclidian distance cost function"""
-    total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
-        lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, 1)
+    """Test the Euclidian distance cost function without centre cell"""
+    total_cost = spatial_ambiguity_selection\
+        .calculate_Euclidian_distance_to_neighbours(
+            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    assert (total_cost == [104., 48., 16., 0.]).all()
+
+
+def test_calculate_Euclidian_distance_to_neigbours_and_centre(L2_small2D, lmout):
+    """Test the Euclidian distance cost function with centre cell included"""
+    total_cost = spatial_ambiguity_selection\
+        .calculate_Euclidian_distance_to_neigbours_and_centre(
+            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
     assert (total_cost == [117., 54., 18., 0.]).all()
+
+
+def test_calculate_squared_Euclidian_distance_to_neighbours(L2_small2D, lmout):
+    """Test the squared Euclidian distance cost function without centre cell"""
+    total_cost = spatial_ambiguity_selection\
+        .calculate_squared_Euclidian_distance_to_neighbours(
+            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    assert (total_cost == [288., 128., 32., 0.]).all()
+
+
+def test_calculate_squared_Euclidian_distance_to_neighbours_and_centre(L2_small2D,
+                                                                       lmout):
+    """Test the squared Euclidian distance cost function with centre cell included"""
+    total_cost = spatial_ambiguity_selection\
+        .calculate_squared_Euclidian_distance_to_neighbours_and_centre(
+            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    assert (total_cost == [324., 144., 36., 0.]).all()
 
 
 def cost(L2_sel, L2_neighbours, weight):
