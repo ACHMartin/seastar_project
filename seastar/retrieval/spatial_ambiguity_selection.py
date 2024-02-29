@@ -2,7 +2,8 @@ import numpy as np
 import xarray as xr
 
 
-def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight, method='standard'):
+def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
+                                               method='standard', include_centre=False):
     """
     Calculates cost using Euclidian distance or squared Euclidian distancee
 
@@ -39,10 +40,15 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight, me
     total_cost = np.array([0, 0, 0, 0])
     cross_range_size = L2_neighbours.CrossRange.sizes['CrossRange']
     ground_range_size = L2_neighbours.GroundRange.sizes['GroundRange']
+    centre_cross = np.int_(cross_range_size/2)
+    centre_ground = np.int_(ground_range_size/2)
+
     for i in range(cross_range_size):
         for j in range(ground_range_size):
             L2_comp_neighbour = L2_neighbours.isel(CrossRange=i, GroundRange=j)
             if not np.isnan(L2_comp_neighbour.CurrentU):
+                if not include_centre and i == centre_cross and j == centre_ground:
+                    continue
                 # iterate through all 4 ambiguities
                 for iambiguity in range(0, 4):
                     # find cost for current
@@ -64,13 +70,28 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight, me
     return total_cost
 
 
+def calculate_Euclidian_distance_to_neigbours_and_centre(L2_sel, L2_neighbours, weight):
+    return calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
+                                                      include_centre=True)
+
+
 def calculate_squared_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight):
-    return calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight, method='squared')
+    return calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours,
+                                                      weight, method='squared')
+
+
+def calculate_squared_Euclidian_distance_to_neighbours_and_centre(L2_sel, L2_neighbours,
+                                                                  weight):
+    return calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours,
+                                                      weight, method='squared',
+                                                      include_centre=True)
+
 
 def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
                                     weight, window):
     """
-    Selects the ambiguity with the lowest cost function value based on a box around the cell
+    Selects the ambiguity with the lowest cost function value
+    based on a box around the cell
 
     Parameters
     ----------
@@ -90,8 +111,10 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
         Index of the `GroundRange` dimension
     cost_function : ``function``
         Function to calculate the cost of the ambiguities.
-        Must take single cell from `lmout`, a box around it from `initial` as input, weight
-        and return toal cost for all for ambiguities
+        Must take:
+            single cell from `lmout`,
+            a box around it from `initial` as input, weight
+        Return total cost for all for ambiguities
     weight : ``int``, optional
         Weight for the cost function
         Default is 5
@@ -140,7 +163,10 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
         and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     cost_function : ``function``
         Function to calculate the cost of the ambiguities.
-        Must take single cell from `lmout`, a box around it from `initial` as input, weight
+        Must take:
+            single cell from `lmout`
+            a box around it from `initial`
+            weight
         and return total cost for all for ambiguities
     pass_number : ``int``, optional
         Number of passes to iterate through the dataset
