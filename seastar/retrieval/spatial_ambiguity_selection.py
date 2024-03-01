@@ -203,17 +203,11 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
                 Ambiguities=selected_ambiguity
             )
 
-    # initialize arrays
-    cross_range_size = lmout.CrossRange.sizes['CrossRange']
-    ground_range_size = lmout.GroundRange.sizes['GroundRange']
-    halfway_ground_range = np.round(ground_range_size/2).astype(int)
-
-    for n in range(pass_number):  # repeat passes
-        print('Pass', n+1)
-        # Pass A: iterate vertically
+    def verticalpass(direction):
+        # iterate vertically in the given direction
         j = halfway_ground_range
         while j >= 0:  # iterate across track
-            for i in range(0, cross_range_size):  # iterate along track
+            for i in range(0, cross_range_size, direction):  # iterate along track
                 select_and_replace_ambiguity(i, j)
             if j == ground_range_size-1:
                 j = halfway_ground_range-1
@@ -221,8 +215,25 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
                 j += 1
             elif j < halfway_ground_range:
                 j -= 1
-        # Pass B: iterate horizontally
+
+    def horizontalpass(direction):
         for i in range(0, cross_range_size):  # iterate along track
-            for j in range(0, ground_range_size):  # iterate across track
+            for j in range(0, ground_range_size, direction):  # iterate across track
                 select_and_replace_ambiguity(i, j)
+
+    # initialize arrays
+    cross_range_size = lmout.CrossRange.sizes['CrossRange']
+    ground_range_size = lmout.GroundRange.sizes['GroundRange']
+    halfway_ground_range = np.round(ground_range_size/2).astype(int)
+
+    for n in range(pass_number):  # repeat passes
+        print('Pass', n+1)
+        # Pass A1: iterate vertically
+        verticalpass(1)
+        # Pass A2: iterate vertically back
+        verticalpass(-1)
+        # Pass B1: iterate horizontally
+        horizontalpass(1)
+        # Pass B2: iterate horizontally back
+        horizontalpass(-1)
     return initial
