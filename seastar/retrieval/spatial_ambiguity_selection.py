@@ -37,24 +37,27 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
     else:
         raise ValueError('Method must be either standard or squared')
 
-    # total_cost = np.array([0, 0, 0, 0])
-    # cross_range_size = L2_neighbours.CrossRange.sizes['CrossRange']
-    # ground_range_size = L2_neighbours.GroundRange.sizes['GroundRange']
-    # centre_cross = np.int_(cross_range_size/2)
-    # centre_ground = np.int_(ground_range_size/2)
+    centre_cross = np.int_(L2_neighbours.CrossRange.sizes['CrossRange']/2)
+    centre_ground = np.int_(L2_neighbours.GroundRange.sizes['GroundRange']/2)
 
     if not include_centre:
-        raise NotImplementedError(
-            'This function does not support not including the centre cell')
+        L2_neighbours.loc[{
+            'CrossRange': L2_neighbours.CrossRange.isel(CrossRange=centre_cross),
+            'GroundRange': L2_neighbours.GroundRange.isel(GroundRange=centre_ground)
+        }]
 
     dif_squared = (L2_neighbours-L2_sel)**2
     dif_squared['dist'] = weight*(dif_squared.CurrentU+dif_squared.CurrentV)**power+(
         dif_squared.EarthRelativeWindU+dif_squared.EarthRelativeWindV)**power
-    dif_squared['dist'] = dif_squared.dist.sum(
+    dif_squared['distsum'] = dif_squared.dist.sum(
         dim=('CrossRange', 'GroundRange'))
 
-    # total_cost = xr.where(np.isnan(total_cost), np.inf, total_cost)
-    return dif_squared.dist
+    if not include_centre:
+        dif_squared['distsum'] = dif_squared.distsum - \
+            dif_squared.dist.isel(CrossRange=centre_cross,
+                                  GroundRange=centre_ground)
+
+    return dif_squared.distsum
 
 
 def calculate_Euclidian_distance_to_neigbours_and_centre(L2_sel, L2_neighbours, weight):
