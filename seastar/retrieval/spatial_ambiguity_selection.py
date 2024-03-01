@@ -37,37 +37,24 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
     else:
         raise ValueError('Method must be either standard or squared')
 
-    total_cost = np.array([0, 0, 0, 0])
-    cross_range_size = L2_neighbours.CrossRange.sizes['CrossRange']
-    ground_range_size = L2_neighbours.GroundRange.sizes['GroundRange']
-    centre_cross = np.int_(cross_range_size/2)
-    centre_ground = np.int_(ground_range_size/2)
+    # total_cost = np.array([0, 0, 0, 0])
+    # cross_range_size = L2_neighbours.CrossRange.sizes['CrossRange']
+    # ground_range_size = L2_neighbours.GroundRange.sizes['GroundRange']
+    # centre_cross = np.int_(cross_range_size/2)
+    # centre_ground = np.int_(ground_range_size/2)
 
-    for i in range(cross_range_size):
-        for j in range(ground_range_size):
-            L2_comp_neighbour = L2_neighbours.isel(CrossRange=i, GroundRange=j)
-            if not np.isnan(L2_comp_neighbour.CurrentU):
-                if not include_centre and i == centre_cross and j == centre_ground:
-                    continue
-                # iterate through all 4 ambiguities
-                for iambiguity in range(0, 4):
-                    # find cost for current
-                    current_distance = (
-                        (L2_sel.sel(Ambiguities=iambiguity).CurrentU.values
-                         - L2_comp_neighbour.CurrentU.values)**2
-                        + (L2_sel.sel(Ambiguities=iambiguity).CurrentV.values
-                            - L2_comp_neighbour.CurrentV.values)**2)**power
-                    # find cost for wind
-                    wind_distance = (
-                        (L2_sel.sel(Ambiguities=iambiguity).EarthRelativeWindU.values
-                         - L2_comp_neighbour.EarthRelativeWindU.values)**2
-                        + (L2_sel.sel(
-                            Ambiguities=iambiguity).EarthRelativeWindV.values
-                            - L2_comp_neighbour.EarthRelativeWindV.values)**2)*power
-                    total_cost[iambiguity] += weight*current_distance + \
-                        wind_distance
-    total_cost = xr.where(np.isnan(total_cost), np.inf, total_cost)
-    return total_cost
+    if not include_centre:
+        raise NotImplementedError(
+            'This function does not support not including the centre cell')
+
+    dif_squared = (L2_neighbours-L2_sel)**2
+    dif_squared['dist'] = weight*(dif_squared.CurrentU+dif_squared.CurrentV)**power+(
+        dif_squared.EarthRelativeWindU+dif_squared.EarthRelativeWindV)**power
+    dif_squared['dist'] = dif_squared.dist.sum(
+        dim=('CrossRange', 'GroundRange'))
+
+    # total_cost = xr.where(np.isnan(total_cost), np.inf, total_cost)
+    return dif_squared.dist
 
 
 def calculate_Euclidian_distance_to_neigbours_and_centre(L2_sel, L2_neighbours, weight):
