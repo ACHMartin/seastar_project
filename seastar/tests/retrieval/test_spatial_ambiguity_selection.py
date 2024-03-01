@@ -29,28 +29,6 @@ def L2_small2D():
 
 
 @pytest.fixture
-def lmout_single():
-    """Create a sample L2 OSCAR dataset with 1 cell and it's ambiguities"""
-    values = np.array([1, 2, 3, 4])
-    return xr.Dataset(
-        {
-            "CurrentU": xr.DataArray(
-                values, dims=("Ambiguities")
-            ),
-            "CurrentV": xr.DataArray(
-                values, dims=("Ambiguities")
-            ),
-            "EarthRelativeWindU": xr.DataArray(
-                values, dims=("Ambiguities")
-            ),
-            "EarthRelativeWindV": xr.DataArray(
-                values, dims=("Ambiguities")
-            ),
-        }
-    )
-
-
-@pytest.fixture
 def initial():
     """Create a sample L2 OSCAR dataset"""
     values = np.zeros((5, 4))
