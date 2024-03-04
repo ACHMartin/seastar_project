@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 
 
 def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
@@ -39,7 +38,6 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
 
     centre_cross = np.int_(L2_neighbours.CrossRange.sizes['CrossRange']/2)
     centre_ground = np.int_(L2_neighbours.GroundRange.sizes['GroundRange']/2)
-
 
     dif_squared = (L2_neighbours-L2_sel)**2
     dif_squared['dist'] = weight*(dif_squared.CurrentU+dif_squared.CurrentV)**power+(
@@ -102,6 +100,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
         Return total cost for all for ambiguities
     weight : ``int``, optional
         Weight for the cost function
+        Must be an odd number
         Default is 5
     window : ``int``, optional
         Size of the box around the cell
@@ -114,7 +113,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
         Index of the selected ambiguity
     """
     if window % 2 == 0:
-        raise ValueError('Box size must be an odd number')
+        raise ValueError('Window size must be an odd number')
     radius = np.int_((window-1)/2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
