@@ -40,11 +40,6 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, weight,
     centre_cross = np.int_(L2_neighbours.CrossRange.sizes['CrossRange']/2)
     centre_ground = np.int_(L2_neighbours.GroundRange.sizes['GroundRange']/2)
 
-    if not include_centre:
-        L2_neighbours.loc[{
-            'CrossRange': L2_neighbours.CrossRange.isel(CrossRange=centre_cross),
-            'GroundRange': L2_neighbours.GroundRange.isel(GroundRange=centre_ground)
-        }]
 
     dif_squared = (L2_neighbours-L2_sel)**2
     dif_squared['dist'] = weight*(dif_squared.CurrentU+dif_squared.CurrentV)**power+(
