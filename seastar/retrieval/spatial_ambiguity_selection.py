@@ -129,7 +129,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, cost_function,
 
 
 def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
-                                      pass_number=2, weight=5, window=3):
+                                      pass_number=2, weight=5, window=3, inplace=True):
     """
     Solves the ambiguity of the L2_lmout dataset using the spatial selection method
 
@@ -161,6 +161,9 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
     window : ``int``, optional
         Size of the box around the cell
         Default is 3
+    inplace : ``bool``, optional
+        Whether to modify the input dataset in place
+        Default is True
     Returns
     -------
     L2: ``xarray.Dataset``
@@ -170,7 +173,7 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
         # select ambiguity with the lowest cost
         selected_ambiguity = single_cell_ambiguity_selection(
             lmout,
-            initial,
+            initial_copy,
             i,
             j,
             cost_function=cost_function,
@@ -178,9 +181,9 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
             window=window)
         # replace with the selected ambiguity if it is not nan
         if not np.isnan(selected_ambiguity):
-            initial.loc[{
-                'CrossRange': initial.CrossRange.isel(CrossRange=i),
-                'GroundRange': initial.GroundRange.isel(GroundRange=j)
+            initial_copy.loc[{
+                'CrossRange': initial_copy.CrossRange.isel(CrossRange=i),
+                'GroundRange': initial_copy.GroundRange.isel(GroundRange=j)
             }] = lmout.isel(
                 CrossRange=i,
                 GroundRange=j,
@@ -205,6 +208,11 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
             for j in range(0, ground_range_size, direction):  # iterate across track
                 select_and_replace_ambiguity(i, j)
 
+    if inplace:
+        initial_copy = initial.copy(deep=False)
+    else:
+        initial_copy = initial.copy(deep=True)
+
     # initialize arrays
     cross_range_size = lmout.CrossRange.sizes['CrossRange']
     ground_range_size = lmout.GroundRange.sizes['GroundRange']
@@ -220,4 +228,4 @@ def solve_ambiguity_spatial_selection(lmout, initial, cost_function,
         horizontalpass(1)
         # Pass B2: iterate horizontally back
         horizontalpass(-1)
-    return initial
+    return initial_copy
