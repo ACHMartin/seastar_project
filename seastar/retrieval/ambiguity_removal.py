@@ -166,12 +166,14 @@ def solve_ambiguity(lmout, ambiguity):
             ambiguity['iterationnumber'] = 2
         if 'window' not in ambiguity:
             ambiguity['window'] = 3
-        sol = solve_ambiguity_spatial_selection(lmout,
-                                                ambiguity['initial solution'],
-                                                cost_function=ambiguity['costfunction'],
-                                                pass_number=ambiguity['iterationnumber'],
-                                                weight=ambiguity['windcurrentratio'],
-                                                window=ambiguity['window'])
+        sol = solve_ambiguity_spatial_selection(
+            lmout,
+            ambiguity["initial solution"],
+            cost_function=ambiguity["costfunction"],
+            pass_number=ambiguity["iterationnumber"],
+            window=ambiguity["window"],
+            current_weight=ambiguity["windcurrentratio"],
+        )
     else:
         raise Exception(
             "ambiguity['name'] should be 'sort_by_cost', 'closest_truth', or 'spatial_selection'")
