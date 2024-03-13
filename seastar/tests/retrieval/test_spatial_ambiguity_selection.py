@@ -66,40 +66,56 @@ def lmout():
 
 def test_calculate_Euclidian_distance_to_neighbours(L2_small2D, lmout):
     """Test the Euclidian distance cost function without centre cell"""
-    total_cost = spatial_ambiguity_selection\
-        .calculate_Euclidian_distance_to_neighbours(
-            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
+        lmout.isel(GroundRange=1, CrossRange=1),
+        L2_small2D,
+        weight=1,
+        include_centre=False,
+        method="standard",
+    )
     npt.assert_array_almost_equal(
         total_cost, [67.88225100, 45.25483400, 22.62741700, 0.])
 
 
 def test_calculate_Euclidian_distance_to_neigbours_and_centre(L2_small2D, lmout):
     """Test the Euclidian distance cost function with centre cell included"""
-    total_cost = spatial_ambiguity_selection\
-        .calculate_Euclidian_distance_to_neigbours_and_centre(
-            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
+        lmout.isel(GroundRange=1, CrossRange=1),
+        L2_small2D,
+        weight=1,
+        include_centre=True,
+        method="standard",
+    )
     npt.assert_array_almost_equal(
         total_cost, [76.36753237, 50.91168825, 25.45584412,  0.])
 
 
 def test_calculate_squared_Euclidian_distance_to_neighbours(L2_small2D, lmout):
     """Test the squared Euclidian distance cost function without centre cell"""
-    total_cost = spatial_ambiguity_selection\
-        .calculate_squared_Euclidian_distance_to_neighbours(
-            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
+        lmout.isel(GroundRange=1, CrossRange=1),
+        L2_small2D,
+        weight=1,
+        include_centre=False,
+        method="squared",
+    )
     assert (total_cost == [288., 128., 32., 0.]).all()
 
 
 def test_calculate_squared_Euclidian_distance_to_neighbours_and_centre(L2_small2D,
                                                                        lmout):
     """Test the squared Euclidian distance cost function with centre cell included"""
-    total_cost = spatial_ambiguity_selection\
-        .calculate_squared_Euclidian_distance_to_neighbours_and_centre(
-            lmout.isel(GroundRange=1, CrossRange=1), L2_small2D, weight=1)
+    total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
+        lmout.isel(GroundRange=1, CrossRange=1),
+        L2_small2D,
+        weight=1,
+        include_centre=True,
+        method="squared",
+    )
     assert (total_cost == [324., 144., 36., 0.]).all()
 
 
-def cost(L2_sel, L2_neighbours, weight):
+def cost(L2_sel, L2_neighbours, **cost_function_kwargs):
     """Fake cost function for testing"""
     return np.array([3, 2, 0, 1])
 
@@ -107,15 +123,16 @@ def cost(L2_sel, L2_neighbours, weight):
 @pytest.mark.parametrize("i_x, i_y", [(0, 0), (3, 2), (3, 3), (4, 2), (4, 3)])
 def test_single_cell_ambiguity_selection(lmout, initial, i_x, i_y):
     """Test the selection of ambiguity with the lowest cost"""
-    selected_ambiguity =\
-        spatial_ambiguity_selection.single_cell_ambiguity_selection(
-            lmout, initial, i_x, i_y, cost, weight=1, window=3)
+    selected_ambiguity = spatial_ambiguity_selection.single_cell_ambiguity_selection(
+        lmout, initial, i_x, i_y, cost, window=3
+    )
     assert selected_ambiguity == 2
 
 
 def test_solve_ambiguity_spatial_selection(lmout, initial):
     """Test the solve ambiguity function"""
     L2_solved = spatial_ambiguity_selection.solve_ambiguity_spatial_selection(
-        lmout, initial, cost, pass_number=1, weight=1, window=3)
+        lmout, initial, cost, pass_number=1, window=3
+    )
     correct = np.full((5, 4), 2)
     assert (L2_solved.CurrentU.values == correct).all()
