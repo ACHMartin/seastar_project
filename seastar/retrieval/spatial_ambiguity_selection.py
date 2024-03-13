@@ -1,9 +1,7 @@
 import numpy as np
 
 
-def calculate_Euclidian_distance_to_neighbours(
-    L2_sel, L2_neighbours, **cost_function_kwargs
-):
+def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, **kwargs):
     """
     Calculates cost using Euclidian distance or squared Euclidian distancee
 
@@ -36,20 +34,20 @@ def calculate_Euclidian_distance_to_neighbours(
     TotalCost : ``numpy.array``
         Total cost for each ambiguity
     """
-    if cost_function_kwargs["method"] == "standard":
+    if kwargs["method"] == "standard":
         power = 0.5
-    elif cost_function_kwargs["method"] == "squared":
+    elif kwargs["method"] == "squared":
         power = 1
     else:
         power = 0.5
 
-    if "current_weight" in cost_function_kwargs:
-        current_weight = cost_function_kwargs["current_weight"]
+    if "current_weight" in kwargs:
+        current_weight = kwargs["current_weight"]
     else:
         current_weight = 10
 
-    if "include_centre" in cost_function_kwargs:
-        include_centre = cost_function_kwargs["include_centre"]
+    if "include_centre" in kwargs:
+        include_centre = kwargs["include_centre"]
     else:
         include_centre = False
 
