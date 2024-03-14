@@ -25,18 +25,23 @@ def calculate_Euclidian_distance_to_neighbours(
         OSCAR L2 dataset containing the neighbours of the cell of interest
         Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
         and'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
-    **cost_function_kwargs : ``**kwargs``, optional
         Additional keyword arguments to pass to the cost function
-        windcurrentratio : ``int``, optional
-            Weight to multiply current by
-            Default is 5
-        method : ``str``, optional
-            Method to calculate the cost function
-            Must be 'standard' or 'squared'
-            Default is 'standard'
-        include_centre : ``bool``, optional
-            Whether to include the centre cell in the cost function
-            Default is False
+    Euclidian_method : ``str``, optional
+        Method to calculate the Euclidian distance
+        Must be 'standard' or 'squared'
+        Default is 'standard'
+    method : ``str``, optional
+        Method to calculate the cost
+        Must be 'windcurrent', 'wind' or 'current'
+        Default is 'windcurrent'
+    windcurrentratio : ``int``, optional
+        Ratio of the weight of the current to the weight of the wind
+        Default is 10
+    include_centre : ``bool``, optional
+        Whether to include the centre cell in the cost function
+        Default is False
+    **kwargs : ``**kwargs``, optional
+        Additional keyword arguments to pass to the cost function
     Returns
     -------
     TotalCost : ``numpy.array``
@@ -166,8 +171,8 @@ def solve_ambiguity_spatial_selection(
         Must take:
             single cell from `lmout`
             a box around it from `initial`
-            current_weight
-        and return total cost for all for ambiguities
+            any additional keyword arguments
+        and return total cost for all 4 ambiguities
     pass_number : ``int``, optional
         Number of passes to iterate through the dataset
         Default is 2
