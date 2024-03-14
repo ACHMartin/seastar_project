@@ -117,9 +117,10 @@ def solve_ambiguity(lmout, ambiguity):
         - name = `spatial_selection`
             `cost_function` HAVE to be in the dict
             `initial_solution` HAVE to be in the dict
-            optional 'windcurrentratio' default = 10
             optional 'iteration_number' default = 2
             optional 'window' default = 3
+            optional 'inplace' default = True
+            optional other kwargs to pass to the cost_function
     Returns
     ----------
     sol : ``xarray.Dataset``
