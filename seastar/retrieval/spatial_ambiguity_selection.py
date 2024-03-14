@@ -1,7 +1,15 @@
 import numpy as np
 
 
-def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, **kwargs):
+def calculate_Euclidian_distance_to_neighbours(
+    L2_sel,
+    L2_neighbours,
+    Euclidian_method="standard",
+    method="windcurrent",
+    windcurrentratio=10,
+    include_centre=False,
+    **kwargs
+):
     """
     Calculates cost using Euclidian distance or squared Euclidian distancee
 
@@ -19,7 +27,7 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, **kwargs):
         and'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     **cost_function_kwargs : ``**kwargs``, optional
         Additional keyword arguments to pass to the cost function
-        current_weight : ``int``, optional
+        windcurrentratio : ``int``, optional
             Weight to multiply current by
             Default is 5
         method : ``str``, optional
@@ -34,30 +42,30 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, **kwargs):
     TotalCost : ``numpy.array``
         Total cost for each ambiguity
     """
-    if kwargs["method"] == "standard":
+    if Euclidian_method == "standard":
         power = 0.5
-    elif kwargs["method"] == "squared":
+    elif Euclidian_method == "squared":
         power = 1
     else:
-        power = 0.5
+        raise ValueError("Euclidian_method must be 'standard' or 'squared'")
 
-    if "current_weight" in kwargs:
-        current_weight = kwargs["current_weight"]
+    if method == "windcurrent":
+        pass
+    elif method == "wind":
+        windcurrentratio = 0
+    elif method == "current":
+        currentwindratio = 0
     else:
-        current_weight = 10
-
-    if "include_centre" in kwargs:
-        include_centre = kwargs["include_centre"]
-    else:
-        include_centre = False
+        raise ValueError("method must be 'windcurrent', 'wind' or 'current'")
 
     centre_cross = np.int_(L2_neighbours.CrossRange.sizes['CrossRange']/2)
     centre_ground = np.int_(L2_neighbours.GroundRange.sizes['GroundRange']/2)
 
     dif_squared = (L2_neighbours-L2_sel)**2
     dif_squared["dist"] = (
-        current_weight * (dif_squared.CurrentU + dif_squared.CurrentV) ** power
-        + (dif_squared.EarthRelativeWindU + dif_squared.EarthRelativeWindV) ** power
+        windcurrentratio * (dif_squared.CurrentU + dif_squared.CurrentV) ** power
+        + currentwindratio
+        * (dif_squared.EarthRelativeWindU + dif_squared.EarthRelativeWindV) ** power
     )
     dif_squared['distsum'] = dif_squared.dist.sum(
         dim=('CrossRange', 'GroundRange'))
@@ -71,7 +79,7 @@ def calculate_Euclidian_distance_to_neighbours(L2_sel, L2_neighbours, **kwargs):
 
 
 def single_cell_ambiguity_selection(
-    lmout, initial, i_x, i_y, cost_function, window, **cost_function_kwargs
+    lmout, initial, i_x, i_y, cost_function, window, **kwargs
 ):
     """
     Selects the ambiguity with the lowest cost function value
@@ -102,8 +110,7 @@ def single_cell_ambiguity_selection(
     window : ``int``, optional
         Size of the box around the cell
         Must be an odd number
-        Default is 3
-    **cost_function_kwargs : ``**kwargs``, optional
+    **kwargs : ``**kwargs``, optional
         Additional keyword arguments to pass to the cost function
 
     Returns
@@ -122,7 +129,7 @@ def single_cell_ambiguity_selection(
                 CrossRange=slice(i_x - radius, i_x + radius + 1),
                 GroundRange=slice(i_y - radius, i_y + radius + 1),
             ),
-            **cost_function_kwargs
+            **kwargs
         )
         selected_ambiguity = total_cost.argmin()
     else:
@@ -132,12 +139,12 @@ def single_cell_ambiguity_selection(
 
 def solve_ambiguity_spatial_selection(
     lmout,
-    initial,
+    initial_solution,
     cost_function,
-    pass_number=2,
+    iteration_number=2,
     window=3,
     inplace=True,
-    **cost_function_kwargs
+    **kwargs
 ):
     """
     Solves the ambiguity of the L2_lmout dataset using the spatial selection method
@@ -149,7 +156,7 @@ def solve_ambiguity_spatial_selection(
         This dataset contains the ambiguities to be selected from.
         Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
         and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
-    initial : ``xarray.dataset``
+    initial_solution : ``xarray.dataset``
         OSCAR L2 dataset
         This dataset contains the initial solution to compare the ambiguities to.
         Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
@@ -164,13 +171,10 @@ def solve_ambiguity_spatial_selection(
     pass_number : ``int``, optional
         Number of passes to iterate through the dataset
         Default is 2
-    current_weight : ``int``, optional
-        Weight for the cost function
-        Default is 5
     inplace : ``bool``, optional
         Whether to modify the input dataset in place
         Default is True
-    **cost_function_kwargs : ``**kwargs``, optional
+    **kwargs : ``**kwargs``, optional
         Additional keyword arguments to pass to the cost function
     Returns
     -------
@@ -186,7 +190,7 @@ def solve_ambiguity_spatial_selection(
             j,
             cost_function=cost_function,
             window=window,
-            **cost_function_kwargs
+            **kwargs
         )
         # replace with the selected ambiguity if it is not nan
         if not np.isnan(selected_ambiguity):
@@ -218,16 +222,16 @@ def solve_ambiguity_spatial_selection(
                 select_and_replace_ambiguity(i, j)
 
     if inplace:
-        initial_copy = initial.copy(deep=False)
+        initial_copy = initial_solution.copy(deep=False)
     else:
-        initial_copy = initial.copy(deep=True)
+        initial_copy = initial_solution.copy(deep=True)
 
     # initialize arrays
     cross_range_size = lmout.CrossRange.sizes['CrossRange']
     ground_range_size = lmout.GroundRange.sizes['GroundRange']
     halfway_ground_range = np.round(ground_range_size/2).astype(int)
 
-    for n in range(pass_number):  # repeat passes
+    for n in range(iteration_number):  # repeat passes
         print('Pass', n+1)
         # Pass A1: iterate vertically
         verticalpass(1)

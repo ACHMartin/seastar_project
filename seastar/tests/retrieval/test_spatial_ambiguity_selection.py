@@ -69,9 +69,9 @@ def test_calculate_Euclidian_distance_to_neighbours(L2_small2D, lmout):
     total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
         lmout.isel(GroundRange=1, CrossRange=1),
         L2_small2D,
-        weight=1,
+        windcurrentratio=1,
         include_centre=False,
-        method="standard",
+        Euclidian_method="standard",
     )
     npt.assert_array_almost_equal(
         total_cost, [67.88225100, 45.25483400, 22.62741700, 0.])
@@ -82,9 +82,9 @@ def test_calculate_Euclidian_distance_to_neigbours_and_centre(L2_small2D, lmout)
     total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
         lmout.isel(GroundRange=1, CrossRange=1),
         L2_small2D,
-        weight=1,
+        windcurrentratio=1,
         include_centre=True,
-        method="standard",
+        Euclidian_method="standard",
     )
     npt.assert_array_almost_equal(
         total_cost, [76.36753237, 50.91168825, 25.45584412,  0.])
@@ -95,9 +95,9 @@ def test_calculate_squared_Euclidian_distance_to_neighbours(L2_small2D, lmout):
     total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
         lmout.isel(GroundRange=1, CrossRange=1),
         L2_small2D,
-        weight=1,
+        windcurrentratio=1,
         include_centre=False,
-        method="squared",
+        Euclidian_method="squared",
     )
     assert (total_cost == [288., 128., 32., 0.]).all()
 
@@ -108,9 +108,9 @@ def test_calculate_squared_Euclidian_distance_to_neighbours_and_centre(L2_small2
     total_cost = spatial_ambiguity_selection.calculate_Euclidian_distance_to_neighbours(
         lmout.isel(GroundRange=1, CrossRange=1),
         L2_small2D,
-        weight=1,
+        windcurrentratio=1,
         include_centre=True,
-        method="squared",
+        Euclidian_method="squared",
     )
     assert (total_cost == [324., 144., 36., 0.]).all()
 

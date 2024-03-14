@@ -115,10 +115,10 @@ def solve_ambiguity(lmout, ambiguity):
             optional `method` within `windcurrent` (default), `wind`, `current`
             optional `windcurrentratio` default = 10
         - name = `spatial_selection`
-            `costfunction` HAVE to be in the dict
-            `initial solution` HAVE to be in the dict
+            `cost_function` HAVE to be in the dict
+            `initial_solution` HAVE to be in the dict
             optional 'windcurrentratio' default = 10
-            optional 'iterationnumber' default = 2
+            optional 'iteration_number' default = 2
             optional 'window' default = 3
     Returns
     ----------
@@ -150,30 +150,17 @@ def solve_ambiguity(lmout, ambiguity):
                                                 windcurrentratio=ambiguity['windcurrentratio'])
         sol = lmout.isel(Ambiguities=index_dict[ambiguity['method']])
     elif ambiguity['name'] == 'spatial_selection':
-        if 'costfunction' not in ambiguity:
+        if "cost_function" not in ambiguity:
             raise Exception(
-                "ambiguity['costfunction'] HAVE to be provided for spatial_selection method"
+                "ambiguity['cost_function'] HAVE to be provided for spatial_selection method"
                 "Must take single cell from `lmout`, a box around it from `initial` as input, weight"
-                "and return total cost for all for ambiguities")
-        elif 'initial solution' not in ambiguity:
+                "and return total cost for all for ambiguities"
+            )
+        elif "initial_solution" not in ambiguity:
             raise Exception(
-                "ambiguity['initial solution'] HAVE to be provided for spatial_selection method")
-        if 'windcurrentratio' not in ambiguity:
-            ambiguity['windcurrentratio'] = 10
-        elif not ambiguity['windcurrentratio'] > 0:
-            raise Exception("ambiguity.windcurrentratio should be positive")
-        if 'iterationnumber' not in ambiguity:
-            ambiguity['iterationnumber'] = 2
-        if 'window' not in ambiguity:
-            ambiguity['window'] = 3
-        sol = solve_ambiguity_spatial_selection(
-            lmout,
-            ambiguity["initial solution"],
-            cost_function=ambiguity["costfunction"],
-            pass_number=ambiguity["iterationnumber"],
-            window=ambiguity["window"],
-            current_weight=ambiguity["windcurrentratio"],
-        )
+                "ambiguity['initial_solution'] HAVE to be provided for spatial_selection method"
+            )
+        sol = solve_ambiguity_spatial_selection(lmout, **ambiguity)
     else:
         raise Exception(
             "ambiguity['name'] should be 'sort_by_cost', 'closest_truth', or 'spatial_selection'")
