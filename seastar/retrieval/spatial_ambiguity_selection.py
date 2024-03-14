@@ -50,7 +50,7 @@ def calculate_Euclidian_distance_to_neighbours(
         raise ValueError("Euclidian_method must be 'standard' or 'squared'")
 
     if method == "windcurrent":
-        pass
+        currentwindratio = 1
     elif method == "wind":
         windcurrentratio = 0
     elif method == "current":
