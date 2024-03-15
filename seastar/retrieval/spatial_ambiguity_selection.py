@@ -8,7 +8,6 @@ def calculate_Euclidian_distance_to_neighbours(
     method="windcurrent",
     windcurrentratio=10,
     include_centre=False,
-    **kwargs
 ):
     """
     Calculates cost using Euclidian distance or squared Euclidian distancee
@@ -55,11 +54,14 @@ def calculate_Euclidian_distance_to_neighbours(
         raise ValueError("Euclidian_method must be 'standard' or 'squared'")
 
     if method == "windcurrent":
-        currentwindratio = 1
+        current_multiplier = windcurrentratio
+        wind_multiplier = 1
     elif method == "wind":
-        windcurrentratio = 0
+        current_multiplier = 0
+        wind_multiplier = 1
     elif method == "current":
-        currentwindratio = 0
+        current_multiplier = 1
+        wind_multiplier = 0
     else:
         raise ValueError("method must be 'windcurrent', 'wind' or 'current'")
 
@@ -68,8 +70,8 @@ def calculate_Euclidian_distance_to_neighbours(
 
     dif_squared = (L2_neighbours-L2_sel)**2
     dif_squared["dist"] = (
-        windcurrentratio * (dif_squared.CurrentU + dif_squared.CurrentV) ** power
-        + currentwindratio
+        current_multiplier * (dif_squared.CurrentU + dif_squared.CurrentV) ** power
+        + wind_multiplier
         * (dif_squared.EarthRelativeWindU + dif_squared.EarthRelativeWindV) ** power
     )
     dif_squared['distsum'] = dif_squared.dist.sum(
