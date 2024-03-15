@@ -6,7 +6,8 @@ import xarray as xr
 from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict
-from seastar.retrieval.spatial_ambiguity_selection import solve_ambiguity_spatial_selection
+from spatial_ambiguity_selection import solve_ambiguity_spatial_selection
+
 # import seastar.gmfs.doppler
 import pdb
 
@@ -120,7 +121,7 @@ def solve_ambiguity(lmout, ambiguity):
             optional 'iteration_number' default = 2
             optional 'window' default = 3
             optional 'inplace' default = True
-            optional other kwargs to pass to the cost_function
+            optional other kwargs required by the cost_function
     Returns
     ----------
     sol : ``xarray.Dataset``
@@ -161,6 +162,7 @@ def solve_ambiguity(lmout, ambiguity):
             raise Exception(
                 "ambiguity['initial_solution'] HAVE to be provided for spatial_selection method"
             )
+        del ambiguity["name"]
         sol = solve_ambiguity_spatial_selection(lmout, **ambiguity)
     else:
         raise Exception(
