@@ -119,11 +119,15 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, window, **kwargs):
     radius = np.int_((window - 1) / 2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
+        if i_x - radius >= 0:
+            cords_slice = slice(i_x - radius, i_x + radius + 1)
+        else:
+            cords_slice = slice(0, i_x + radius + 1)
         total_distance = calculate_Euclidian_distance_to_neighbours(
             L2_sel,
             initial.isel(
-                CrossRange=slice(i_x - radius, i_x + radius + 1),
-                GroundRange=slice(i_y - radius, i_y + radius + 1),
+                CrossRange=cords_slice,
+                GroundRange=cords_slice,
             ),
             **kwargs
         )
@@ -175,13 +179,7 @@ def solve_ambiguity_spatial_selection(
     def select_and_replace_ambiguity(i, j):
         # select ambiguity with the lowest distance
         selected_ambiguity = single_cell_ambiguity_selection(
-            lmout,
-            initial_copy,
-            i,
-            j,
-            distance_function=distance_function,
-            window=window,
-            **kwargs
+            lmout, initial_copy, i, j, window=window, **kwargs
         )
         # replace with the selected ambiguity if it is not nan
         if not np.isnan(selected_ambiguity):
