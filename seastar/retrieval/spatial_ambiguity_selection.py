@@ -101,7 +101,7 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, window, **kwargs):
         and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
     i_x : ``int``
         Index of the `CrossRange` dimension
-    i_j : ``int``
+    i_y : ``int``
         Index of the `GroundRange` dimension
     window : ``int``, optional
         Size of the box around the cell
@@ -120,14 +120,18 @@ def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, window, **kwargs):
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
         if i_x - radius >= 0:
-            cords_slice = slice(i_x - radius, i_x + radius + 1)
+            CrossRange_slice = slice(i_x - radius, i_x + radius + 1)
         else:
-            cords_slice = slice(0, i_x + radius + 1)
+            CrossRange_slice = slice(0, i_x + radius + 1)
+        if i_y - radius >= 0:
+            GroundRange_slice = slice(i_y - radius, i_y + radius + 1)
+        else:
+            GroundRange_slice = slice(0, i_y + radius + 1)
         total_distance = calculate_Euclidian_distance_to_neighbours(
             L2_sel,
             initial.isel(
-                CrossRange=cords_slice,
-                GroundRange=cords_slice,
+                CrossRange=CrossRange_slice,
+                GroundRange=GroundRange_slice,
             ),
             **kwargs
         )
