@@ -131,7 +131,6 @@ def solve_ambiguity(lmout, ambiguity):
             optional `method` within `windcurrent` (default), `wind`, `current`
             optional `windcurrentratio` default = 10
         - name = `spatial_selection`
-            `cost_function` HAVE to be in the dict
             `initial_solution` HAVE to be in the dict
             optional 'iteration_number' default = 2
             optional 'window' default = 3
@@ -171,13 +170,7 @@ def solve_ambiguity(lmout, ambiguity):
         )
         sol = lmout.isel(Ambiguities=index_dict[ambiguity["method"]])
     elif ambiguity["name"] == "spatial_selection":
-        if "cost_function" not in ambiguity:
-            raise Exception(
-                "ambiguity['cost_function'] HAVE to be provided for spatial_selection method"
-                "Must take single cell from `lmout`, a box around it from `initial` as input, weight"
-                "and return total cost for all for ambiguities"
-            )
-        elif "initial_solution" not in ambiguity:
+        if "initial_solution" not in ambiguity:
             raise Exception(
                 "ambiguity['initial_solution'] HAVE to be provided for spatial_selection method"
             )
