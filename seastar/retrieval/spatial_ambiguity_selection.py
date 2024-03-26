@@ -10,9 +10,9 @@ def calculate_Euclidian_distance_to_neighbours(
     include_centre=False,
 ):
     """
-    Calculates cost using Euclidian distance or squared Euclidian distancee
+    Calculates distance using Euclidian distance or squared Euclidian distancee
 
-    The cost is the Euclidian distance
+    The distance is the Euclidian distance
     between each ambiguity of the cell and its neighbours:
     a sum of current distance*current_weight and wind distance
     ----------
@@ -24,27 +24,25 @@ def calculate_Euclidian_distance_to_neighbours(
         OSCAR L2 dataset containing the neighbours of the cell of interest
         Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
         and'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
-        Additional keyword arguments to pass to the cost function
+        Additional keyword arguments to pass to the distance function
     Euclidian_method : ``str``, optional
         Method to calculate the Euclidian distance
         Must be 'standard' or 'squared'
         Default is 'standard'
     method : ``str``, optional
-        Method to calculate the cost
+        Method to calculate the distance
         Must be 'windcurrent', 'wind' or 'current'
         Default is 'windcurrent'
     windcurrentratio : ``int``, optional
         Ratio of the weight of the current to the weight of the wind
         Default is 10
     include_centre : ``bool``, optional
-        Whether to include the centre cell in the cost function
+        Whether to include the centre cell in the distance function
         Default is False
-    **kwargs : ``**kwargs``, optional
-        Additional keyword arguments to pass to the cost function
     Returns
     -------
-    TotalCost : ``numpy.array``
-        Total cost for each ambiguity
+    dif_squared.distsum : ``xarray.dataarray``
+        Dataset containing the sum of the distances between the cell and its neighbours
     """
     if Euclidian_method == "standard":
         power = 0.5
@@ -65,31 +63,30 @@ def calculate_Euclidian_distance_to_neighbours(
     else:
         raise ValueError("method must be 'windcurrent', 'wind' or 'current'")
 
-    centre_cross = np.int_(L2_neighbours.CrossRange.sizes['CrossRange']/2)
-    centre_ground = np.int_(L2_neighbours.GroundRange.sizes['GroundRange']/2)
+    centre_cross = np.int_(L2_neighbours.CrossRange.sizes["CrossRange"] / 2)
+    centre_ground = np.int_(L2_neighbours.GroundRange.sizes["GroundRange"] / 2)
 
-    dif_squared = (L2_neighbours-L2_sel)**2
+    dif_squared = (L2_neighbours - L2_sel) ** 2
     dif_squared["dist"] = (
         current_multiplier * (dif_squared.CurrentU + dif_squared.CurrentV) ** power
         + wind_multiplier
         * (dif_squared.EarthRelativeWindU + dif_squared.EarthRelativeWindV) ** power
     )
-    dif_squared['distsum'] = dif_squared.dist.sum(
-        dim=('CrossRange', 'GroundRange'))
+    dif_squared["distsum"] = dif_squared.dist.sum(dim=("CrossRange", "GroundRange"))
 
     if not include_centre:
-        dif_squared['distsum'] = dif_squared.distsum - \
-            dif_squared.dist.isel(CrossRange=centre_cross,
-                                  GroundRange=centre_ground)
+        dif_squared["distsum"] = dif_squared.distsum - dif_squared.dist.isel(
+            CrossRange=centre_cross, GroundRange=centre_ground
+        )
 
     return dif_squared.distsum
 
 
 def single_cell_ambiguity_selection(
-    lmout, initial, i_x, i_y, cost_function, window, **kwargs
+    lmout, initial, i_x, i_y, distance_function, window, **kwargs
 ):
     """
-    Selects the ambiguity with the lowest cost function value
+    Selects the ambiguity with the lowest distance function value
     based on a box around the cell
 
     Parameters
@@ -108,17 +105,17 @@ def single_cell_ambiguity_selection(
         Index of the `CrossRange` dimension
     i_j : ``int``
         Index of the `GroundRange` dimension
-    cost_function : ``function``
-        Function to calculate the cost of the ambiguities.
+    distance_function : ``function``
+        Function to calculate the distance of the ambiguities.
         Must take:
             single cell from `lmout`,
             a box around it from `initial` as input, current_weight
-        Return total cost for all for ambiguities
+        Return total distance for all for ambiguities
     window : ``int``, optional
         Size of the box around the cell
         Must be an odd number
     **kwargs : ``**kwargs``, optional
-        Additional keyword arguments to pass to the cost function
+        Additional keyword arguments to pass to the distance function
 
     Returns
     -------
@@ -126,11 +123,11 @@ def single_cell_ambiguity_selection(
         Index of the selected ambiguity
     """
     if window % 2 == 0:
-        raise ValueError('Window size must be an odd number')
-    radius = np.int_((window-1)/2)
+        raise ValueError("Window size must be an odd number")
+    radius = np.int_((window - 1) / 2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
-        total_cost = cost_function(
+        total_distance = distance_function(
             L2_sel,
             initial.isel(
                 CrossRange=slice(i_x - radius, i_x + radius + 1),
@@ -138,7 +135,7 @@ def single_cell_ambiguity_selection(
             ),
             **kwargs
         )
-        selected_ambiguity = total_cost.argmin()
+        selected_ambiguity = total_distance.argmin()
     else:
         selected_ambiguity = np.nan
     return selected_ambiguity
@@ -147,7 +144,7 @@ def single_cell_ambiguity_selection(
 def solve_ambiguity_spatial_selection(
     lmout,
     initial_solution,
-    cost_function,
+    distance_function,
     iteration_number=2,
     window=3,
     inplace=True,
@@ -168,13 +165,13 @@ def solve_ambiguity_spatial_selection(
         This dataset contains the initial solution to compare the ambiguities to.
         Must have 'Ambiguities', 'CrossRange' and 'GroundRange' dimensions,
         and 'CurrentU', 'CurrentV', 'EarthRelativeWindU', 'EarthRelativeWindV' data variables
-    cost_function : ``function``
-        Function to calculate the cost of the ambiguities.
+    distance_function : ``function``
+        Function to calculate the distance of the ambiguities.
         Must take:
             single cell from `lmout`
             a box around it from `initial`
             any additional keyword arguments
-        and return total cost for all 4 ambiguities
+        and return total distance for all 4 ambiguities
     pass_number : ``int``, optional
         Number of passes to iterate through the dataset
         Default is 2
@@ -182,33 +179,32 @@ def solve_ambiguity_spatial_selection(
         Whether to modify the input dataset in place
         Default is True
     **kwargs : ``**kwargs``, optional
-        Additional keyword arguments to pass to the cost function
+        Additional keyword arguments to pass to the distance function
     Returns
     -------
-    L2: ``xarray.Dataset``
-        OSCAR L2 dataset with solved ambiguities
+    initial_copy : ``xarray.dataset``
+        Dataset containing the selected ambiguities
     """
+
     def select_and_replace_ambiguity(i, j):
-        # select ambiguity with the lowest cost
+        # select ambiguity with the lowest distance
         selected_ambiguity = single_cell_ambiguity_selection(
             lmout,
             initial_copy,
             i,
             j,
-            cost_function=cost_function,
+            distance_function=distance_function,
             window=window,
             **kwargs
         )
         # replace with the selected ambiguity if it is not nan
         if not np.isnan(selected_ambiguity):
-            initial_copy.loc[{
-                'CrossRange': initial_copy.CrossRange.isel(CrossRange=i),
-                'GroundRange': initial_copy.GroundRange.isel(GroundRange=j)
-            }] = lmout.isel(
-                CrossRange=i,
-                GroundRange=j,
-                Ambiguities=selected_ambiguity
-            )
+            initial_copy.loc[
+                {
+                    "CrossRange": initial_copy.CrossRange.isel(CrossRange=i),
+                    "GroundRange": initial_copy.GroundRange.isel(GroundRange=j),
+                }
+            ] = lmout.isel(CrossRange=i, GroundRange=j, Ambiguities=selected_ambiguity)
 
     def verticalpass(direction):
         # iterate vertically in the given direction
@@ -216,8 +212,8 @@ def solve_ambiguity_spatial_selection(
         while j >= 0:  # iterate across track
             for i in range(0, cross_range_size, direction):  # iterate along track
                 select_and_replace_ambiguity(i, j)
-            if j == ground_range_size-1:
-                j = halfway_ground_range-1
+            if j == ground_range_size - 1:
+                j = halfway_ground_range - 1
             elif j >= halfway_ground_range:
                 j += 1
             elif j < halfway_ground_range:
@@ -234,12 +230,12 @@ def solve_ambiguity_spatial_selection(
         initial_copy = initial_solution.copy(deep=True)
 
     # initialize arrays
-    cross_range_size = lmout.CrossRange.sizes['CrossRange']
-    ground_range_size = lmout.GroundRange.sizes['GroundRange']
-    halfway_ground_range = np.round(ground_range_size/2).astype(int)
+    cross_range_size = lmout.CrossRange.sizes["CrossRange"]
+    ground_range_size = lmout.GroundRange.sizes["GroundRange"]
+    halfway_ground_range = np.round(ground_range_size / 2).astype(int)
 
     for n in range(iteration_number):  # repeat passes
-        print('Pass', n+1)
+        print("Pass", n + 1)
         # Pass A1: iterate vertically
         verticalpass(1)
         # Pass A2: iterate vertically back
