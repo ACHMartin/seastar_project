@@ -82,9 +82,7 @@ def calculate_Euclidian_distance_to_neighbours(
     return dif_squared.distsum
 
 
-def single_cell_ambiguity_selection(
-    lmout, initial, i_x, i_y, distance_function, window, **kwargs
-):
+def single_cell_ambiguity_selection(lmout, initial, i_x, i_y, window, **kwargs):
     """
     Selects the ambiguity with the lowest distance function value
     based on a box around the cell
@@ -105,12 +103,6 @@ def single_cell_ambiguity_selection(
         Index of the `CrossRange` dimension
     i_j : ``int``
         Index of the `GroundRange` dimension
-    distance_function : ``function``
-        Function to calculate the distance of the ambiguities.
-        Must take:
-            single cell from `lmout`,
-            a box around it from `initial` as input, current_weight
-        Return total distance for all for ambiguities
     window : ``int``, optional
         Size of the box around the cell
         Must be an odd number
@@ -127,7 +119,7 @@ def single_cell_ambiguity_selection(
     radius = np.int_((window - 1) / 2)
     L2_sel = lmout.isel(CrossRange=i_x, GroundRange=i_y)
     if not np.isnan(L2_sel.isel(Ambiguities=0).CurrentU.values):
-        total_distance = distance_function(
+        total_distance = calculate_Euclidian_distance_to_neighbours(
             L2_sel,
             initial.isel(
                 CrossRange=slice(i_x - radius, i_x + radius + 1),
@@ -142,13 +134,7 @@ def single_cell_ambiguity_selection(
 
 
 def solve_ambiguity_spatial_selection(
-    lmout,
-    initial_solution,
-    distance_function,
-    iteration_number=2,
-    window=3,
-    inplace=True,
-    **kwargs
+    lmout, initial_solution, iteration_number=2, window=3, inplace=True, **kwargs
 ):
     """
     Solves the ambiguity of the L2_lmout dataset using the spatial selection method

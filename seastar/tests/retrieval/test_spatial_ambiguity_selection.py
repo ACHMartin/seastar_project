@@ -25,7 +25,7 @@ def L2_small2D():
 @pytest.fixture
 def initial():
     """Create a sample L2 OSCAR dataset"""
-    values = np.zeros((5, 4))
+    values = np.full((5, 4), 2)
     return xr.Dataset(
         data_vars={
             "CurrentU": (["CrossRange", "GroundRange"], values),
@@ -127,16 +127,11 @@ def test_calculate_squared_Euclidian_distance_to_neighbours_and_centre(
     assert (total_distance == [324.0, 144.0, 36.0, 0.0]).all()
 
 
-def distance(L2_sel, L2_neighbours, **distance_function_kwargs):
-    """Fake distance function for testing"""
-    return np.array([3, 2, 0, 1])
-
-
 @pytest.mark.parametrize("i_x, i_y", [(0, 0), (3, 2), (3, 3), (4, 2), (4, 3)])
 def test_single_cell_ambiguity_selection(lmout, initial, i_x, i_y):
     """Test the selection of ambiguity with the lowest distance"""
     selected_ambiguity = spatial_ambiguity_selection.single_cell_ambiguity_selection(
-        lmout, initial, i_x, i_y, distance, window=3
+        lmout, initial, i_x, i_y, window=3
     )
     assert selected_ambiguity == 2
 
@@ -144,7 +139,7 @@ def test_single_cell_ambiguity_selection(lmout, initial, i_x, i_y):
 def test_solve_ambiguity_spatial_selection(lmout, initial):
     """Test the solve ambiguity function"""
     L2_solved = spatial_ambiguity_selection.solve_ambiguity_spatial_selection(
-        lmout, initial, distance, pass_number=1, window=3
+        lmout, initial, pass_number=1, window=3
     )
     correct = np.full((5, 4), 2)
     assert (L2_solved.CurrentU.values == correct).all()
