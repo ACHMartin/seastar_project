@@ -158,3 +158,6 @@ cython_debug/
 .idea/vcs.xml
 .idea/workspace.xml
 .idea
+
+# VS Code
+seastar/.vscode/settings.json
