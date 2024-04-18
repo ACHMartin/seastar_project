@@ -34,7 +34,7 @@ def load_OSCAR_data(file_path, file_inds):
     file_list = sorted(os.listdir(file_path))
     ds = dict()
     for ind in file_inds:
-        ds[ind] = readNetCDFFile(os.path.join(file_path + file_list[ind]))
+        ds[ind] = readNetCDFFile(os.path.join(file_path, file_list[ind]))
     return ds
 
 
