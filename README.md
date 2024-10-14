@@ -69,57 +69,28 @@ The different steps are as below:
 
 Navigate to the latest release `(v2023.10.0)` on the RHS of the root project page and download and unzip the source code.
 
+### 1.2 Create an environment
 
-### 1.2 Create an environment with Anaconda
-
-To run the code in the project you need to install the required Python packages in an environment. To do this we will use **Anaconda**, which can be downloaded [here](https://www.anaconda.com/download/).
-
-Open the Anaconda prompt (in Mac and Linux, open a terminal window) and use the `cd` command (change directory) to the directory where you have installed the **seastar_project** repository.
-
-Create a new environment named `seastar` with all the required packages and activate this environment by entering the following commands:
-
+To run the code in the project you need to install the required Python packages in an environment. To create and activate the new environment with all the required packages using `Mamba`, you can run:
 ```
->>> conda env create --file env/environment.yml
+>>> mamba env create -f armoor/environment.yml
+>>> mamba activate seastar
+```
+Alternatively, using `Conda` (slightly slower than `Mamba` but widely used), you can run:
+```
+>>> conda env create -f armoor/environment.yml
 >>> conda activate seastar
 ```
 
-To confirm that you have successfully activated `seastar`, your terminal command line prompt should now start with `(seatar)`.
+It is also possible to install the environment using `Poetry`. This methods, which is faster than with `Mamba` and `Conda`, is explained in more details in the [documentation](https://seastar-project.readthedocs.io/en/latest/)
 
-### 1.3 Optional: Add the path of the seastar_project into your conda pythonpath
-To permanently include packages or folder into the `PYTHONPATH` of an Anaconda 
-environment, activate the Conda environment and use `conda develop` to add the 
-path permanently to the `PYTHONPATH` of the Conda environment.
-```
-(seastar)>>> conda develop /PATH/TO/seastar_project
-```
-you should get the following prints on screen:
-```
-added /PATH/TO/seastar_project
-completed operation for: /PATH/TO/seastar_project
-```
+## 2. Documentation
 
-## 2. Running the code
+A Sphinx documentation is available following this [link] (https://seastar-project.readthedocs.io/en/latest/). It provides more details on the installation and on the organisation of the project code.
 
-### 2.1 Set parameters for your local environment
+## 3. License
 
-From the directory containing the **seastar_project** edit the file **seatarx_config.ini** and set the parameters as required e.g. set the path to the  local directories for the SAR data and for writing the results.
-
-### 2.2 Execute the processor
-
-In the terminal window opened in the **seastar_project** directory enter the following command:
-
-```
->>> python master_processor.py
-```
-
-## 3. Documentation
-
-[readthedocs](https://seastar-project.readthedocs.io/en/latest/)
-
-
-## 4. License
-
-Copyright 2023 Adrien Martin & David McCann
+Copyright 2023 Adrien Martin & David McCann & Eva Le Merle
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not 
 use this file except in compliance with the License. You may obtain a copy of 
