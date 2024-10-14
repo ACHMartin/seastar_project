@@ -21,8 +21,8 @@ print(os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'SeaSTAR'
-copyright = '2023, Adrien Martin, David McCann'
-author = 'Adrien Martin, David McCann'
+copyright = '2023, Adrien Martin, David McCann, Eva Le Merle'
+author = 'Adrien Martin, David McCann, Eva Le Merle'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0'
@@ -65,7 +65,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -77,3 +77,11 @@ html_static_path = ['_static']
 html_css_files = [
     'css/custom.css',
 ]
+
+# Theme options
+html_theme_options = {
+    'collapse_navigation': False,  # Garde le menu de navigation ouvert
+    'sticky_navigation': True,     # Garde la navigation en vue lorsque vous descendez sur la page
+    'navigation_depth': 2,         # Profondeur maximale de la hiérarchie dans la navigation
+    'titles_only': False,          # Afficher uniquement les titres dans la navigation latérale
+}
