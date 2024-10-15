@@ -1,9 +1,26 @@
-[project]
+[tool.poetry]
 name = 'seastar'
 description = 'seastar package'
+authors = ["Adrien Martin <adrien.martin@noveltis.fr>"]
 version = '1.0'
-dependencies = ['numpy', 'pandas', 'scipy', 'xarray']
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.8.16"                     # Python required version
+matplotlib = "3.5.1"                      # Matplotlib
+netcdf4 = "1.5.7"                         # NetCDF4
+notebook = "6.4.11"                       # Notebook
+numpy = "1.22.4"                          # NumPy
+scipy = "1.7.3"                           # SciPy
+packaging = "*"                           # Packaging
+pip = "*"                                 # Pip
+sphinx = "4.4.0"                          # Sphinx
+sphinx_rtd_theme = "1.0.0"                # Sphinx RTD Theme
+xarray = "2022.11.0"                      # Xarray
+utm = "0.7.0"                             # UTM
+pytest = "*"                              # Test librairy
+dask = "2023.5.0"                         # Dask
 
 [build-system]
-build-backend = 'flit_core.buildapi'
-requires = ['flit_core >=3.2,<4']
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
