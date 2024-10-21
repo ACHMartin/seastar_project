@@ -9,7 +9,7 @@ This page describes the installation process for SeaSTAR tools.
 Retrieving sources
 ------------------
 
-Navigate to the latest release `(v2023.10.3)` on the RHS of the root project page and download and unzip the source code.
+Navigate to the latest release `(v2023.10.3)` on the right-hand-side of the root project page and download and unzip the source code.
 
 You can also retrieve sources from the GitHub repository :
 
@@ -30,7 +30,7 @@ Using poetry
 **Poetry** is a modern **Python** dependency management and packaging tool designed to streamline the development and deployment of **Python** projects. 
 **Poetry** focuses on pure Python projects and provides a simple interface for managing project dependencies, versions, and virtual environments. 
 Unlike Conda, **Poetry** does not handle non-Python dependencies directly.
-A *pyproject.toml* file is also available and allow to install the environmenent using **Poetry**.
+A *pyproject.toml* file is available and allow to install the environmenent using **Poetry**.
 
 To download **Poetry**, use the following command:
 ::
@@ -44,9 +44,10 @@ Since **Poetry** does not handle complex dependencies like **Cartopy**, you firs
     $ mamba activate
     $ mamba install cartopy=0.18.0
 
-Once this environment is created you can launch the **Poetry** command to install the rest of the Python-only dependencies with the corresponding versions:
+Once this environment is created you can move to the seastar_projectdirectory and launch the **Poetry** command to install the rest of the Python-only dependencies with the corresponding versions:
 ::
-    
+
+    $ cd seastar_project 
     $ poetry install
 
 **Poetry** creates and manages virtual environments automatically. 
@@ -60,12 +61,12 @@ They are especially effective for managing complex dependencies, including packa
 To create a new environment with all the required packages and activate this environment using **Mamba**, you can run:
 ::
 
-    $ mamba env create -f armoor/environment.yml
+    $ mamba env create -f seastar_project/env/environment.yml
     $ mamba activate seastar
 
 Alternatively, using **Conda** (slightly slower than **Mamba** but widely used):
 ::
 
-    $ conda env create -f armoor/environment.yml
+    $ conda env create -f seastar_project/env/environment.yml
     $ conda activate seastar
 

@@ -73,12 +73,12 @@ Navigate to the latest release `(v2023.10.3)` on the RHS of the root project pag
 
 To run the code in the project you need to install the required Python packages in an environment. To create and activate the new environment with all the required packages using `Mamba`, you can run:
 ```
->>> mamba env create -f armoor/environment.yml
+>>> mamba env create -f seastar_project/env/environment.yml
 >>> mamba activate seastar
 ```
 Alternatively, using `Conda` (slightly slower than `Mamba` but widely used), you can run:
 ```
->>> conda env create -f armoor/environment.yml
+>>> conda env create -f seastar_project/env/environment.yml
 >>> conda activate seastar
 ```
 
