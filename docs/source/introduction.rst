@@ -1,9 +1,6 @@
 Introduction
 ============
 
-Introduction
-------------
-
 This document is the user manual for the **SeaSTAR** Project's specialized software,
 tailored for the Ocean Surface Current Airborne Radar demonstrator (OSCAR). 
 This manual is designed to provide the user with a straightforward guide to utilizing

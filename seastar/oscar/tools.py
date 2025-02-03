@@ -7,6 +7,7 @@ from seastar.utils.tools import list_duplicates
 from scipy import interpolate
 import xarray as xr
 
+
 def load_OSCAR_data(file_path, file_inds):
     """
     Load OSCAR data.
@@ -33,8 +34,9 @@ def load_OSCAR_data(file_path, file_inds):
     file_list = sorted(os.listdir(file_path))
     ds = dict()
     for ind in file_inds:
-        ds[ind] = readNetCDFFile(file_path + file_list[ind])
+        ds[ind] = readNetCDFFile(os.path.join(file_path, file_list[ind]))
     return ds
+
 
 def identify_antenna_location(ds):
     """

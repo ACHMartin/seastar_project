@@ -275,45 +275,46 @@ def compute_multilooking_Master_Slave(ds, window=3,
     if len(ds.SigmaImageSingleLookRealPart.dims) > 2:
         raise Exception("The variable SigmaImageSingleLookRealPart is not a"
                         "2D variable. Please check this variable's dimensions")
-    ds_out = xr.Dataset()
+    ds_out = ds.copy()
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
-    if 'SigmaSLCSlave' not in ds.data_vars:
-        ds_out['IntensityAvgComplexMasterSlave'] = (ds.SigmaSLCMaster ** 2)\
-            .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean()\
-            .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
-    else:
-        ds_out['IntensityAvgComplexMasterSlave'] =\
-            (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
-            .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean()\
-            .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
-    ds_out.IntensityAvgComplexMasterSlave.attrs['long_name'] = \
-        'Average intensity of Master/Slave SLC'
-    ds_out.IntensityAvgComplexMasterSlave.attrs['units'] = ''
-    ds_out['Intensity'] = np.abs(ds_out.IntensityAvgComplexMasterSlave)
-    ds_out.Intensity.attrs['long_name'] = 'SLC Intensity'
-    ds_out.Intensity.attrs['description'] =\
-        'Average absolute single look complex image intensity (|M.S^*| with ^* complex conjugate, if S missing => |M^2|)'
-    ds_out.Intensity.attrs['units'] = ''
-    if 'SigmaSLCSlave' not in ds.data_vars:
-        ds_out['Interferogram'] = xr.DataArray(data=np.NaN)
-        ds_out.Interferogram.attrs['description'] =\
-            'Interferogram between master/slave antenna pair.'\
-            ' Values set to NaN as no Slave data present in beam dataset'
-    else:
-        ds_out['Interferogram'] = (
-            ds.SigmaSLCMaster.dims,
-            np.angle(ds_out.IntensityAvgComplexMasterSlave, deg=False)
-            )
-        ds_out.Interferogram.attrs['description'] =\
-            'Interferogram between master/slave antenna pair.'
-    ds_out.Interferogram.attrs['long_name'] = 'Interferogram'
-    ds_out.Interferogram.attrs['units'] = 'rad'
 
     ds_out['IntensityAvgMaster'] = (np.abs
         (ds.SigmaSLCMaster) ** 2) \
             .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean() \
             .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
+
+    if 'SigmaSLCSlave' in ds.data_vars:
+        ds_out['IntensityAvgSlave'] = (np.abs(ds.SigmaSLCSlave) ** 2)\
+                .rolling({ds.SigmaSLCSlave.dims[1]: window}).mean()\
+                .rolling({ds.SigmaSLCSlave.dims[0]: window}).mean()
+
+        ds_out['IntensityAvgComplexMasterSlave'] =\
+            (ds.SigmaSLCMaster * np.conjugate(ds.SigmaSLCSlave))\
+            .rolling({ds.SigmaSLCMaster.dims[1]: window}).mean()\
+            .rolling({ds.SigmaSLCMaster.dims[0]: window}).mean()
+
+        ds_out['Intensity'] = np.abs(ds_out.IntensityAvgComplexMasterSlave)
+
+        ds_out['Interferogram'] = (
+            ds.SigmaSLCMaster.dims,
+            np.angle(ds_out.IntensityAvgComplexMasterSlave, deg=False)
+            )
+
+        ds_out['Coherence'] =\
+            ds_out.Intensity / np.sqrt(ds_out.IntensityAvgMaster
+                                       * ds_out.IntensityAvgSlave)
+
+    else:
+        ds_out['IntensityAvgSlave'] = xr.DataArray(data=np.NaN)
+
+        ds_out['IntensityAvgComplexMasterSlave'] = xr.DataArray(data=np.NaN)
+
+        ds_out['Intensity'] = ds_out.IntensityAvgMaster 
+
+        ds_out['Interferogram'] = xr.DataArray(data=np.NaN)
+
+        ds_out['Coherence'] = xr.DataArray(data=np.NaN)
 
     ds_out.IntensityAvgMaster.attrs['long_name'] = \
         'Intensity Master'
@@ -321,25 +322,24 @@ def compute_multilooking_Master_Slave(ds, window=3,
         'Average absolute single look complex image intensity for Master SLC (|M^2|)'
     ds_out.IntensityAvgMaster.attrs['units'] = ''
 
-    if 'SigmaSLCSlave' in ds.data_vars:
-        ds_out['IntensityAvgSlave'] = (np.abs
-            (ds.SigmaSLCSlave) ** 2)\
-                .rolling({ds.SigmaSLCSlave.dims[1]: window}).mean()\
-                .rolling({ds.SigmaSLCSlave.dims[0]: window}).mean()
-
-        ds_out['Coherence'] =\
-            ds_out.Intensity / np.sqrt(ds_out.IntensityAvgMaster
-                                       * ds_out.IntensityAvgSlave)
-    else:
-        # ds_out['IntensityAvgMaster'] = xr.DataArray(data=np.NaN)
-        ds_out['IntensityAvgSlave'] = xr.DataArray(data=np.NaN)
-        ds_out['Coherence'] = xr.DataArray(data=np.NaN)
-
     ds_out.IntensityAvgSlave.attrs['long_name'] = \
         'Intensity Slave'
-    ds_out.IntensityAvgSlave.attrs['description'] = \
-        'Average absolute single look complex image intensity for Slave SLC (|S^2|)'
     ds_out.IntensityAvgSlave.attrs['units'] = ''
+
+    ds_out.IntensityAvgComplexMasterSlave.attrs['long_name'] = \
+        'Average intensity of Master/Slave SLC'
+    ds_out.IntensityAvgComplexMasterSlave.attrs['units'] = ''
+
+    ds_out.Intensity.attrs['long_name'] = 'SLC Intensity'
+    ds_out.Intensity.attrs['description'] =\
+        'Average absolute single look complex image intensity (|M.S^*| with ^* complex conjugate, if S missing => |M^2|)'
+    ds_out.Intensity.attrs['units'] = ''
+
+    ds_out.Interferogram.attrs['description'] =\
+        'Interferogram between master/slave antenna pair.'
+    ds_out.Interferogram.attrs['long_name'] = 'Interferogram'
+    ds_out.Interferogram.attrs['units'] = 'rad'
+
     ds_out.Coherence.attrs['long_name'] = \
         'Coherence'
     ds_out.Coherence.attrs['description'] = \
