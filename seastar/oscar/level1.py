@@ -275,7 +275,7 @@ def compute_multilooking_Master_Slave(ds, window=3,
     if len(ds.SigmaImageSingleLookRealPart.dims) > 2:
         raise Exception("The variable SigmaImageSingleLookRealPart is not a"
                         "2D variable. Please check this variable's dimensions")
-    ds_out = ds.copy()
+    ds_out = xr.Dataset()
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
 
