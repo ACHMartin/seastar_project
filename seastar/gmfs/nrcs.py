@@ -176,3 +176,98 @@ def nscat4ds(u10, phi, inc, pol):
         s0
     )
 
+def cmod7(u10, phi, inc, pol=1):
+    """
+    Compute sigma0 due to wind.
+    admartin@noc.ac.uk adapted from
+    (c) 2017 Anton Verhoef, KNMI Royal Netherlands Meteorological Institute
+
+    Input parameters u10, phi, inc and pol must be in
+    identical sizes and formats.
+
+    Parameters
+    ----------
+    u10 : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Wind speed (m/s) at 10m above sea surface.
+        GMF built for wind speed ranging from 0.2 m/s to 50 m/s.
+    phi : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Angle between wind and look directions (degrees) in range 0 (upwind) :
+            90 (crosswind) : 180 (downwind).
+    inc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Incidence angle of radar beam (degrees from nadir).
+        GMF built for incidence angle ranging from 16° to 66°.
+    pol : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Polarisation of radar beam (1 for VV). No HH polarisation.
+
+    Raises
+    ------
+    Exception
+        Exception for inconsistency in sizes of input parameters.
+        Exception for polarisation out of range of (1,2) for (VV,HH).
+
+    Returns
+    -------
+    sigma0 : ``float``, ``numpy.array``, ``xarray.DataArray``
+        NRCS due to geophysical and geometric conditions of
+        the same size as the input.
+
+    """
+    # Check inputs
+    sizes = np.array([np.size(inc), np.size(u10), np.size(phi)])
+    # TODO add pol in the sizes ?!
+    size = sizes.max()
+    if ((sizes != size) & (sizes != 1)).any():
+        raise Exception('Inputs sizes do not agree.')
+    for ii in np.unique(pol):
+        if ii not in [1]:
+            raise Exception('Polarisation should be 1 (VV),'
+                        'CMOD7 does not accept HH pol.'
+                        'Given polarisation: ' + pol)
+    varin = np.stack([u10, phi, inc, pol],axis=-1)
+
+    # Construct Path
+    dirpath = seastar.gmfs.nrcs.__file__[:-7]
+    # fname_big = 'cmod7_vv.dat_big_endian'
+    fname_vv = dirpath + 'cmod7_vv.dat_little_endian'
+    
+
+    # Dimensions of GMF table
+    m = 250  # wind speed min/max = 0.2-50 (step 0.2) [m/s] --> 250 pts
+    n = 73   # dir min/max = 0-180 (step 2.5) [deg]   -->  73 pts
+    p = 51   # inc min/max = 16-66 (step 1) [deg]     -->  51 pts
+    #q = 1    # polarisation = 1 --> 1 pts
+
+    wspd = np.linspace(0.2, 50, m)
+    rdir = np.linspace(0, 180, n)
+    inci = np.linspace(16, 66, p)
+    #pol  = np.linspace(1, 1, q)
+
+    gmf_table_vv = np.fromfile(fname_vv, dtype=np.float32)
+    #gmf_table_hh = np.fromfile(fname_hh, dtype=np.float32)
+
+    # Remove head and tail
+    gmf_table_vv = gmf_table_vv[1:-1]
+    #gmf_table_hh = gmf_table_hh[1:-1]
+
+    # To access the table as a three-dimensional Fortran-ordered m x n x p matrix,
+    # reshape it
+    gmf_table = gmf_table_vv.reshape((m, n, p), order="F")
+    #gmf_table_hh = gmf_table_hh.reshape((m, n, p), order="F")
+
+    #gmf_table = np.stack([gmf_table_vv, gmf_table_hh], axis=-1)
+
+    points = (wspd, rdir, inci)
+
+    s0 = interpn(points, gmf_table, varin,
+                method='linear',
+                bounds_error=False,
+                fill_value=np.nan)
+
+    if isinstance(u10, xr.core.dataarray.DataArray):
+        s0 = xr.DataArray(
+            data=s0,
+            dims=u10.dims,
+        )
+    return(
+        s0
+    )
