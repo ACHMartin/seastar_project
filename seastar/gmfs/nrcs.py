@@ -223,7 +223,7 @@ def cmod7(u10, phi, inc, pol=1):
             raise Exception('Polarisation should be 1 (VV),'
                         'CMOD7 does not accept HH pol.'
                         'Given polarisation: ' + pol)
-    varin = np.stack([u10, phi, inc, pol],axis=-1)
+    varin = np.stack([u10, phi, inc],axis=-1)
 
     # Construct Path
     dirpath = seastar.gmfs.nrcs.__file__[:-7]
