@@ -63,8 +63,23 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
                 L1.IncidenceAngleImage.values,
                 pol_val.values
             )
+        elif gmf['name'] == 'cmod7':
+            unique_pol = np.unique(pol_val.values)
+            if len(unique_pol) == 1: # only one value for pol
+                if unique_pol == 1: # VV polarisation
+                    # nothing
+            else:
+                raise Exception('Error, cmod7 gmf only accept VV polarisation with values of "1"')
+            # compute with cmod7
+            nrcs_data = cmod7(
+                aux_geo.OceanSurfaceWindSpeed.values,
+                relative_wind_direction.values,
+                L1.IncidenceAngleImage.values,
+                1
+            )
+
         else:
-            raise Exception('Error, unknown gmf, gmf["name"] should be nscat4ds')
+            raise Exception('Error, unknown gmf, gmf["name"] should be nscat4ds or cmod7')
 
         if len(nrcs_data) == 1: # bug if nrcs_data is of len = 1 for DataArray creation
             nrcs_data = nrcs_data[0]
@@ -214,7 +229,6 @@ def cmod7(u10, phi, inc, pol=1):
     """
     # Check inputs
     sizes = np.array([np.size(inc), np.size(u10), np.size(phi)])
-    # TODO add pol in the sizes ?!
     size = sizes.max()
     if ((sizes != size) & (sizes != 1)).any():
         raise Exception('Inputs sizes do not agree.')
