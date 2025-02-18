@@ -64,18 +64,17 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
                 pol_val.values
             )
         elif gmf['name'] == 'cmod7':
+            # check pol_val are only in VV (values of 1)
             unique_pol = np.unique(pol_val.values)
-            if len(unique_pol) == 1: # only one value for pol
-                if unique_pol == 1: # VV polarisation
-                    # nothing
-            else:
+            # more than one value for pol or not 1 # VV
+            if len(unique_pol) > 1 or not (unique_pol == np.ones(unique_pol.shape)).all():
                 raise Exception('Error, cmod7 gmf only accept VV polarisation with values of "1"')
             # compute with cmod7
             nrcs_data = cmod7(
                 aux_geo.OceanSurfaceWindSpeed.values,
                 relative_wind_direction.values,
                 L1.IncidenceAngleImage.values,
-                1
+                1 # VV
             )
 
         else:
