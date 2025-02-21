@@ -41,7 +41,7 @@ def fill_missing_variables(ds_dict, antenna_id):
         for antenna_2 in [a for a in antenna_list if a not in [antenna_1]]:
             for var in ds_dict[antenna_1].data_vars:
                 if var not in ds_dict[antenna_2].data_vars:
-                    ds_dict[antenna_2][var] = xr.DataArray(data=np.NaN)
+                    ds_dict[antenna_2][var] = xr.DataArray(data=np.nan)
 
     return ds_dict
 
@@ -306,15 +306,15 @@ def compute_multilooking_Master_Slave(ds, window=3,
                                        * ds_out.IntensityAvgSlave)
 
     else:
-        ds_out['IntensityAvgSlave'] = xr.DataArray(data=np.NaN)
+        ds_out['IntensityAvgSlave'] = xr.DataArray(data=np.nan)
 
-        ds_out['IntensityAvgComplexMasterSlave'] = xr.DataArray(data=np.NaN)
+        ds_out['IntensityAvgComplexMasterSlave'] = xr.DataArray(data=np.nan)
 
         ds_out['Intensity'] = ds_out.IntensityAvgMaster 
 
-        ds_out['Interferogram'] = xr.DataArray(data=np.NaN)
+        ds_out['Interferogram'] = xr.DataArray(data=np.nan)
 
-        ds_out['Coherence'] = xr.DataArray(data=np.NaN)
+        ds_out['Coherence'] = xr.DataArray(data=np.nan)
 
     ds_out.IntensityAvgMaster.attrs['long_name'] = \
         'Intensity Master'
@@ -474,7 +474,7 @@ def compute_time_lag_Master_Slave(ds, options):
                 'Time difference between antenna master and slave.'
             TimeLag.attrs['units'] = 's'
         else:
-            TimeLag = xr.DataArray(data=np.NaN)
+            TimeLag = xr.DataArray(data=np.nan)
             TimeLag.attrs['long_name'] = 'Time lag'
             TimeLag.attrs['description'] =\
                 'Time difference between antenna master and slave.'\
@@ -617,7 +617,7 @@ def init_auxiliary(level1, u10, wind_direction):
     return aux
 
 
-def replace_dummy_values(ds, dummy_val=-9999, replace=np.NaN):
+def replace_dummy_values(ds, dummy_val=-9999, replace=np.nan):
     """
     Replace dummy values.
 
