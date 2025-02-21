@@ -6,20 +6,19 @@ version = '1.0'
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">= 3.8"                     # Python required version
-matplotlib = "3.5.1"                      # Matplotlib
-netcdf4 = "1.5.7"                         # NetCDF4
-notebook = "6.4.11"                       # Notebook
-numpy = "1.22.4"                          # NumPy
-scipy = "1.7.3"                           # SciPy
+python = "*"                              # Python
+matplotlib = "*"                          # Matplotlib
+netcdf4 = "*"                             # NetCDF4
+numpy = "*"                               # NumPy
+scipy = "*"                               # SciPy
 packaging = "*"                           # Packaging
 pip = "*"                                 # Pip
-sphinx = "4.4.0"                          # Sphinx
-sphinx_rtd_theme = "1.0.0"                # Sphinx RTD Theme
-xarray = "2022.11.0"                      # Xarray
-utm = "0.7.0"                             # UTM
+sphinx = "*"                              # Sphinx
+sphinx_rtd_theme = "*"                    # Sphinx RTD Theme
+xarray = "*"                              # Xarray
+utm = "*"                                 # UTM
 pytest = "*"                              # Test librairy
-dask = "2023.5.0"                         # Dask
+dask = "*"                                # Dask
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
