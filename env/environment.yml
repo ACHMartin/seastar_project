@@ -6,7 +6,6 @@ dependencies:
   - python
   - matplotlib
   - netcdf4
-  - notebook
   - numpy
   - scipy
   - packaging
