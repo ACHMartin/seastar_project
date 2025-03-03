@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """Functions for the processing of OSCAR airbone data."""
 import os
+import importlib.util
 import numpy as np
 from seastar.utils.readers import readNetCDFFile
 from seastar.utils.tools import list_duplicates
 from scipy import interpolate
 import xarray as xr
+from datetime import datetime as dt
+
+from _version import __version__
 
 
 def load_OSCAR_data(file_path, file_inds):
@@ -189,3 +193,31 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
                         coords=ds_out.coords
                         )
     return colocated_var
+
+
+
+def extract_acquisition_date(ds):
+    """
+    Extract the starting and ending datetime as well as the date and time acquisition to the good format to be reported in the filename of processed data.
+    
+    Parameters
+    ----------
+    ds : `xr.DataArray`
+       The L1ap dataset that contains date and time information.
+    
+    Returns
+    ----------
+    start_date : `str`
+        The starting acquisition time.
+    end_date : `str`
+        The ending acquisition time.
+    date_time_filename : `str`
+        The date and time as it will appear in the post-processed data file name.
+    """
+    
+    start_date = ds.Title.split()[2]
+    end_date = ds.Title.split()[2].split("T")[0] + "T" + str(int(ds.FinalHour.data)).zfill(2)+str(int(ds.FinalMin.data)).zfill(2)+str(int(ds.FinalSec.data)).zfill(2)
+    date_time_filename = ds.Title.split()[2] + "-" + str(int(ds.FinalHour.data)).zfill(2)+str(int(ds.FinalMin.data)).zfill(2)+str(int(ds.FinalSec.data)).zfill(2)
+    
+    
+    return start_date, end_date, date_time_filename
