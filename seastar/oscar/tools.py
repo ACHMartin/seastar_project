@@ -196,6 +196,91 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
 
 
 
+def formatting_data(ds, processing_level, data_version, start_time, end_time, date_filename, resolution, track, platform="OSCAR", campaign="202305_MedSea"):
+    """
+    Formatting the attributes and the file name of the processed data from level 1B to level 2 included.
+    
+    Parameters
+    ----------
+    ds : `xr.DataArray`
+       dataset to format and to save as a NetCDF file.
+    processing_level : `str`
+        The processing level (e.g., "L1B", "L1C", "L2").
+    version_file : `str`
+        The path to the version file _version.py in the project.
+    data_version : `str`
+        The version of the MetaSensing data. Corresponding to the ftp deposite date.
+    start_time : `str`
+        The starting acquisition time.
+    end_time : `str`
+        The ending acquisition time.
+    date_filename : `str`
+        The init and final time of the acquisition with the date.
+    resolution : `int`
+        The pixel resolution of the OSCAR data.
+    platform : `str, optional`
+        The platform name (default is "OSCAR").       
+    campaign : `str, optional`
+        The campaign name (default is "202305_MedSea").  
+            
+    Returns
+    ----------
+    ds : xr.Dataset
+        The dataset with updated metadata.
+    filename : `str`
+        Name of the OSCAR NetCDF file.
+    """
+    
+    # Check if ds is a valid xarray Dataset
+    if not isinstance(ds, xr.Dataset):
+        raise TypeError("Input 'ds' must be an xarray.Dataset.")
+
+    # Ensure processing_level is valid
+    valid_levels = {"L1B", "L1C", "L2"}
+    if processing_level not in valid_levels:
+        raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
+    
+    
+    # Building dataset
+    if processing_level=="L1B" or processing_level=="L1C":
+        ds.attrs['Campaign'] = campaign
+        ds.attrs['Platform'] = platform
+        ds.attrs['Track'] = track
+        ds.attrs['StartTime'] = start_time
+        ds.attrs['EndTime'] = end_time
+        ds.attrs['ProcessingLevel'] = processing_level
+        ds.attrs['Resolution'] = str(resolution).zfill(3)+"x"+str(resolution).zfill(3)+"m"
+        ds.attrs['Codebase'] = 'seastar_project'
+        ds.attrs['Repository'] = 'https://github.com/NOC-EO/seastar_project'
+        ds.attrs['SoftwareVersion'] = __version__
+        ds.attrs['DataVersion'] = data_version
+        ds.attrs['Comments'] = 'Processed on ' + dt.today().strftime('%Y%m%d')
+        
+        filename = date_filename + "_" + ds.attrs['Platform'] + "_" + ds.attrs['ProductLevel'] + "_" + ds.attrs['Track'] + "_" + ds.attrs['Resolution'] + "_" + __version__ + ".nc"
+        
+    elif processing_level=="L2":
+        ds.attrs['Kp'] = ds.Kp
+        ds.attrs['RSV_noise'] = ds.RSVNoise
+        ds.attrs['L2_Processor'] = ds.L2_processor  # Either PWP or FWC
+        ds.attrs['GMF'] = ds.gmf                    # gmf for Doppler wind
+        ds.attrs['Campaign'] = campaign
+        ds.attrs['Platform'] = platform
+        ds.attrs['Track'] = track
+        ds.attrs['StartTime'] = start_time
+        ds.attrs['EndTime'] = end_time
+        ds.attrs['ProductLevel'] = processing_level # corresponding data level (L1B, L1C or L2)
+        ds.attrs['Resolution'] = resolution
+        ds.attrs['Codebase'] = 'seastar_project'
+        ds.attrs['Repository'] = 'https://github.com/NOC-EO/seastar_project'
+        ds.attrs['SoftwareVersion'] = __version__
+        ds.attrs['DataVersion'] = data_version
+        ds.attrs['Comments'] = 'Processed on ' + dt.today().strftime('%Y%m%d')
+        
+        filename = date_filename + "_" + ds.attrs['Platform'] + "_" + ds.attrs['ProductLevel'] + "_" + ds.attrs['Track'] + "_" + ds.attrs['Resolution'] + "_" + ds.attrs['L2_Processor'] + "_" + ds.attrs['GMF'] + "_Kp" + ds.attrs['Kp'] + "_RSV" + ds.attrs['RSV_noise'] + "_" + __version__ + ".nc"
+        
+    return ds, filename
+
+
 def extract_acquisition_date(ds):
     """
     Extract the starting and ending datetime as well as the date and time acquisition to the good format to be reported in the filename of processed data.
