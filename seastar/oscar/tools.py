@@ -196,7 +196,9 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
 
 
 
-def formatting_data(ds, processing_level, data_version, start_time, end_time, date_filename, resolution, track, platform="OSCAR", campaign="202305_MedSea"):
+def formatting_data(
+    ds, processing_level, data_version, start_time, end_time, date_filename, resolution, track, 
+    L2_processor=None, Kp=None, RSVNoise=None, gmf =None, platform="OSCAR", campaign="202305_MedSea"):
     """
     Formatting the attributes and the file name of the processed data from level 1B to level 2 included.
     
@@ -218,9 +220,19 @@ def formatting_data(ds, processing_level, data_version, start_time, end_time, da
         The init and final time of the acquisition with the date.
     resolution : `int`
         The pixel resolution of the OSCAR data.
-    platform : `str, optional`
+    track : `str`
+        The Track number formatted as Track_01.
+    L2_processor : `str`, optional
+        Processor used for L2 processing. Can be PWP (PenWP) or FWC (Full Wind Current) (default is None.
+    Kp : `float`, optional
+        The Kp parameter, required for L2 (default is None.
+    RSVNoise : `float`, optional
+        The RSV noise parameter, optional for L2 (default is None.
+    gmf : `str`, optional
+        The Geophysical Model Function (GMF) name, required for L2. Can be mouche12 or yurovsky19 (default is None.
+    platform : `str`, optional
         The platform name (default is "OSCAR").       
-    campaign : `str, optional`
+    campaign : `str`, optional
         The campaign name (default is "202305_MedSea").  
             
     Returns
@@ -240,44 +252,69 @@ def formatting_data(ds, processing_level, data_version, start_time, end_time, da
     if processing_level not in valid_levels:
         raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
     
+    # Format resolution properly for metadata
+    resolution_str = str(resolution).zfill(3)+"x"+str(resolution).zfill(3)+"m" 
     
-    # Building dataset
-    if processing_level=="L1B" or processing_level=="L1C":
-        ds.attrs['Campaign'] = campaign
-        ds.attrs['Platform'] = platform
-        ds.attrs['Track'] = track
-        ds.attrs['StartTime'] = start_time
-        ds.attrs['EndTime'] = end_time
-        ds.attrs['ProcessingLevel'] = processing_level
-        ds.attrs['Resolution'] = str(resolution).zfill(3)+"x"+str(resolution).zfill(3)+"m"
-        ds.attrs['Codebase'] = 'seastar_project'
-        ds.attrs['Repository'] = 'https://github.com/NOC-EO/seastar_project'
-        ds.attrs['SoftwareVersion'] = __version__
-        ds.attrs['DataVersion'] = data_version
-        ds.attrs['Comments'] = 'Processed on ' + dt.today().strftime('%Y%m%d')
+    # Define general attributes
+    metadata = {
+        "Campaign": campaign,
+        "Platform": platform,
+        "Track": track,
+        "StartTime": start_time,
+        "EndTime": end_time,
+        "ProcessingLevel": processing_level,
+        "Resolution": resolution_str,
+        "Codebase": "seastar_project",
+        "Repository": "https://github.com/NOC-EO/seastar_project",
+        "SoftwareVersion": __version__,
+        "DataVersion": data_version,
+        "Comments": f"Processed on {dt.today().strftime('%Y%m%d')}",
+    }
+
+    # Add L2-specific attributes
+    if processing_level == "L2":
         
-        filename = date_filename + "_" + ds.attrs['Platform'] + "_" + ds.attrs['ProductLevel'] + "_" + ds.attrs['Track'] + "_" + ds.attrs['Resolution'] + "_" + __version__ + ".nc"
+        # Ensure L2 processor is valid
+        valid_L2_processor = {"PWP", "FCW"}
+        if L2_processor not in valid_L2_processor:
+            raise ValueError(f"Invalid L2 processor: {L2_processor}. Must be one of {valid_L2_processor}.")
         
-    elif processing_level=="L2":
-        ds.attrs['Kp'] = ds.Kp
-        ds.attrs['RSV_noise'] = ds.RSVNoise
-        ds.attrs['L2_Processor'] = ds.L2_processor  # Either PWP or FWC
-        ds.attrs['GMF'] = ds.gmf                    # gmf for Doppler wind
-        ds.attrs['Campaign'] = campaign
-        ds.attrs['Platform'] = platform
-        ds.attrs['Track'] = track
-        ds.attrs['StartTime'] = start_time
-        ds.attrs['EndTime'] = end_time
-        ds.attrs['ProductLevel'] = processing_level # corresponding data level (L1B, L1C or L2)
-        ds.attrs['Resolution'] = resolution
-        ds.attrs['Codebase'] = 'seastar_project'
-        ds.attrs['Repository'] = 'https://github.com/NOC-EO/seastar_project'
-        ds.attrs['SoftwareVersion'] = __version__
-        ds.attrs['DataVersion'] = data_version
-        ds.attrs['Comments'] = 'Processed on ' + dt.today().strftime('%Y%m%d')
+        # Ensure GMF is valid
+        valid_gmf = {"mouche12", "yurovsky19"}
+        if gmf not in valid_gmf:
+            raise ValueError(f"Invalid GMF: {gmf}. Must be one of {valid_gmf}.")
         
-        filename = date_filename + "_" + ds.attrs['Platform'] + "_" + ds.attrs['ProductLevel'] + "_" + ds.attrs['Track'] + "_" + ds.attrs['Resolution'] + "_" + ds.attrs['L2_Processor'] + "_" + ds.attrs['GMF'] + "_Kp" + ds.attrs['Kp'] + "_RSV" + ds.attrs['RSV_noise'] + "_" + __version__ + ".nc"
-        
+        # Ensure required L2 values are not None
+        if any(var is None for var in [Kp, RSVNoise, L2_processor, gmf]):
+            raise ValueError("Kp, RSVNoise, L2_processor, and gmf are required for processing level L2.")
+    
+        metadata.update({
+            "Kp": Kp,
+            "RSV_noise": RSVNoise,
+            "L2_Processor": L2_processor,
+            "GMF": gmf,
+        })
+
+        # Assign attributes to dataset
+        ds.attrs.update(metadata)
+
+   # Construct the filename
+    filename_parts = [
+        date_filename,  # Already formatted as per your logic
+        platform,
+        processing_level,
+        track,
+        resolution_str,
+        L2_processor if L2_processor else "",  # Only for L2
+        gmf if gmf else "",  # Only for L2
+        f"Kp{Kp}" if Kp else "",  # Only for L2
+        f"RSV{RSVNoise}" if RSVNoise else "",  # Only for L2
+        __version__,
+    ]
+
+    filename = "_".join(filter(None, filename_parts)) + ".nc"
+
+
     return ds, filename
 
 
