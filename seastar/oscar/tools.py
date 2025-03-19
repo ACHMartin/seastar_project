@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Functions for the processing of OSCAR airbone data."""
 import os
-import importlib.util
 import numpy as np
 from seastar.utils.readers import readNetCDFFile
 from seastar.utils.tools import list_duplicates
@@ -195,6 +194,46 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
     return colocated_var
 
 
+
+def formatting_filename(ds):
+    """
+    Formatting the filename of the dataset.
+    
+    Parameters
+    ----------
+    ds : `xr.DataArray`
+       dataset to format and to save as a NetCDF file.
+       
+    Returns
+    ----------
+    ds : xr.Dataset
+        The dataset with updated metadata.
+    filename : `str`
+        Name of the OSCAR NetCDF file.
+    """
+    
+       # Construct the filename
+    date_filename = ds.Date + ds.StartTime + '-' + ds.EndTime
+    
+    filename_parts = [
+        date_filename,  # Already formatted as per your logic
+        ds.Platform,
+        ds.ProcessingLevel,
+        ds.Track,
+        ds.Resolution,
+        ds.L2Processor if ds.L2Processor else "",  # Only for L2
+        ds.gmf if ds.gmf else "",  # Only for L2
+        f"Kp{ds.Kp}" if ds.Kp else "",  # Only for L2
+        f"RSV{ds.RSVNoise}" if ds.RSVNoise else "",  # Only for L2
+        __version__,
+    ]
+
+    filename = "_".join(filter(None, filename_parts)) + ".nc"
+
+    return ds, filename
+    
+    
+    
 
 def formatting_data(
     ds, processing_level, data_version, start_time, end_time, date_filename, resolution, track, 
