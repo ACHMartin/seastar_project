@@ -51,6 +51,14 @@ for file = 1 : num_files
     disp('---------------------------------------------------------------')
     disp(['Processing file ',file_name])
 
+    % Read track_names.ini to match Track name from DAR to track time
+    track_time_for_ini_search = ['x',erase(ncreadatt([file_path, file_name],"/","Title"), 'Track : ')];
+    if strcmp(OS,'WINDOWS')
+        ini_file = INI('File',['../../config/' campaign_name '_TrackNames.ini']);
+        
+    ini_struct = ini_file.read();
+    track_name = ini_struct.(track_time_for_ini_search(1:9)).(track_time_for_ini_search);
+
     % Read Python _version.py to retrieve __version__ parameter
     text = fileread('../../_version.py ');
     version_file_as_cells = regexp(text, '\n', 'split');
@@ -66,12 +74,6 @@ for file = 1 : num_files
     % Extract campaign name from file path
     campaign_name_match = regexp(file_path_split,'\<[0-9]{6,6}_\w*','match');
     campaign_name = cell2mat(campaign_name_match{~cellfun(@isempty,a)});
-
-    % Read track_names.ini to match Track name from DAR to track time
-    track_time_for_ini_search = ['x',erase(ncreadatt([file_path, file_name],"/","Title"), 'Track : ')];
-    ini_file = INI('File',['../../config/' campaign_name '_TrackNames.ini']);
-    ini_struct = ini_file.read();
-    track_name = ini_struct.(track_time_for_ini_search(1:9)).(track_time_for_ini_search);
 
     % Read start and end times, formatted YYYYMMDDTHHMM
     start_year = ncread([file_path, file_name],'StartYear');
@@ -101,6 +103,7 @@ for file = 1 : num_files
     ncwriteatt([file_path, file_name], '/','Repository','https://github.com/NOC-EO/seastar_project');
     ncwriteatt([file_path, file_name], '/','DataVersion', data_version);
 
+    pause
     if sum(ismember(var_list,'IncidenceAngleImage')) == 1 &&...
             all(info.Variables(find(strcmp(var_list,'IncidenceAngleImage'))).Size ==...
             [info.Variables(find(strcmp(var_list,'GroundRange'))).Size,info.Variables(find(strcmp(var_list,'CrossRange'))).Size])
