@@ -217,14 +217,14 @@ def formatting_filename(ds):
     
     filename_parts = [
         date_filename,  # Already formatted as per your logic
-        ds.Platform,
-        ds.ProcessingLevel,
-        ds.Track,
-        ds.Resolution,
-        ds.L2Processor if ds.L2Processor else "",  # Only for L2
-        ds.gmf if ds.gmf else "",  # Only for L2
-        f"Kp{ds.Kp}" if ds.Kp else "",  # Only for L2
-        f"RSV{ds.RSVNoise}" if ds.RSVNoise else "",  # Only for L2
+        ds.attrs.get("Platform"),
+        ds.attrs.get("ProcessingLevel"),
+        ds.attrs.get("Track"),
+        ds.attrs.get("Resolution"),
+        ds.attrs.get("L2Processor") if ds.L2Processor else "",  # Only for L2
+        ds.attrs.get("DopplerGMF") if ds.attrs.get("DopplerGMF") else "",  # Only for L2
+        f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
+        f"RSV{ds.attrs.get("RSVNoise")}" if ds.attrs.get("RSVNoise") else "",  # Only for L2
         __version__,
     ]
 
@@ -233,128 +233,68 @@ def formatting_filename(ds):
     return ds, filename
     
     
-    
-
-def formatting_data(
-    ds, processing_level, data_version, start_time, end_time, date_filename, resolution, track, 
-    L2_processor=None, Kp=None, RSVNoise=None, gmf =None, platform="OSCAR", campaign="202305_MedSea"):
+def check_attrs_dataset(ds):
     """
-    Formatting the attributes and the file name of the processed data from level 1B to level 2 included.
-    
+    Test the dataset to check if all the attributes, from the defined list of mandatory atributes, are reported in the dataset.
+    It test L1 and L2 datasets.
+
     Parameters
     ----------
     ds : `xr.DataArray`
-       dataset to format and to save as a NetCDF file.
-    processing_level : `str`
-        The processing level (e.g., "L1B", "L1C", "L2").
-    version_file : `str`
-        The path to the version file _version.py in the project.
-    data_version : `str`
-        The version of the MetaSensing data. Corresponding to the ftp deposite date.
-    start_time : `str`
-        The starting acquisition time.
-    end_time : `str`
-        The ending acquisition time.
-    date_filename : `str`
-        The init and final time of the acquisition with the date.
-    resolution : `int`
-        The pixel resolution of the OSCAR data.
-    track : `str`
-        The Track number formatted as Track_01.
-    L2_processor : `str`, optional
-        Processor used for L2 processing. Can be PWP (PenWP) or FWC (Full Wind Current) (default is None.
-    Kp : `float`, optional
-        The Kp parameter, required for L2 (default is None.
-    RSVNoise : `float`, optional
-        The RSV noise parameter, optional for L2 (default is None.
-    gmf : `str`, optional
-        The Geophysical Model Function (GMF) name, required for L2. Can be mouche12 or yurovsky19 (default is None.
-    platform : `str`, optional
-        The platform name (default is "OSCAR").       
-    campaign : `str`, optional
-        The campaign name (default is "202305_MedSea").  
-            
+       dataset to check.
+
     Returns
     ----------
     ds : xr.Dataset
-        The dataset with updated metadata.
-    filename : `str`
-        Name of the OSCAR NetCDF file.
+        The dataset.
     """
     
+    logger.info("Checking the attrs dataset.")
+
     # Check if ds is a valid xarray Dataset
     if not isinstance(ds, xr.Dataset):
-        raise TypeError("Input 'ds' must be an xarray.Dataset.")
+        logger.error("Input 'ds' must be an xarray.Dataset.")
 
     # Ensure processing_level is valid
-    valid_levels = {"L1B", "L1C", "L2"}
+    processing_level = ds.attrs.get("ProcessingLevel")
+    valid_levels = {"L1AP", "L1B", "L1C", "L2"}
     if processing_level not in valid_levels:
-        raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
+        logger.error(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
     
-    # Format resolution properly for metadata
-    resolution_str = str(resolution).zfill(3)+"x"+str(resolution).zfill(3)+"m" 
+    # List of the mandatory attributes for L1 dataset
+    required_attrs = ["Campaign", 
+                    "Platform", 
+                    "Track", 
+                    "StartTime", 
+                    "EndTime", 
+                    "ProcessingLevel", 
+                    "Codebase", 
+                    "Repository", 
+                    "SoftwareVersion", 
+                    "DataVersion", 
+                    "Comments"]
     
-    # Define general attributes
-    metadata = {
-        "Campaign": campaign,
-        "Platform": platform,
-        "Track": track,
-        "StartTime": start_time,
-        "EndTime": end_time,
-        "ProcessingLevel": processing_level,
-        "Resolution": resolution_str,
-        "Codebase": "seastar_project",
-        "Repository": "https://github.com/NOC-EO/seastar_project",
-        "SoftwareVersion": __version__,
-        "DataVersion": data_version,
-        "Comments": f"Processed on {dt.today().strftime('%Y%m%d')}",
-    }
-
-    # Add L2-specific attributes
+    # Check missing attributes
+    missing_attrs = [attr for attr in required_attrs if attr not in ds.attrs]
+    
+    # Extend the list of attributes for every dataset level
+    if processing_level == 'L1B':
+        required_attrs_L1B = ["Resolution"]
+        missing_attrs.extend([attr for attr in required_attrs_L1B if attr not in ds.attrs])
+    if processing_level == "L1C":
+        required_attrs_L1C = ["Calibration", "CalibrationResolution", "NRCSGMF"]
+        missing_attrs.extend([attr for attr in required_attrs_L1C if attr not in ds.attrs])
     if processing_level == "L2":
-        
-        # Ensure L2 processor is valid
-        valid_L2_processor = {"PWP", "FCW"}
-        if L2_processor not in valid_L2_processor:
-            raise ValueError(f"Invalid L2 processor: {L2_processor}. Must be one of {valid_L2_processor}.")
-        
-        # Ensure GMF is valid
-        valid_gmf = {"mouche12", "yurovsky19"}
-        if gmf not in valid_gmf:
-            raise ValueError(f"Invalid GMF: {gmf}. Must be one of {valid_gmf}.")
-        
-        # Ensure required L2 values are not None
-        if any(var is None for var in [Kp, RSVNoise, L2_processor, gmf]):
-            raise ValueError("Kp, RSVNoise, L2_processor, and gmf are required for processing level L2.")
-    
-        metadata.update({
-            "Kp": Kp,
-            "RSV_noise": RSVNoise,
-            "L2_Processor": L2_processor,
-            "GMF": gmf,
-        })
+        required_attrs_L2 = ["DopplerGMF", "Kp", "RSVNoise", "L2Processor"]
+        missing_attrs.extend([attr for attr in required_attrs_L2 if attr not in ds.attrs])
 
-        # Assign attributes to dataset
-        ds.attrs.update(metadata)
+    # Raise error if missing attributes
+    if missing_attrs:
+        logger.error(f"The following attrs are missing in ds.attrs: {missing_attrs}")
+    else:
+        logger.info("All the attributes are reported in the dataset.")
 
-   # Construct the filename
-    filename_parts = [
-        date_filename,  # Already formatted as per your logic
-        platform,
-        processing_level,
-        track,
-        resolution_str,
-        L2_processor if L2_processor else "",  # Only for L2
-        gmf if gmf else "",  # Only for L2
-        f"Kp{Kp}" if Kp else "",  # Only for L2
-        f"RSV{RSVNoise}" if RSVNoise else "",  # Only for L2
-        __version__,
-    ]
-
-    filename = "_".join(filter(None, filename_parts)) + ".nc"
-
-
-    return ds, filename
+    return ds
 
 
 def extract_acquisition_date(ds):

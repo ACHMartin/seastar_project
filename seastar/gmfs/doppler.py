@@ -213,6 +213,10 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     )
     ds_wa.attrs['long_name'] = 'Wind Artifact Surface Velocity (WASV)'
     ds_wa.attrs['units'] = ['m/s']
+    
+    # Addition of the DopplerGMF attribute
+    ds_wa.attrs['DopplerGMF'] = gmf
+    
     return ds_wa
 
 
