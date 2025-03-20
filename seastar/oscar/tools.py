@@ -9,6 +9,7 @@ import xarray as xr
 from datetime import datetime as dt
 
 from _version import __version__
+from _logger import logger
 
 
 def load_OSCAR_data(file_path, file_inds):
