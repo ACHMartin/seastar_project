@@ -126,7 +126,6 @@ def short_file_name_from_md5(md5_checksum):
         4-character hexidecimal name based on first 4 characters from MD5 checksum.
 
     """
-    
     file_short_name = md5_checksum[0:4]
     
     return file_short_name
