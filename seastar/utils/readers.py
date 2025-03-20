@@ -92,22 +92,41 @@ def readNetCDFFile(netCFD_path):
 
     return data_xr
 
-def short_file_name_from_md5(file_name):
+def md5_checksum_from_file(file_name):
     """
-    Create short name from a file MD5 checksum.
+    Create hexidecimal MD5 checksum from input file.
 
     Parameters
     ----------
     file_name : ``str``
-        File name including path to create the MD5 checksum from.
+        Full filename including path to create MD5 checksum from.
 
     Returns
     -------
-    calib_file_short_name : ``str``
-        4-character hexidecimal name based on first 4 characters from MD5 checksum.
+    md5_checksum : ``str``
+        Hexidecimal MD5 checksum based on input file.
 
     """
     md5_checksum = hashlib.md5(open(os.path.join(file_name),'rb').read()).hexdigest()
-    calib_file_short_name = md5_checksum[0:4]
     
-    return calib_file_short_name
+    return md5_checksum
+
+def short_file_name_from_md5(md5_checksum):
+    """
+    Create short name from an MD5 checksum.
+
+    Parameters
+    ----------
+    md5_checksum : ``str``
+        Hexidecimal MD5 checksum.
+
+    Returns
+    -------
+    file_short_name : ``str``
+        4-character hexidecimal name based on first 4 characters from MD5 checksum.
+
+    """
+    
+    file_short_name = md5_checksum[0:4]
+    
+    return file_short_name
