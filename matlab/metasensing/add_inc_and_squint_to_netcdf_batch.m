@@ -8,6 +8,33 @@ num_files = size(file_list, 1);
 
 for file = 1 : num_files
     file_name = [file_list(file, :)];
+    % Decompose file path components
+    if isscalar(split(file_path,'/'))
+        OS = 'WINDOWS';
+        file_path_components = split(file_path,'\'); % WINDOWS
+    else
+        OS = 'UNIX';
+        file_path_components = split(file_path,'/'); % UNIX
+    end
+    % Build L1AP save path
+    save_path_components = file_path_components;
+    save_path_components{find(strcmp(file_path_components, 'L1A'))} = 'L1AP';
+    if strcmp(OS, 'WINDOWS')
+        save_path = cell2mat(join(save_path_components,'\'));
+        file_path_split = split(file_path,'\');
+    elseif strcmp(OS, 'UNIX')
+        save_path = cell2mat(join(save_path_components,'/'));
+        file_path_split = split(file_path,'/');
+    end
+    % copy L1A file to L1AP directory to be worked on
+    if ~exist(save_path, 'dir')
+        mkdir(save_path)
+    end
+    copyfile([file_path, file_name], [save_path, file_name], 'f')
+    % Set file path to save path
+    file_path = save_path;
+
+
     info = ncinfo([file_path, file_name]);
     num_vars = size(info.Variables, 2);
     var_list=cell(num_vars,1);
@@ -22,7 +49,58 @@ for file = 1 : num_files
     end
     DEMImage=ncread([file_path, file_name],'DEMImage');
     disp('---------------------------------------------------------------')
-    disp(['Processing file ',file_name]) 
+    disp(['Processing file ',file_name])
+
+    % Read Python _version.py to retrieve __version__ parameter
+    text = fileread('../../_version.py ');
+    version_file_as_cells = regexp(text, '\n', 'split');
+    mask = ~cellfun(@isempty, strfind(version_file_as_cells, '__version__ = '));
+    version_string = string(erase(cell2mat(version_file_as_cells(mask)), '__version__ = '));
+    version_string = regexp(version_string, '\D+', 'split');
+    processing_version = join(version_string(~cellfun('isempty',version_string)),'.');
+
+    % Extract data version from file path
+    data_version_match = regexp(file_path_split,'\<v[0-9]\w*','match');
+    data_version = cell2mat(data_version_match{~cellfun(@isempty,data_version_match)});
+
+    % Extract campaign name from file path
+    campaign_name_match = regexp(file_path_split,'\<[0-9]{6,6}_\w*','match');
+    campaign_name = cell2mat(campaign_name_match{~cellfun(@isempty,a)});
+
+    % Read track_names.ini to match Track name from DAR to track time
+    track_time_for_ini_search = ['x',erase(ncreadatt([file_path, file_name],"/","Title"), 'Track : ')];
+    ini_file = INI('File',['../../config/' campaign_name '_TrackNames.ini']);
+    ini_struct = ini_file.read();
+    track_name = ini_struct.(track_time_for_ini_search(1:9)).(track_time_for_ini_search);
+
+    % Read start and end times, formatted YYYYMMDDTHHMM
+    start_year = ncread([file_path, file_name],'StartYear');
+    start_month = ncread([file_path, file_name],'StartMonth');
+    start_day = ncread([file_path, file_name],'StartDay');
+    start_hour = ncread([file_path, file_name],'StartHour');
+    start_minute = ncread([file_path, file_name],'StartMin');
+    start_time = sprintf('%02d%02d%02dT%02d%02d',[start_year,start_month,start_day, start_hour, start_minute]);
+
+    end_year = ncread([file_path, file_name],'FinalYear');
+    end_month = ncread([file_path, file_name],'FinalMonth');
+    end_day = ncread([file_path, file_name],'FinalDay');
+    end_hour = ncread([file_path, file_name],'FinalHour');
+    end_minute = ncread([file_path, file_name],'FinalMin');
+    end_time = sprintf('%02d%02d%02dT%02d%02d',[end_year,end_month,end_day, end_hour, end_minute]);
+
+    % Write global attributes
+    ncwriteatt([file_path, file_name], '/','Campaign', campaign_name)
+    ncwriteatt([file_path, file_name], '/','Platform', 'OSCAR')
+    ncwriteatt([file_path, file_name], '/','ProcessingLevel', 'L1AP')
+    ncwriteatt([file_path, file_name], '/','Track',track_name)
+    ncwriteatt([file_path, file_name], '/','StartTime',start_time)
+    ncwriteatt([file_path, file_name], '/','EndTime',end_time)
+    ncwriteatt([file_path, file_name], '/','Codebase','seastar_project');
+    ncwriteatt([file_path, file_name], '/','CodeVersion', processing_version)
+    ncwriteatt([file_path, file_name], '/','Comments', 'Processed on ' + string(today("datetime")))
+    ncwriteatt([file_path, file_name], '/','Repository','https://github.com/NOC-EO/seastar_project');
+    ncwriteatt([file_path, file_name], '/','DataVersion', data_version);
+
     if sum(ismember(var_list,'IncidenceAngleImage')) == 1 &&...
             all(info.Variables(find(strcmp(var_list,'IncidenceAngleImage'))).Size ==...
             [info.Variables(find(strcmp(var_list,'GroundRange'))).Size,info.Variables(find(strcmp(var_list,'CrossRange'))).Size])
@@ -57,7 +135,7 @@ for file = 1 : num_files
         disp('SquintImage already present in netcdf file. Passing...')
     else
         [fdc, Squint_slant, squintx, fdcg, Squint_ground, squintxg] = squint_from_netcdf_monostatic([file_path, file_name]);
-        SquintImage = Squint_ground; 
+        SquintImage = Squint_ground;
         SquintMounted = Squint_ground;
         squint_tx = nan;
         squint_rx = nan;
@@ -76,7 +154,7 @@ for file = 1 : num_files
         ncwriteatt([file_path, file_name], 'SquintImage','long_name','Ground squint')
         ncwriteatt([file_path, file_name], 'SquintImage','units','deg')
         ncwriteatt([file_path, file_name], 'SquintImage','description','Beam squint along the ground for each pixel in the image')
-        
+
         SquintMounted=rad2deg(SquintMounted);
         [m,n] = size(SquintMounted);
         nccreate([file_path, file_name],'SquintMounted','Dimensions',...
