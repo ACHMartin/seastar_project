@@ -345,8 +345,14 @@ def compute_multilooking_Master_Slave(ds, window=3,
     ds_out.Coherence.attrs['description'] = \
         'Coherence between master/slave antenna pair'
     ds_out.Coherence.attrs['units'] = ''
-
-
+    
+    # Addition of the resolution attribute
+    resolution = window * 8.
+    ds_out.attrs['Resolution'] = str(resolution).zfill(3)+"x"+str(resolution).zfill(3)+"m" 
+    
+    # Update of the processing level attribute
+    ds_out.attrs['ProcessingLevel'] = "L1B"
+    
     return ds_out[list(vars_to_send)]
 
 def compute_local_coordinates(ds):
