@@ -3,37 +3,37 @@
 % and Squint computations supplied in Matlab .m format by Metasensing.
 
 L1A_file_path = [uigetdir(),'\'];
-file_list = ls([L1A_file_path, '*.nc']);
-num_files = size(file_list, 1);
+L1A_file_list = ls([L1A_file_path, '*.nc']);
+num_L1A_files = size(L1A_file_list, 1);
 
-for file = 1 : num_files
-    L1A_file_name = [file_list(file, :)];
+for file = 1 : num_L1A_files
+    L1A_file_name = [L1A_file_list(file, :)];
     % Decompose file path components
     if isscalar(split(L1A_file_path,'/'))
         OS = 'WINDOWS';
-        file_path_components = split(L1A_file_path,'\'); % WINDOWS
+        L1A_file_path_components = split(L1A_file_path,'\'); % WINDOWS
     else
         OS = 'UNIX';
-        file_path_components = split(L1A_file_path,'/'); % UNIX
+        L1A_file_path_components = split(L1A_file_path,'/'); % UNIX
     end
     % Build L1AP save path
-    save_path_components = file_path_components;
-    save_path_components{find(strcmp(file_path_components, 'L1A'))} = 'L1AP';
+    L1AP_file_path_components = L1A_file_path_components;
+    L1AP_file_path_components{find(strcmp(L1A_file_path_components, 'L1A'))} = 'L1AP';
     if strcmp(OS, 'WINDOWS')
-        save_path = cell2mat(join(save_path_components,'\'));
-        file_path_split = split(L1A_file_path,'\');
+        L1AP_file_path = cell2mat(join(L1AP_file_path_components,'\'));
+        L1A_file_path_split = split(L1A_file_path,'\');
     elseif strcmp(OS, 'UNIX')
-        save_path = cell2mat(join(save_path_components,'/'));
-        file_path_split = split(L1A_file_path,'/');
+        L1AP_file_path = cell2mat(join(L1AP_file_path_components,'/'));
+        L1A_file_path_split = split(L1A_file_path,'/');
     end
     % copy L1A file to L1AP directory to be worked on
-    if ~exist(save_path, 'dir')
-        mkdir(save_path)
+    if ~exist(L1AP_file_path, 'dir')
+        mkdir(L1AP_file_path)
     end
     L1AP_file_name = ['L1AP_', L1A_file_name];
-    copyfile([L1A_file_path, L1A_file_name], [save_path, L1AP_file_name], 'f')
+    copyfile([L1A_file_path, L1A_file_name], [L1AP_file_path, L1AP_file_name], 'f')
     % Set file path to save path
-    L1AP_file_path = save_path;
+    L1AP_file_path = L1AP_file_path;
 
 
     info = ncinfo([L1AP_file_path, L1AP_file_name]);
@@ -61,12 +61,12 @@ for file = 1 : num_files
     processing_version = join(version_string(~cellfun('isempty',version_string)),'.');
 
     % Extract data version from file path
-    data_version_match = regexp(file_path_split,'\<v[0-9]\w*','match');
+    data_version_match = regexp(L1A_file_path_split,'\<v[0-9]\w*','match');
     data_version = cell2mat(data_version_match{~cellfun(@isempty,data_version_match)});
 
     % Extract campaign name from file path
-    campaign_name_match = regexp(file_path_split,'\<[0-9]{6,6}_\w*','match');
-    campaign_name = cell2mat(campaign_name_match{~cellfun(@isempty,a)});
+    campaign_name_match = regexp(L1A_file_path_split,'\<[0-9]{6,6}_\w*','match');
+    campaign_name = cell2mat(L1A_file_path_split(~cellfun(@isempty,campaign_name_match)));
 
     % Read track_names.ini to match Track name from DAR to track time
     track_time_for_ini_search = ['x',erase(ncreadatt([L1AP_file_path, L1AP_file_name],"/","Title"), 'Track : ')];
