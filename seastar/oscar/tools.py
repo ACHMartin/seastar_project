@@ -6,6 +6,10 @@ from seastar.utils.readers import readNetCDFFile
 from seastar.utils.tools import list_duplicates
 from scipy import interpolate
 import xarray as xr
+from datetime import datetime as dt
+
+from _version import __version__
+from _logger import logger
 
 
 def load_OSCAR_data(file_path, file_inds):
@@ -189,3 +193,133 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
                         coords=ds_out.coords
                         )
     return colocated_var
+
+
+
+def formatting_filename(ds):
+    """
+    Formatting the filename of the dataset.
+    
+    Parameters
+    ----------
+    ds : `xr.DataArray`
+       dataset to format and to save as a NetCDF file.
+       
+    Returns
+    ----------
+    ds : xr.Dataset
+        The dataset with updated metadata.
+    filename : `str`
+        Name of the OSCAR NetCDF file.
+    """
+    
+       # Construct the filename
+    date_filename = ds.Date + ds.StartTime + '-' + ds.EndTime
+    
+    filename_parts = [
+        date_filename,  # Already formatted as per your logic
+        ds.attrs.get("Platform"),
+        ds.attrs.get("ProcessingLevel"),
+        ds.attrs.get("Track"),
+        ds.attrs.get("Resolution"),
+        ds.attrs.get("L2Processor") if ds.L2Processor else "",  # Only for L2
+        ds.attrs.get("DopplerGMF") if ds.attrs.get("DopplerGMF") else "",  # Only for L2
+        f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
+        f"RSV{ds.attrs.get("RSVNoise")}" if ds.attrs.get("RSVNoise") else "",  # Only for L2
+        __version__,
+    ]
+
+    filename = "_".join(filter(None, filename_parts)) + ".nc"
+
+    return ds, filename
+    
+    
+def check_attrs_dataset(ds):
+    """
+    Test the dataset to check if all the attributes, from the defined list of mandatory atributes, are reported in the dataset.
+    It test L1 and L2 datasets.
+
+    Parameters
+    ----------
+    ds : `xr.DataArray`
+       dataset to check.
+
+    Returns
+    ----------
+    ds : xr.Dataset
+        The dataset.
+    """
+    
+    logger.info("Checking the attrs dataset.")
+
+    # Check if ds is a valid xarray Dataset
+    if not isinstance(ds, xr.Dataset):
+        logger.error("Input 'ds' must be an xarray.Dataset.")
+
+    # Ensure processing_level is valid
+    processing_level = ds.attrs.get("ProcessingLevel")
+    valid_levels = {"L1AP", "L1B", "L1C", "L2"}
+    if processing_level not in valid_levels:
+        logger.error(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
+    
+    # List of the mandatory attributes for L1 dataset
+    required_attrs = ["Campaign", 
+                    "Platform", 
+                    "Track", 
+                    "StartTime", 
+                    "EndTime", 
+                    "ProcessingLevel", 
+                    "Codebase", 
+                    "Repository", 
+                    "SoftwareVersion", 
+                    "DataVersion", 
+                    "Comments"]
+    
+    # Check missing attributes
+    missing_attrs = [attr for attr in required_attrs if attr not in ds.attrs]
+    
+    # Extend the list of attributes for every dataset level
+    if processing_level == 'L1B':
+        required_attrs_L1B = ["Resolution"]
+        missing_attrs.extend([attr for attr in required_attrs_L1B if attr not in ds.attrs])
+    if processing_level == "L1C":
+        required_attrs_L1C = ["Calibration", "CalibrationResolution", "NRCSGMF"]
+        missing_attrs.extend([attr for attr in required_attrs_L1C if attr not in ds.attrs])
+    if processing_level == "L2":
+        required_attrs_L2 = ["DopplerGMF", "Kp", "RSVNoise", "L2Processor"]
+        missing_attrs.extend([attr for attr in required_attrs_L2 if attr not in ds.attrs])
+
+    # Raise error if missing attributes
+    if missing_attrs:
+        logger.error(f"The following attrs are missing in ds.attrs: {missing_attrs}")
+    else:
+        logger.info("All the attributes are reported in the dataset.")
+
+    return ds
+
+
+def extract_acquisition_date(ds):
+    """
+    Extract the starting and ending datetime as well as the date and time acquisition to the good format to be reported in the filename of processed data.
+    
+    Parameters
+    ----------
+    ds : `xr.DataArray`
+       The L1ap dataset that contains date and time information.
+    
+    Returns
+    ----------
+    start_date : `str`
+        The starting acquisition time.
+    end_date : `str`
+        The ending acquisition time.
+    date_time_filename : `str`
+        The date and time as it will appear in the post-processed data file name.
+    """
+    
+    start_date = ds.Title.split()[2]
+    end_date = ds.Title.split()[2].split("T")[0] + "T" + str(int(ds.FinalHour.data)).zfill(2)+str(int(ds.FinalMin.data)).zfill(2)+str(int(ds.FinalSec.data)).zfill(2)
+    date_time_filename = ds.Title.split()[2] + "-" + str(int(ds.FinalHour.data)).zfill(2)+str(int(ds.FinalMin.data)).zfill(2)+str(int(ds.FinalSec.data)).zfill(2)
+    
+    
+    return start_date, end_date, date_time_filename
