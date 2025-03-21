@@ -5,6 +5,7 @@ import configparser
 import xarray as xr
 import platform
 from configparser import ConfigParser
+import hashlib
 
 
 def _read_config(config_file='config.ini'):
@@ -90,3 +91,41 @@ def readNetCDFFile(netCFD_path):
         print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
 
     return data_xr
+
+def md5_checksum_from_file(file_name):
+    """
+    Create hexidecimal MD5 checksum from input file.
+
+    Parameters
+    ----------
+    file_name : ``str``
+        Full filename including path to create MD5 checksum from.
+
+    Returns
+    -------
+    md5_checksum : ``str``
+        Hexidecimal MD5 checksum based on input file.
+
+    """
+    md5_checksum = hashlib.md5(open(os.path.join(file_name),'rb').read()).hexdigest()
+    
+    return md5_checksum
+
+def short_file_name_from_md5(md5_checksum):
+    """
+    Create short name from an MD5 checksum.
+
+    Parameters
+    ----------
+    md5_checksum : ``str``
+        Hexidecimal MD5 checksum.
+
+    Returns
+    -------
+    file_short_name : ``str``
+        4-character hexidecimal name based on first 4 characters from MD5 checksum.
+
+    """
+    file_short_name = md5_checksum[0:4]
+    
+    return file_short_name
