@@ -129,3 +129,31 @@ def short_file_name_from_md5(md5_checksum):
     file_short_name = md5_checksum[0:4]
     
     return file_short_name
+
+def read_OSCAR_track_names_config(campaign, flight):
+    """
+    Read track names configuration file.
+    
+    Reads in an OSCAR campaign track names INI file and parses it as a dict of
+    {track_time : track_name}.
+
+    Parameters
+    ----------
+    campaign : ``str``
+        OSCAR campaign name
+    flight : ``str``
+        OSCAR flight date, in the form YYYYMMDD
+
+    Returns
+    -------
+    track_names_dict : ``dict``
+        Dict of {Track_time : Track_name}. Track time identical to L1A / L1AP
+        track time in file name.
+
+    """
+    print('Reading Track name config...')
+    config_file_name = campaign + '_' + 'TrackNames.ini'
+    track_names_config = ConfigParser()
+    track_names_config.read(os.path.join(os.path.join('config', config_file_name)))
+    track_names_dict = dict(track_names_config.items(flight))
+    return track_names_dict
