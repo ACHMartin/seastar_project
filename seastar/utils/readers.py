@@ -154,6 +154,7 @@ def read_OSCAR_track_names_config(campaign, flight):
     print('Reading Track name config...')
     config_file_name = campaign + '_' + 'TrackNames.ini'
     track_names_config = ConfigParser()
+    track_names_config.optionxform = str
     track_names_config.read(os.path.join(os.path.join('config', config_file_name)))
     track_names_dict = dict(track_names_config.items(flight))
     return track_names_dict
