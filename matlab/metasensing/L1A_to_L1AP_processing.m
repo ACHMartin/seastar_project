@@ -6,27 +6,28 @@ function L1A_to_L1AP_processing(L1A_file_path)
 % the supplied directory, saving L1AP files in a new L1AP folder mirroring
 % the directory structure of the L1A files following the OSCAR file
 % structure specification.
-
-L1A_file_list = ls([L1A_file_path, '*.nc']);
+if ispc
+    L1A_file_list = ls([L1A_file_path, '*.nc']);
+else
+    L1A_file_list = ls([L1A_file_path, '*.nc'])'; %UNIX ls output dimension is flipped
+end
 num_L1A_files = size(L1A_file_list, 1);
 
 for file = 1 : num_L1A_files
     L1A_file_name = [L1A_file_list(file, :)];
     % Decompose file path components
-    if isscalar(split(L1A_file_path,'/'))
-        OS = 'WINDOWS';
+    if ispc
         L1A_file_path_components = split(L1A_file_path,'\'); % WINDOWS
     else
-        OS = 'UNIX';
         L1A_file_path_components = split(L1A_file_path,'/'); % UNIX
     end
     % Build L1AP save path
     L1AP_file_path_components = L1A_file_path_components;
     L1AP_file_path_components{find(strcmp(L1A_file_path_components, 'L1A'))} = 'L1AP';
-    if strcmp(OS, 'WINDOWS')
+    if ispc
         L1AP_file_path = cell2mat(join(L1AP_file_path_components,'\'));
         L1A_file_path_split = split(L1A_file_path,'\');
-    elseif strcmp(OS, 'UNIX')
+    else
         L1AP_file_path = cell2mat(join(L1AP_file_path_components,'/'));
         L1A_file_path_split = split(L1A_file_path,'/');
     end
