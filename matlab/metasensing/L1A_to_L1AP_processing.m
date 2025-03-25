@@ -68,7 +68,7 @@ for file = 1 : num_L1A_files
     disp(['Processing file ', L1AP_file_name])
 
     % Read Python _version.py to retrieve __version__ parameter
-    text = fileread('../../_version.py ');
+    text = fileread('../../_version.py');
     version_file_as_cells = regexp(text, '\n', 'split');
     mask = ~cellfun(@isempty, strfind(version_file_as_cells, '__version__ = '));
     version_string = string(erase(cell2mat(version_file_as_cells(mask)), '__version__ = '));
