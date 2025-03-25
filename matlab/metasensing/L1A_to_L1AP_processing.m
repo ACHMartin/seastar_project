@@ -8,13 +8,23 @@ function L1A_to_L1AP_processing(L1A_file_path)
 % structure specification.
 if ispc
     L1A_file_list = ls([L1A_file_path, '*.nc']);
+    num_L1A_files = size(L1A_file_list, 1);
 else
-    L1A_file_list = ls([L1A_file_path, '*.nc'])'; %UNIX ls output dimension is flipped
+    L1A_file_list_dir = dir([L1A_file_path, '*.nc']); %UNIX uses dir explicitly
+    L1A_file_list_cells = struct2cell(L1A_file_list_dir);
+    num_L1A_files = size(L1A_file_list_cells, 2);
+    L1A_file_list = cell(num_L1A_files, 1);
+    for file_index = 1:num_L1A_files 
+        L1A_file_list(file_index) = L1A_file_list_cells(1,i);
+    end
 end
-num_L1A_files = size(L1A_file_list, 1);
+
 
 for file = 1 : num_L1A_files
-    L1A_file_name = [L1A_file_list(file, :)];
+    if ispc
+        L1A_file_name = [L1A_file_list(file, :)];
+    else
+        L1A_file_name = L1A_file_list{file};
     % Decompose file path components
     if ispc
         L1A_file_path_components = split(L1A_file_path,'\'); % WINDOWS
