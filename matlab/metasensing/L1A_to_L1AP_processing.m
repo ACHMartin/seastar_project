@@ -15,7 +15,7 @@ else
     num_L1A_files = size(L1A_file_list_cells, 2);
     L1A_file_list = cell(num_L1A_files, 1);
     for file_index = 1:num_L1A_files 
-        L1A_file_list(file_index) = L1A_file_list_cells(1,i);
+        L1A_file_list(file_index) = L1A_file_list_cells(1,file_index);
     end
 end
 
