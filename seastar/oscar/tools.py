@@ -97,7 +97,7 @@ def find_file_triplets(file_path):
     file_time = list()
     for file in range(num_files):
         file_info = str.split(file_list[file], '_')
-        file_time.append(file_info[2])
+        file_time.append(file_info[3])
     file_time_triplets = sorted(list_duplicates(file_time))
     return file_time_triplets
 
@@ -153,7 +153,7 @@ def identify_antenna_location_from_filename(file_path, file_time_triplets):
     antenna_id = list()
     for i in range(len(file_time_triplets)):
         file_name = file_list[file_time_triplets[i]]
-        antenna_id.append(antenna_identifiers[file_name.split('_')[5][0]])
+        antenna_id.append(antenna_identifiers[file_name.split('_')[6][0]])
     return antenna_id
 
 
@@ -214,28 +214,30 @@ def formatting_filename(ds):
     """
     
        # Construct the filename
-    date_filename = ds.Date + ds.StartTime + '-' + ds.EndTime
-    
+    date_filename = ds.attrs.get("StartTime") + '-' + ds.attrs.get("EndTime").split("T")[1]
+
     filename_parts = [
         date_filename,  # Already formatted as per your logic
         ds.attrs.get("Platform"),
         ds.attrs.get("ProcessingLevel"),
         ds.attrs.get("Track"),
         ds.attrs.get("Resolution"),
-        ds.attrs.get("L2Processor") if ds.L2Processor else "",  # Only for L2
-        ds.attrs.get("DopplerGMF") if ds.attrs.get("DopplerGMF") else "",  # Only for L2
+        ds.attrs.get("L2Processor", ""),  # Only for L2
+        ds.attrs.get("DopplerGMF", ""),  # Only for L2
         f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
         f"RSV{ds.attrs.get("RSVNoise")}" if ds.attrs.get("RSVNoise") else "",  # Only for L2
         __version__,
     ]
 
     filename = "_".join(filter(None, filename_parts)) + ".nc"
+    print(filename)
 
     return ds, filename
     
     
 def check_attrs_dataset(ds):
     """
+    Check dataset attributes.
     Test the dataset to check if all the attributes, from the defined list of mandatory atributes, are reported in the dataset.
     It test L1 and L2 datasets.
 

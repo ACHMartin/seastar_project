@@ -276,6 +276,7 @@ def compute_multilooking_Master_Slave(ds, window=3,
         raise Exception("The variable SigmaImageSingleLookRealPart is not a"
                         "2D variable. Please check this variable's dimensions")
     ds_out = xr.Dataset()
+    ds_out.attrs = ds.attrs.copy()          # Copy the attrs from ds to ds_out
     if 'SigmaSLCMaster' not in ds.data_vars:
         ds = compute_SLC_Master_Slave(ds)
 
@@ -348,7 +349,7 @@ def compute_multilooking_Master_Slave(ds, window=3,
     
     # Addition of the resolution attribute
     resolution = window * 8.
-    ds_out.attrs['Resolution'] = str(resolution).zfill(3)+"x"+str(resolution).zfill(3)+"m" 
+    ds_out.attrs['Resolution'] = str(int(resolution)).zfill(3)+"x"+str(int(resolution)).zfill(3)+"m" 
     
     # Update of the processing level attribute
     ds_out.attrs['ProcessingLevel'] = "L1B"
@@ -656,24 +657,16 @@ def replace_dummy_values(ds, dummy_val=-9999, replace=np.nan):
     return ds
 
 
-def track_title_to_datetime(title):
+def track_title_to_datetime(start_time):
     """
-    Track title to datetime conversion.
+    Track start date to datetime conversion.
 
-    Converts the Title attribute of an OSCAR .netcdf dataset to
+    Converts the StartTime attribute of an OSCAR .netcdf dataset to
     numpy.datetime64 format.
 
     Parameters
     ----------
-    title : ``str``
-        Dataset title in the form "Track : YYYYMMDDTHHMMSS"
-
-    Returns
-    -------
-    track_time : ``np.datetime64``
-        Time in numpy.datetime64 format
-
+    start_time : ``str``
+        Dataset start time in the form "YYYYMMDDTHHMM"
     """
-    datestr = title.split()[2]
-    track_time = np.datetime64(dt.strptime(datestr, '%Y%m%dT%H%M%S'))
-    return track_time
+    return np.datetime64(dt.strptime(start_time, '%Y%m%dT%H%M'))
