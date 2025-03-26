@@ -1,12 +1,12 @@
 function L1A_to_L1AP_processing(L1A_file_path)
-
-% Function to process OSCAR L1A data files to L1AP level. Adds
-% Incidence angle and Squint fields, as well as global attributes. Function
-% takes the path to L1A files as input and processes all L1A files within
-% the supplied directory, saving L1AP files in a new L1AP folder mirroring
-% the directory structure of the L1A files following the OSCAR file
-% structure specification.
-
+%L1A_TO_L1AP_PROCESSING Processes OSCAR L1A data to L1AP
+%
+%   Function to process OSCAR L1A data files to L1AP level. Adds
+%   Incidence angle and Squint fields, as well as global attributes. Function
+%   takes the path to L1A files as input and processes all L1A files within
+%   the supplied directory, saving L1AP files in a new L1AP folder mirroring
+%   the directory structure of the L1A files following the OSCAR file
+%   structure specification.
 
 [L1A_file_list, num_L1A_files] = build_L1A_file_list(L1A_file_path);
 
@@ -47,6 +47,9 @@ end
 
 
 function [L1A_file_list, num_L1A_files] = build_L1A_file_list(L1A_file_path)
+%BUILD_L1A_FILE_LIST Constructs list of OSCAR L1A files for processing
+%
+
 if ispc
     L1A_file_list = ls([L1A_file_path, '*.nc']);
     num_L1A_files = size(L1A_file_list, 1);
@@ -62,7 +65,9 @@ end
 end
 
 function [L1AP_file_path, L1A_file_path_split] = build_L1AP_file_path(L1A_file_path)
-% Decompose file path components
+%BUILD_L1AP_FILE_PATH Constructs OSCAR L1AP file path
+%
+
 if ispc
     L1A_file_path_components = split(L1A_file_path,'\'); % WINDOWS
 else
@@ -82,15 +87,21 @@ end
 
 
 function [L1A_file_name] = get_L1A_file_name(L1A_file_list, file)
+%GET_L1A_FILE_NAME Gets L1A file name to process
+%
+
 if ispc
     L1A_file_name = [L1A_file_list(file, :)];
 else
     L1A_file_name = L1A_file_list{file};
 end
 end
+
 function [processing_version] = get_processing_version_from_file(version_file)
-% Read Python _version.py to retrieve __version__ parameter
-% text = fileread('../../_version.py');
+%GET_PROCESSING_VERSION_FROM_FILE Gets SeaSTAR project version
+%
+%   Reads Python _version.py to retrieve __version__ parameter
+
 text = fileread(version_file);
 version_file_as_cells = regexp(text, '\n', 'split');
 mask = ~cellfun(@isempty, strfind(version_file_as_cells, '__version__ = '));
@@ -98,25 +109,41 @@ version_string = string(erase(cell2mat(version_file_as_cells(mask)), '__version_
 version_string = regexp(version_string, '\D+', 'split');
 processing_version = join(version_string(~cellfun('isempty',version_string)),'.');
 end
+
 function [data_version] = get_data_version_from_file_path_split(L1A_file_path_split)
-% Extract data version from file path
+%GET_DATA_VERSION_FROM_FILE_PATH_SPLIT Get OSCAR data version
+%
+%   Extracts data version from file path information.
+
 data_version_match = regexp(L1A_file_path_split,'\<v[0-9]\w*','match');
 data_version = cell2mat(data_version_match{~cellfun(@isempty,data_version_match)});
 end
+
 function [campaign_name] = get_campaign_name_from_file_path_split(L1A_file_path_split)
-% Extract campaign name from file path
+%GET_CAMPAIGN_NAME_FROM_FILE_PATH_SPLIT Gets OSCAR campaign name
+%
+%   Extracts campaign name from file path information
+
 campaign_name_match = regexp(L1A_file_path_split,'\<[0-9]{6,6}_\w*','match');
 campaign_name = cell2mat(L1A_file_path_split(~cellfun(@isempty,campaign_name_match)));
 end
+
 function [track_name] = get_track_name_from_campaign_config(campaign_name, L1AP_file_path, L1AP_file_name)
-% Read track_names.ini to match Track name from DAR to track time
+%GET_TRACK_NAME_FROM_CAMPAIGN_CONFIG Gets OSCAR track name
+%
+% Reads track_names.ini from ../../config/ to match Track name from DAR to track time
+
 track_time_for_ini_search = ['x',erase(ncreadatt([L1AP_file_path, L1AP_file_name],"/","Title"), 'Track : ')];
 ini_file = INI('File',['../../config/' campaign_name '_TrackNames.ini']);
 ini_struct = ini_file.read();
 track_name = ini_struct.(track_time_for_ini_search(1:9)).(track_time_for_ini_search);
 end
+
 function [start_time, end_time] = read_start_end_time_from_L1A(L1AP_file_path, L1AP_file_name)
-% Read start and end times, formatted YYYYMMDDTHHMM
+%READ_START_END_TIME_FROM_L1A Reads OSCAR L1A acquisition start and end time
+%
+%   Reads start and end times from L1A NetCDF, formatted YYYYMMDDTHHMM
+
 start_year = ncread([L1AP_file_path, L1AP_file_name],'StartYear');
 start_month = ncread([L1AP_file_path, L1AP_file_name],'StartMonth');
 start_day = ncread([L1AP_file_path, L1AP_file_name],'StartDay');
@@ -134,7 +161,10 @@ end
 
 function write_global_attributes_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name, ...
     campaign_name, track_name, start_time, end_time, processing_version, data_version)
-% Write global attributes
+%WRITE_GLOBAL_ATTRIBUTES_TO_L1AP_NETCDF Writes global attributes
+%
+% Writes global attributes to L1AP file
+
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','Campaign', campaign_name)
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','Platform', 'OSCAR')
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','ProcessingLevel', 'L1AP')
@@ -149,6 +179,12 @@ ncwriteatt([L1AP_file_path, L1AP_file_name], '/','DataVersion', data_version);
 end
 
 function add_incidence_angle_and_look_angle_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
+%ADD_INCIDENCE_ANGLE_AND_LOOK_ANGLE_TO_L1AP_NETCDF Adds Incidence Angle and
+%Look Angle to L1AP NetCDF file
+%
+%   Computes IncidenceAngleImage and LookAngleImage then adds them to the
+%   L1AP NetCDF file along with variable attributes.
+
 info = ncinfo([L1AP_file_path, L1AP_file_name]);
 num_vars = size(info.Variables, 2);
 var_list=cell(num_vars,1);
@@ -194,6 +230,10 @@ end
 end
 
 function add_squint_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
+%ADD_SQUINT_TO_L1AP_NETCDF Adds Squint to L1AP NetCDF file
+%
+%   Computes SquintImage and SquintMounted then adds them to the L1AP
+%   NetCDF file along with variable attributes.
 info = ncinfo([L1AP_file_path, L1AP_file_name]);
 num_vars = size(info.Variables, 2);
 var_list=cell(num_vars,1);
