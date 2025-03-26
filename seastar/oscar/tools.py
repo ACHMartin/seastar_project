@@ -299,29 +299,3 @@ def check_attrs_dataset(ds):
 
     return ds
 
-
-def extract_acquisition_date(ds):
-    """
-    Extract the starting and ending datetime as well as the date and time acquisition to the good format to be reported in the filename of processed data.
-    
-    Parameters
-    ----------
-    ds : `xr.DataArray`
-       The L1ap dataset that contains date and time information.
-    
-    Returns
-    ----------
-    start_date : `str`
-        The starting acquisition time.
-    end_date : `str`
-        The ending acquisition time.
-    date_time_filename : `str`
-        The date and time as it will appear in the post-processed data file name.
-    """
-    
-    start_date = ds.Title.split()[2]
-    end_date = ds.Title.split()[2].split("T")[0] + "T" + str(int(ds.FinalHour.data)).zfill(2)+str(int(ds.FinalMin.data)).zfill(2)+str(int(ds.FinalSec.data)).zfill(2)
-    date_time_filename = ds.Title.split()[2] + "-" + str(int(ds.FinalHour.data)).zfill(2)+str(int(ds.FinalMin.data)).zfill(2)+str(int(ds.FinalSec.data)).zfill(2)
-    
-    
-    return start_date, end_date, date_time_filename
