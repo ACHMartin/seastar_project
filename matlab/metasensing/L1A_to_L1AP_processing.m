@@ -33,7 +33,7 @@ for file = 1 : num_L1A_files
     [start_time, end_time] = read_start_end_time_from_L1A(L1AP_file_path, L1AP_file_name);
     write_global_attributes_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name, ...
         campaign_name, track_name, start_time, end_time, processing_version, data_version)
-    
+    delete_title_attribute_from_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
     add_incidence_angle_and_look_angle_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name);
 
     add_squint_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name);
@@ -324,4 +324,32 @@ else
     ncwriteatt([L1AP_file_path, L1AP_file_name], 'OrbitYawImage','units','deg')
     ncwriteatt([L1AP_file_path, L1AP_file_name], 'OrbitYawImage','description','Gimbal yaw for each pixel in the image')
 end
+end
+
+function delete_title_attribute_from_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
+%DELETE_TITLE_ATTRIBUTE_FROM_L1AP_NETCDF Deletes redundant 'Title' global
+%attribute
+%
+
+% Open netCDF file.
+ncid = netcdf.open([L1AP_file_path, L1AP_file_name], 'NC_WRITE');
+% Put file in define mode to delete an attribute.
+netcdf.reDef(ncid);  
+% Delete the global attribute in the netCDF file.
+netcdf.delAtt(ncid,netcdf.getConstant('GLOBAL'), 'Title');
+% Return file to data mode.
+netcdf.endDef(ncid)
+% Verify that the global attribute was deleted.
+[numdims, numvars, numatts, unlimdimID] = netcdf.inq(ncid);
+global_attributes_list = cell(numatts, 1);
+for attnum=1:numatts
+    global_attributes_list{attnum} = netcdf.inqAttName(ncid,netcdf.getConstant('NC_GLOBAL'), attnum - 1);
+end
+if isempty(find(strcmp(global_attributes_list, 'Title')))
+    disp('Title attribute successfully deleted...')
+else
+    disp('Unable to delete Title attribute.')
+end
+netcdf.close(ncid) 
+
 end
