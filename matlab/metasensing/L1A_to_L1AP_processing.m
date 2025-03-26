@@ -185,18 +185,8 @@ function add_incidence_angle_and_look_angle_to_L1AP_netcdf(L1AP_file_path, L1AP_
 %   Computes IncidenceAngleImage and LookAngleImage then adds them to the
 %   L1AP NetCDF file along with variable attributes.
 
-info = ncinfo([L1AP_file_path, L1AP_file_name]);
-num_vars = size(info.Variables, 2);
-var_list=cell(num_vars,1);
-for i = 1 : num_vars
-    var_list{i} = info.Variables(i).Name;
-end
-num_dims = size(info.Dimensions, 2);
-dim_list=cell(num_dims,1);
-for i = 1 : num_dims
-    dim_list{i,1} = info.Dimensions(i).Length;
+[info, num_vars, dim_list, var_list] = return_netcdf_info_and_dims(L1AP_file_path, L1AP_file_name);
 
-end
 DEMImage=ncread([L1AP_file_path, L1AP_file_name],'DEMImage');
 if sum(ismember(var_list,'IncidenceAngleImage')) == 1 &&...
         all(info.Variables(find(strcmp(var_list,'IncidenceAngleImage'))).Size ==...
@@ -234,18 +224,9 @@ function add_squint_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
 %
 %   Computes SquintImage and SquintMounted then adds them to the L1AP
 %   NetCDF file along with variable attributes.
-info = ncinfo([L1AP_file_path, L1AP_file_name]);
-num_vars = size(info.Variables, 2);
-var_list=cell(num_vars,1);
-for i = 1 : num_vars
-    var_list{i} = info.Variables(i).Name;
-end
-num_dims = size(info.Dimensions, 2);
-dim_list=cell(num_dims,1);
-for i = 1 : num_dims
-    dim_list{i,1} = info.Dimensions(i).Length;
 
-end
+[info, num_vars, dim_list, var_list] = return_netcdf_info_and_dims(L1AP_file_path, L1AP_file_name);
+
 if sum(ismember(var_list,'SquintImage')) == 1 &&...
         all(info.Variables(find(strcmp(var_list,'SquintImage'))).Size ==...
         [info.Variables(find(strcmp(var_list,'GroundRange'))).Size,info.Variables(find(strcmp(var_list,'CrossRange'))).Size])
@@ -286,18 +267,12 @@ else
 end
 end
 function add_orbit_images_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
-info = ncinfo([L1AP_file_path, L1AP_file_name]);
-num_vars = size(info.Variables, 2);
-var_list=cell(num_vars,1);
-for i = 1 : num_vars
-    var_list{i} = info.Variables(i).Name;
-end
-num_dims = size(info.Dimensions, 2);
-dim_list=cell(num_dims,1);
-for i = 1 : num_dims
-    dim_list{i,1} = info.Dimensions(i).Length;
+%ADD_ORBIT_IMAGES_TO_L1AP_NETCDF Computes and adds ObitHeadingImage and
+%OrbitYawImage to L1AP netcdf file along with variable attributes
+%
 
-end
+[info, num_vars, dim_list, var_list] = return_netcdf_info_and_dims(L1AP_file_path, L1AP_file_name);
+
 if sum(ismember(var_list,'OrbitHeadingImage')) == 1 &&...
         all(info.Variables(find(strcmp(var_list,'OrbitHeadingImage'))).Size ==...
         [info.Variables(find(strcmp(var_list,'GroundRange'))).Size,info.Variables(find(strcmp(var_list,'CrossRange'))).Size])
@@ -351,5 +326,24 @@ else
     disp('Unable to delete Title attribute.')
 end
 netcdf.close(ncid) 
+
+end
+
+function [info, num_vars, dim_list, var_list] = return_netcdf_info_and_dims(L1AP_file_path, L1AP_file_name)
+%RETURN_NETCDF_INFO_AND_DIMS Returns netcdf file information, variable list
+%and dimensions
+%
+
+info = ncinfo([L1AP_file_path, L1AP_file_name]);
+num_vars = size(info.Variables, 2);
+var_list=cell(num_vars,1);
+for i = 1 : num_vars
+    var_list{i} = info.Variables(i).Name;
+end
+num_dims = size(info.Dimensions, 2);
+dim_list=cell(num_dims,1);
+for i = 1 : num_dims
+    dim_list{i,1} = info.Dimensions(i).Length;
+end
 
 end
