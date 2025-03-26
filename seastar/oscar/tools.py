@@ -272,7 +272,7 @@ def check_attrs_dataset(ds):
                     "ProcessingLevel", 
                     "Codebase", 
                     "Repository", 
-                    "SoftwareVersion", 
+                    "CodeVersion", 
                     "DataVersion", 
                     "Comments"]
     
