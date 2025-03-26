@@ -28,7 +28,7 @@ for file = 1 : num_L1A_files
 
     [processing_version] = get_processing_version_from_file('../../_version.py');
     [data_version] = get_data_version_from_file_path_split(L1A_file_path_split);
-    [campaign_name] = get_campaign_name_from_file_path_split(L1A_file_path_split);
+    [campaign_name] = get_campaign_name_from_config(L1AP_file_name);
     [track_name] = get_track_name_from_campaign_config(campaign_name, L1AP_file_path, L1AP_file_name);
     [start_time, end_time] = read_start_end_time_from_L1A(L1AP_file_path, L1AP_file_name);
     write_global_attributes_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name, ...
@@ -119,13 +119,17 @@ data_version_match = regexp(L1A_file_path_split,'\<v[0-9]\w*','match');
 data_version = cell2mat(data_version_match{~cellfun(@isempty,data_version_match)});
 end
 
-function [campaign_name] = get_campaign_name_from_file_path_split(L1A_file_path_split)
-%GET_CAMPAIGN_NAME_FROM_FILE_PATH_SPLIT Gets OSCAR campaign name
+function [campaign_name] = get_campaign_name_from_config(L1AP_file_name)
+%GET_CAMPAIGN_NAME_FROM_CONFIG Get OSCAR campaign name from Campaign_name_lookup.ini
 %
-%   Extracts campaign name from file path information
 
-campaign_name_match = regexp(L1A_file_path_split,'\<[0-9]{6,6}_\w*','match');
-campaign_name = cell2mat(L1A_file_path_split(~cellfun(@isempty,campaign_name_match)));
+ini_file = INI('File','../../config/Campaign_name_lookup.ini');
+ini_struct = ini_file.read();
+expression = '\d*T\d*';
+pat = regexpPattern(expression);
+L1AP_file_name_split = split(L1AP_file_name, '_');
+L1AP_file_time = cell2mat(L1AP_file_name_split(cellfun(@(x) ~isempty(strfind(x,pat)),L1AP_file_name_split)));
+campaign_name = ini_struct.OSCAR_campaigns.(['x', L1AP_file_time(1:6)]);
 end
 
 function [track_name] = get_track_name_from_campaign_config(campaign_name, L1AP_file_path, L1AP_file_name)
