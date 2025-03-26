@@ -23,7 +23,7 @@ OSCAR is the airborne demonstrator of SeaSTAR and has been developed by MetaSens
 framework of ESA contract *4000116401/16/NL/BJ*.
 
 This software has been developed to be applicable to a wide range of **SeaSTAR** studies including the
-processing of OSCAR data from Level-1p (as delivered by MetaSensing before pre-processing) to Level-2
+processing of OSCAR data from Level-1A (as delivered by MetaSensing before pre-processing) to Level-2
 (Wind and Current map per airborne track). The processing, in short, consists of multilooking,
 calculation of the Radial Surface Velocity (RSV) from the interferogram, application of calibration
 factor, retrieval of geophysical parameters (Total Surface Current Vector TSCV and potentially Ocean Surface
@@ -36,12 +36,20 @@ software (PenWP-OSCAR) or from external data (e.g. Numerical Weather Prediction 
 The different steps are as below:
 
 1. *Pre-processing* using Matlab scripts to compute and add Incidence Angle and
-   antenna Squint fields to the data files  (Level-1p to Level-1a):
+   antenna Squint fields to the data files  (Level-1a to Level-1ap). For operations on Windows machines:
+```
+    "\path_to\matlab.exe" -nosplash -nodesktop -r "cd('\path_to\seastar_project\matlab\metasensing'), L1A_to_L1AP_processing('\path_to_L1A_data');exit"
+```
+    For operation on UNIX machines:
+```
+    matlab -nosplash -nodisplay -r "cd('/path_to/seastar_project/matlab/metasensing'); L1A_to_L1AP_processing('/path_to_L1A_data');exit"
+```
+    Or for use within Matlab with GUI input:
 ```
       matlab/metasensing/add_inc_and_squint_to_netcdf_batch.m
 ```
 
-2. *Multilooking*, computation of the *Radial Surface Velocity* (L1a to L1b) using functions
+2. *Multilooking*, computation of the *Radial Surface Velocity* (L1ap to L1b) using functions
    in the *oscar.level1* module:
 ```
       seastar.oscar.level1.compute_SLC_Master_Slave()
