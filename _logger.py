@@ -6,7 +6,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),  # Display logs in the console
-        logging.FileHandler("seastar_logger.log")  # Save logs to a file
+        logging.FileHandler("seastar_logger.log", mode="w")  # Save logs to a file and overwrite it each time we launch the code
     ]
 )
 
