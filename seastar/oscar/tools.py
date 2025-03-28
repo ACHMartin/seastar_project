@@ -24,7 +24,7 @@ def load_OSCAR_data(file_path, file_list):
     ----------
     file_path : ``str``
         Path containing OSCAR data files
-    file_list : ``list``
+    file_list : ``list`` of ``str``
         List of file name of the Fore/Mid/Aft antenna data triplet
 
     Returns
@@ -35,8 +35,8 @@ def load_OSCAR_data(file_path, file_list):
 
     """
     ds = dict()
-    for ind in range(len(file_list)):
-        ds[ind] = readNetCDFFile(os.path.join(file_path,file_list[ind]))
+    for ind, file_name in enumerate(file_list):
+        ds[ind] = readNetCDFFile(os.path.join(file_path,file_name))
     return ds
 
 
@@ -152,8 +152,7 @@ def identify_antenna_location_from_filename(file_list):
     """
     antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
     antenna_id = list()
-    for i in range(len(file_list)):
-        file_name = file_list[i]
+    for file_name in file_list:
         antenna_id.append(antenna_identifiers[file_name.split('_')[6][0]])
     return antenna_id
 
