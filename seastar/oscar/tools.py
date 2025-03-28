@@ -7,7 +7,7 @@ from seastar.utils.tools import list_duplicates
 from scipy import interpolate
 import xarray as xr
 from datetime import datetime as dt
-
+import re
 from _version import __version__
 from _logger import logger
 
@@ -94,10 +94,17 @@ def find_file_triplets(file_path):
     """
     file_list = sorted(os.listdir(file_path))
     num_files = len(file_list)
+    r = re.compile("[0-9]{8}T[0-9]{6}")
     file_time = list()
     for file in range(num_files):
-        file_info = str.split(file_list[file], '_')
-        file_time.append(file_info[3])
+        file_name_split = str.split(file_list[file], '_')
+        file_time.append(
+            file_name_split[
+                file_name_split.index(
+                    list(filter(r.match, file_name_split))[0]
+                    )
+                ]
+            )
     file_time_triplets = sorted(list_duplicates(file_time))
     return file_time_triplets
 
