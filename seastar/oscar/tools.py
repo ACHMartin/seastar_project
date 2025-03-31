@@ -321,22 +321,21 @@ def clean_units_attribute(ds):
 
     Returns
     -------
-    ds_out : ``xr.dataset``
+    ds : ``xr.dataset``
         Dataset with cleaned units attributes.
     """
     
     def remove_brackets(unit_str):
         return re.sub(r'[\[\]]', '', unit_str)
     
-    ds_out = ds.copy()
     
     # Check global attributes
-    if 'units' in ds_out.attrs and isinstance(ds_out.attrs['units'], str):
-        ds_out.attrs['units'] = remove_brackets(ds_out.attrs['units'])
+    if 'units' in ds.attrs and isinstance(ds.attrs['units'], str):
+        ds.attrs['units'] = remove_brackets(ds.attrs['units'])
     
     # Check each variable's attributes
-    for var_name, var in ds_out.variables.items():
+    for var_name, var in ds.variables.items():
         if 'units' in var.attrs and isinstance(var.attrs['units'], str):
             var.attrs['units'] = remove_brackets(var.attrs['units'])
     
-    return ds_out
+    return ds
