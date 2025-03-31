@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import xarray as xr
+import os
 import scipy as sp
 import seastar
 import re
+import glob
 import warnings
 from datetime import datetime as dt
+from datetime import timezone
+
+from _logger import logger
 
 
 def fill_missing_variables(ds_dict, antenna_id):
@@ -670,3 +675,136 @@ def track_title_to_datetime(start_time):
         Dataset start time in the form "YYYYMMDDTHHMM"
     """
     return np.datetime64(dt.strptime(start_time, '%Y%m%dT%H%M'))
+
+
+def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=False):
+    """
+    Processing chain from L1AP tp L1B.
+    
+    This function processes the OSCAR data from L1AP to L1B. It needs a triplet of L1AP file to generate a L1B file with data of the three antennas.
+    
+    Parameters
+    ----------
+        L1AP_path : ``str``
+            Path of the L1AP files.
+        campaign : ``str``
+            Campaign name.
+        acq_date : ``str``
+            Date of the data acquisition.
+        track : ``str``
+            Track name.
+        
+        write_nc (bool, optional): 
+            Argument to write the data in a netcdf file. Defaults to False.
+
+    Returns:
+    ----------
+        ds_L1B: ``xr.Dataset``
+            Xarray dataset of the L1B OSCAR data.
+    """
+
+    # Getting the date for every tracks in the dict.
+    track_names_dict = seastar.utils.readers.read_OSCAR_track_names_config(campaign, acq_date)
+    
+    # Getting the date for the track we are interested in
+    if track in track_names_dict.values():
+        date_of_track = [key for key, v in track_names_dict.items() if v == track][0]
+        logger.info(f"Track '{track}' found, acquisition time: {date_of_track}")
+    else:
+        logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
+        
+    # Loading the file names of the files corresponding to date_of_track (triplet of file - one per antenna)
+    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(L1AP_path + "/*" + date_of_track + "*.nc"))]
+
+    #-----------------------------------------------------------
+    #               L1B PROCESSING
+    #-----------------------------------------------------------
+    ds_L1B = dict()
+    window = 7              # window can be 3 or 7
+
+    vars_to_keep = [
+            'LatImage',
+            'LonImage',
+            'IncidenceAngleImage',
+            'LookDirection',
+            'SquintImage',
+            'CentralFreq',
+            'OrbitHeadingImage'
+            ]
+
+    logger.info(f"Opening track: {track} on day: {acq_date}")
+
+    ds = seastar.oscar.tools.load_L1AP_OSCAR_data(L1AP_path, L1AP_file_names) 
+
+    # Getting the antenna identificators
+    antenna_ident = seastar.oscar.tools.identify_antenna_location_from_filename(L1AP_file_names)
+    logger.info(f"Antenna: {antenna_ident}")
+    
+    log_message_nesz = "\n".join(["Noise Equivalent Sigma Zero:",
+                                    f"Mid: {ds[0].SigmaNoise.values}",
+                                    f"Fore: {ds[1].SigmaNoise.values}",
+                                    f"Aft:  {ds[2].SigmaNoise.values}"
+                                    ])
+    logger.info(log_message_nesz)
+
+    log_message_nesz_slave = "\n".join(["Noise Equivalent Sigma Zero Slave:",
+                                        f"Fore: {ds[1].SigmaNoiseSlave.values}",
+                                        f"Aft: {ds[2].SigmaNoiseSlave.values}"
+                                        ])
+    logger.info(log_message_nesz_slave)
+
+    ds_ml = dict()
+    for i in list(ds.keys()):
+        logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
+        ds[i] = seastar.oscar.level1.replace_dummy_values(
+                ds[i], dummy_val=float(ds[i].Dummy.data))
+        ds_ml[i] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds[i], window)
+        ds_ml[i]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds[i])
+        ds_ml[i]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds[i], antenna=antenna_ident[list(ds.keys()).index(i)])
+        ds_ml[i]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds[i], options='from_SAR_time')         # Time difference between Master and Slave
+        ds_ml[i][vars_to_keep] = ds[i][vars_to_keep]
+        ds_ml[i]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[i])
+        ds_ml[i]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[i].StartTime)
+        ds_ml[i]['Intensity_dB'] = 10*np.log10(ds_ml[i].Intensity)
+
+        #Rolling median to smooth out TimeLag errors
+        if not np.isnan(ds_ml[i].TimeLag).all():
+            ds_ml[i]['TimeLag'] = ds_ml[i].TimeLag\
+                .rolling({'CrossRange': 5}).median()\
+                .rolling({'GroundRange': 5}).median()
+
+    ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_ident)
+    
+    #-----------------------------------------------------------
+    
+    # Building L1 dataset
+    logger.info(f"Build L1 dataset for :  {track} of day: {acq_date}")
+    
+    ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_ident)
+    del ds_ml   
+    ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
+    
+    # Checking dataset attributes
+    ds_L1B = seastar.oscar.tools.check_attrs_dataset(ds_L1B)
+
+    # Updating of the history in the attrs:
+    current_history = ds_L1B.attrs.get("History", "")                                               # Get the current history or initialize it
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1B processing."            # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry       # Append to the history
+    ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
+
+    # Defining filename for datafile
+    ds_L1B, filename = seastar.oscar.tools.formatting_filename(ds_L1B)
+
+    # Write the data in a NetCDF file
+    if write_nc: 
+        path_new_data = os.path.join(os.path.dirname(L1AP_path).replace("L1AP", "L1B"), os.path.basename(L1AP_path))
+        if not os.path.exists(path_new_data):
+            os.makedirs(path_new_data, exist_ok=True)
+            logger.info(f"Created directory {path_new_data}")
+        else: logger.info(f"Directory {path_new_data} already exists.")
+        
+        logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
+        ds_L1B.to_netcdf(os.path.join(path_new_data, filename)) 
+
+    return ds_L1B
