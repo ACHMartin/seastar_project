@@ -7,6 +7,7 @@ import platform
 from configparser import ConfigParser
 import hashlib
 
+from _logger import logger
 
 def _read_config(config_file='config.ini'):
     """
@@ -158,3 +159,23 @@ def read_OSCAR_track_names_config(campaign, flight):
     track_names_config.read(os.path.join(os.path.join('config', config_file_name)))
     track_names_dict = dict(track_names_config.items(flight))
     return track_names_dict
+
+def read_campaign_config():
+    """
+    Read campaign names configuration file.
+    
+    Reads in an OSCAR campaign names INI file and parses it as a dict of
+    {date : campaign_name}.
+
+    Returns
+    -------
+    campaign_names_dict : ``dict``
+        Dict of {date : campaign_name}. 
+    """
+    logger.info("Reading Campaign config...")
+    config_file_name = 'Campaign_name_lookup.ini'
+    campaign_names_config = ConfigParser()
+    campaign_names_config.optionxform = str
+    campaign_names_config.read(os.path.join(os.path.join('config', config_file_name)))
+    campaign_names_dict = dict(campaign_names_config.items('OSCAR_campaigns'))
+    return campaign_names_dict
