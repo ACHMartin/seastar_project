@@ -305,3 +305,36 @@ def check_attrs_dataset(ds):
 
     return ds
 
+def clean_units_attribute(ds):
+    """
+    Clean units attributes from dataset.
+    
+    Looks for global and varible `units` attributes and removes all instances
+    of square brackets around the `units` value.
+    
+    e.g., '[m]' --> 'm'
+    
+    Parameters:
+        ds : ``xr.Dataset``
+            Input dataset to clean
+    
+    Returns:
+        ds_out : ``xr.dataset``
+            Dataset with cleaned units attributes.
+    """
+    
+    def remove_brackets(unit_str):
+        return re.sub(r'[\[\]]', '', unit_str)
+    
+    ds_out = ds.copy()
+    
+    # Check global attributes
+    if 'units' in ds_out.attrs and isinstance(ds_out.attrs['units'], str):
+        ds_out.attrs['units'] = remove_brackets(ds_out.attrs['units'])
+    
+    # Check each variable's attributes
+    for var_name, var in ds_out.variables.items():
+        if 'units' in var.attrs and isinstance(var.attrs['units'], str):
+            var.attrs['units'] = remove_brackets(var.attrs['units'])
+    
+    return ds_out
