@@ -2,6 +2,7 @@
 """Functions for the processing of OSCAR airbone data."""
 import os
 import numpy as np
+import re
 from seastar.utils.readers import readNetCDFFile
 from seastar.utils.tools import list_duplicates
 from scipy import interpolate
@@ -150,10 +151,14 @@ def identify_antenna_location_from_filename(file_list):
         List of antenna identifiers as strings like ['Mid', 'Fore', 'Aft']
 
     """
-    antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
+    r = re.compile(r'(?:\D*\d\D*\d\D*)$')
     antenna_id = list()
     for file_name in file_list:
-        antenna_id.append(antenna_identifiers[file_name.split('_')[6][0]])
+        antenna_filter = filter(r.match, file_name.split('_'))
+        antenna_number = "".join(map(str, antenna_filter))
+        antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
+        antenna = "".join({antenna_identifiers[i] for i in antenna_number if i in antenna_identifiers})
+        antenna_id.append(antenna)
     return antenna_id
 
 
