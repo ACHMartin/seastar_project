@@ -13,7 +13,7 @@ from _version import __version__
 from _logger import logger
 
 
-def load_OSCAR_data(file_path, file_list):
+def load_L1AP_OSCAR_data(file_path, file_list):
     """
     Load OSCAR data.
 
