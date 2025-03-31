@@ -11,9 +11,9 @@ function L1A_to_L1AP_processing(L1A_file_path)
 [L1A_file_list, num_L1A_files] = build_L1A_file_list(L1A_file_path);
 
 for file = 1 : num_L1A_files
-    
+
     [L1A_file_name] = get_L1A_file_name(L1A_file_list, file);
-    
+
     [L1AP_file_path, L1A_file_path_split] = build_L1AP_file_path(L1A_file_path);
 
     % copy L1A file to L1AP directory to be worked on
@@ -22,7 +22,7 @@ for file = 1 : num_L1A_files
     end
     L1AP_file_name = ['L1AP_', L1A_file_name];
     copyfile([L1A_file_path, L1A_file_name], [L1AP_file_path, L1AP_file_name], 'f')
-    
+
     disp('---------------------------------------------------------------')
     disp(['Processing file ', L1AP_file_name])
 
@@ -39,7 +39,7 @@ for file = 1 : num_L1A_files
     add_squint_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name);
 
     add_orbit_images_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
-    
+
 end
 
 end
@@ -128,7 +128,7 @@ ini_struct = ini_file.read();
 expression = '\d*T\d*';
 pat = regexpPattern(expression);
 L1AP_file_name_split = split(L1AP_file_name, '_');
-L1AP_file_time = cell2mat(L1AP_file_name_split(cellfun(@(x) ~isempty(strfind(x,pat)),L1AP_file_name_split)));
+L1AP_file_time = unique(cell2mat(L1AP_file_name_split(cellfun(@(x) ~isempty(strfind(x,pat)),L1AP_file_name_split))), 'rows');
 campaign_name = ini_struct.OSCAR_campaigns.(['x', L1AP_file_time(1:6)]);
 end
 
@@ -313,7 +313,7 @@ function delete_title_attribute_from_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
 % Open netCDF file.
 ncid = netcdf.open([L1AP_file_path, L1AP_file_name], 'NC_WRITE');
 % Put file in define mode to delete an attribute.
-netcdf.reDef(ncid);  
+netcdf.reDef(ncid);
 % Delete the global attribute in the netCDF file.
 netcdf.delAtt(ncid,netcdf.getConstant('GLOBAL'), 'Title');
 % Return file to data mode.
@@ -329,7 +329,7 @@ if isempty(find(strcmp(global_attributes_list, 'Title')))
 else
     disp('Unable to delete Title attribute.')
 end
-netcdf.close(ncid) 
+netcdf.close(ncid)
 
 end
 
