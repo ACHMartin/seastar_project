@@ -314,13 +314,15 @@ def clean_units_attribute(ds):
     
     e.g., '[m]' --> 'm'
     
-    Parameters:
-        ds : ``xr.Dataset``
-            Input dataset to clean
-    
-    Returns:
-        ds_out : ``xr.dataset``
-            Dataset with cleaned units attributes.
+    Parameters
+    ----------
+    ds : ``xr.dataset``
+        Input dataset to clean
+
+    Returns
+    -------
+    ds_out : ``xr.dataset``
+        Dataset with cleaned units attributes.
     """
     
     def remove_brackets(unit_str):
