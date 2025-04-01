@@ -30,15 +30,16 @@ def load_L1AP_OSCAR_data(file_path, file_list):
 
     Returns
     -------
-    ds : ``dict``, ``xarray.Dataset``
+    ds_dict : ``dict``, ``xarray.Dataset``
         OSCAR Fore/Mid/Aft antenna data as ``xarray.Dataset`` in a dict with
-        keys as ``int`` to identify each antenna
+        keys as the name of each antenna as a ``str``
 
     """
-    ds = dict()
+    ds_dict = dict()
     for ind, file_name in enumerate(file_list):
-        ds[ind] = readNetCDFFile(os.path.join(file_path,file_name))
-    return ds
+        antenna = identify_antenna_location_from_filename(file_name)
+        ds_dict[antenna] = readNetCDFFile(os.path.join(file_path,file_name))
+    return ds_dict
 
 
 def identify_antenna_location(ds):
@@ -125,18 +126,18 @@ def antenna_idents(ds):
 
     Returns
     -------
-    antenna_ident : ``list``
+    antenna_list : ``list``
         List of antenna identifiers in the form ['Fore', 'Mid', 'Aft'],
         corresponding to the data and keys stored in `ds`
 
     """
-    antenna_id = list()
+    antenna_list = list()
     for i in list(ds.keys()):
-        antenna_id.append(identify_antenna_location(ds[i]))
-    return antenna_id
+        antenna_list.append(identify_antenna_location(ds[i]))
+    return antenna_list
 
 
-def identify_antenna_location_from_filename(file_list):
+def identify_antenna_location_from_filename(file_name):
     """
     Identify antenna from filename.
 
@@ -147,19 +148,16 @@ def identify_antenna_location_from_filename(file_list):
 
     Returns
     -------
-    antenna_id : ``list``
-        List of antenna identifiers as strings like ['Mid', 'Fore', 'Aft']
+    antenna : ``str``
+        Name of antenna as strings like 'Mid', 'Fore' or 'Aft'.
 
     """
     r = re.compile(r'(?:\D*\d\D*\d\D*)$')
-    antenna_id = list()
-    for file_name in file_list:
-        antenna_filter = filter(r.match, file_name.split('_'))
-        antenna_number = "".join(map(str, antenna_filter))
-        antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
-        antenna = "".join({antenna_identifiers[i] for i in antenna_number if i in antenna_identifiers})
-        antenna_id.append(antenna)
-    return antenna_id
+    antenna_filter = filter(r.match, file_name.split('_'))
+    antenna_number = "".join(map(str, antenna_filter))
+    antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
+    antenna = "".join({antenna_identifiers[i] for i in antenna_number if i in antenna_identifiers})
+    return antenna
 
 
 def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):

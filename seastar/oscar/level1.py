@@ -13,7 +13,7 @@ from datetime import timezone
 from _logger import logger
 
 
-def fill_missing_variables(ds_dict, antenna_id):
+def fill_missing_variables(ds_dict, antenna_list):
     """
     Fill missing variables in OSCAR datasets.
 
@@ -26,7 +26,7 @@ def fill_missing_variables(ds_dict, antenna_id):
     ds : ``dict``
         OSCAR data stored as a dict with antenna number as keys and loaded
         data in ``xarray.Dataset`` format as values
-    antenna_ident : ``list``
+    antenna_list : ``list``
         List of antenna identifiers in the form ['Fore', 'Mid', 'Aft'],
         corresponding to the data and keys stored in `ds`
 
@@ -37,9 +37,9 @@ def fill_missing_variables(ds_dict, antenna_id):
         data in ``xarray.Dataset`` format as values
 
     """
-    fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
-    mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
-    aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
+    fore_id = list(ds_dict.keys())[antenna_list.index('Fore')]
+    mid_id = list(ds_dict.keys())[antenna_list.index('Mid')]
+    aft_id = list(ds_dict.keys())[antenna_list.index('Aft')]
     antenna_list = [fore_id, mid_id, aft_id]
 
     for antenna_1 in antenna_list:
@@ -51,7 +51,7 @@ def fill_missing_variables(ds_dict, antenna_id):
     return ds_dict
 
 
-def merge_beams(ds_dict, antenna_id):
+def merge_beams(ds_dict, antenna_list):
     """
     Merge three beams into single dataset.
 
@@ -69,7 +69,7 @@ def merge_beams(ds_dict, antenna_id):
     ds : ``dict``
         OSCAR data stored as a dict with antenna number as keys and loaded
         data in ``xarray.Dataset`` format as values
-    antenna_ident : ``list``
+    antenna_list : ``list``
         List of antenna identifiers in the form ['Fore', 'Mid', 'Aft'],
         corresponding to the data and keys stored in `ds`
 
@@ -82,7 +82,7 @@ def merge_beams(ds_dict, antenna_id):
     ds_level1 = xr.concat(list(ds_dict.values()),
                           'Antenna', join='outer',
                           coords='all')
-    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_id))
+    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_list))
     key_list = list(ds_dict.keys())
     ds_level1.coords['latitude'] = xr.merge(
             [ds_dict[key_list[0]].LatImage
@@ -741,37 +741,37 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
     ds_dict = seastar.oscar.tools.load_L1AP_OSCAR_data(L1AP_folder, L1AP_file_names) 
 
     # Getting the antenna identificators
-    antenna_ident = seastar.oscar.tools.identify_antenna_location_from_filename(L1AP_file_names)
-    logger.info(f"Antenna: {antenna_ident}")
+    antenna_list = list(ds_dict.keys())
+    logger.info(f"Antenna: {antenna_list}")
 
     ds_ml = dict()
-    for i in list(ds_dict.keys()):
-        logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
-        ds_dict[i] = seastar.oscar.level1.replace_dummy_values(
-                ds_dict[i], dummy_val=float(ds_dict[i].Dummy.data))
-        ds_ml[i] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[i], window)
-        ds_ml[i]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[i])
-        ds_ml[i]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[i], antenna=antenna_ident[list(ds_dict.keys()).index(i)])
-        ds_ml[i]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[i], options='from_SAR_time')         # Time difference between Master and Slave
-        ds_ml[i][vars_to_keep] = ds_dict[i][vars_to_keep]
-        ds_ml[i]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[i])
-        ds_ml[i]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[i].StartTime)
-        ds_ml[i]['Intensity_dB'] = seastar.utils.tools.lin2dB(ds_ml[i].Intensity)
+    for antenna in antenna_list:
+        logger.info(f"Begining of the processing of {L1AP_file_names[antenna]}")
+        ds_dict[antenna] = seastar.oscar.level1.replace_dummy_values(
+                ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
+        ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], window)
+        ds_ml[antenna]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[antenna])
+        ds_ml[antenna]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[antenna], antenna=antenna)
+        ds_ml[antenna]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[antenna], options='from_SAR_time')         # Time difference between Master and Slave
+        ds_ml[antenna][vars_to_keep] = ds_dict[antenna][vars_to_keep]
+        ds_ml[antenna]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[antenna])
+        ds_ml[antenna]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[antenna].StartTime)
+        ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2dB(ds_ml[antenna].Intensity)
 
         #Rolling median to smooth out TimeLag errors
-        if not np.isnan(ds_ml[i].TimeLag).all():
-            ds_ml[i]['TimeLag'] = ds_ml[i].TimeLag\
+        if not np.isnan(ds_ml[antenna].TimeLag).all():
+            ds_ml[antenna]['TimeLag'] = ds_ml[antenna].TimeLag\
                 .rolling({'CrossRange': 5}).median()\
                 .rolling({'GroundRange': 5}).median()
 
-    ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_ident)
+    ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_list)
     
     #-----------------------------------------------------------
     
     # Building L1 dataset
     logger.info(f"Build L1 dataset for :  {track} of day: {acq_date}")
     
-    ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_ident)
+    ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_list)
     del ds_ml   
     ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
     
