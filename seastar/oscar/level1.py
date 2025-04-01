@@ -785,7 +785,7 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
     ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
 
     # Defining filename for datafile
-    ds_L1B, filename = seastar.oscar.tools.formatting_filename(ds_L1B)
+    filename = seastar.oscar.tools.formatting_filename(ds_L1B)
 
     # Write the data in a NetCDF file
     if write_nc: 

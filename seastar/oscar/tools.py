@@ -236,7 +236,7 @@ def formatting_filename(ds):
 
     filename = "_".join(filter(None, filename_parts)) + ".nc"
 
-    return ds, filename
+    return filename
     
     
 def check_attrs_dataset(ds):
