@@ -677,7 +677,7 @@ def track_title_to_datetime(start_time):
     return np.datetime64(dt.strptime(start_time, '%Y%m%dT%H%M'))
 
 
-def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=False):
+def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=False):
     """
     Processing chain from L1AP tp L1B.
     
@@ -685,14 +685,15 @@ def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=Fa
     
     Parameters
     ----------
-        L1AP_path : ``str``
-            Path of the L1AP files.
+        L1AP_folder : ``str``
+            Folder of the L1AP files.
         campaign : ``str``
-            Campaign name.
+            Campaign name as defined in config/Campaign_name_lookup.ini file. Example of campaign name: 202205_IroiseSea, 202305_MedSea.
         acq_date : ``str``
-            Date of the data acquisition.
+            Date of the data acquisition with the format "YYYYMMDD".
         track : ``str``
-            Track name.
+            Track name as defined in config/XXX_TrackNames.ini file. Format should be "Track_x" for tracks over ocean and 
+            "Track_Lx" for tracks over land with "x" the number of the track.
         
         write_nc (bool, optional): 
             Argument to write the data in a netcdf file. Defaults to False.
@@ -702,6 +703,9 @@ def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=Fa
         ds_L1B: ``xr.Dataset``
             Xarray dataset of the L1B OSCAR data.
     """
+
+    # Checking campaign, acquisition date and track name
+    # TODO: add a chek for campaign, acquisition date and track name
 
     # Getting the date for every tracks in the dict.
     track_names_dict = seastar.utils.readers.read_OSCAR_track_names_config(campaign, acq_date)
@@ -714,7 +718,7 @@ def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=Fa
         logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
         
     # Loading the file names of the files corresponding to date_of_track (triplet of file - one per antenna)
-    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(L1AP_path + "/*" + date_of_track + "*.nc"))]
+    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(L1AP_folder + "/*" + date_of_track + "*.nc"))]
 
     #-----------------------------------------------------------
     #               L1B PROCESSING
@@ -734,38 +738,25 @@ def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=Fa
 
     logger.info(f"Opening track: {track} on day: {acq_date}")
 
-    ds = seastar.oscar.tools.load_L1AP_OSCAR_data(L1AP_path, L1AP_file_names) 
+    ds_dict = seastar.oscar.tools.load_L1AP_OSCAR_data(L1AP_folder, L1AP_file_names) 
 
     # Getting the antenna identificators
     antenna_ident = seastar.oscar.tools.identify_antenna_location_from_filename(L1AP_file_names)
     logger.info(f"Antenna: {antenna_ident}")
-    
-    log_message_nesz = "\n".join(["Noise Equivalent Sigma Zero:",
-                                    f"Mid: {ds[0].SigmaNoise.values}",
-                                    f"Fore: {ds[1].SigmaNoise.values}",
-                                    f"Aft:  {ds[2].SigmaNoise.values}"
-                                    ])
-    logger.info(log_message_nesz)
-
-    log_message_nesz_slave = "\n".join(["Noise Equivalent Sigma Zero Slave:",
-                                        f"Fore: {ds[1].SigmaNoiseSlave.values}",
-                                        f"Aft: {ds[2].SigmaNoiseSlave.values}"
-                                        ])
-    logger.info(log_message_nesz_slave)
 
     ds_ml = dict()
-    for i in list(ds.keys()):
+    for i in list(ds_dict.keys()):
         logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
-        ds[i] = seastar.oscar.level1.replace_dummy_values(
-                ds[i], dummy_val=float(ds[i].Dummy.data))
-        ds_ml[i] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds[i], window)
-        ds_ml[i]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds[i])
-        ds_ml[i]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds[i], antenna=antenna_ident[list(ds.keys()).index(i)])
-        ds_ml[i]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds[i], options='from_SAR_time')         # Time difference between Master and Slave
-        ds_ml[i][vars_to_keep] = ds[i][vars_to_keep]
+        ds_dict[i] = seastar.oscar.level1.replace_dummy_values(
+                ds_dict[i], dummy_val=float(ds_dict[i].Dummy.data))
+        ds_ml[i] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[i], window)
+        ds_ml[i]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[i])
+        ds_ml[i]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[i], antenna=antenna_ident[list(ds_dict.keys()).index(i)])
+        ds_ml[i]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[i], options='from_SAR_time')         # Time difference between Master and Slave
+        ds_ml[i][vars_to_keep] = ds_dict[i][vars_to_keep]
         ds_ml[i]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[i])
         ds_ml[i]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[i].StartTime)
-        ds_ml[i]['Intensity_dB'] = 10*np.log10(ds_ml[i].Intensity)
+        ds_ml[i]['Intensity_dB'] = seastar.utils.tools.lin2dB(ds_ml[i].Intensity)
 
         #Rolling median to smooth out TimeLag errors
         if not np.isnan(ds_ml[i].TimeLag).all():
@@ -798,7 +789,7 @@ def processing_OSCAR_L1APtoL1B(L1AP_path, campaign, acq_date, track, write_nc=Fa
 
     # Write the data in a NetCDF file
     if write_nc: 
-        path_new_data = os.path.join(os.path.dirname(L1AP_path).replace("L1AP", "L1B"), os.path.basename(L1AP_path))
+        path_new_data = os.path.join(os.path.dirname(L1AP_folder).replace("L1AP", "L1B"), os.path.basename(L1AP_folder))
         if not os.path.exists(path_new_data):
             os.makedirs(path_new_data, exist_ok=True)
             logger.info(f"Created directory {path_new_data}")
