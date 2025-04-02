@@ -40,10 +40,10 @@ def fill_missing_variables(ds_dict, antenna_list):
     fore_id = list(ds_dict.keys())[antenna_list.index('Fore')]
     mid_id = list(ds_dict.keys())[antenna_list.index('Mid')]
     aft_id = list(ds_dict.keys())[antenna_list.index('Aft')]
-    antenna_list = [fore_id, mid_id, aft_id]
+    antenna_list2 = [fore_id, mid_id, aft_id]
 
-    for antenna_1 in antenna_list:
-        for antenna_2 in [a for a in antenna_list if a not in [antenna_1]]:
+    for antenna_1 in antenna_list2:
+        for antenna_2 in [a for a in antenna_list2 if a not in [antenna_1]]:
             for var in ds_dict[antenna_1].data_vars:
                 if var not in ds_dict[antenna_2].data_vars:
                     ds_dict[antenna_2][var] = xr.DataArray(data=np.nan)
@@ -745,8 +745,8 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
     logger.info(f"Antenna: {antenna_list}")
 
     ds_ml = dict()
-    for antenna in antenna_list:
-        logger.info(f"Begining of the processing of {L1AP_file_names[antenna]}")
+    for i, antenna in enumerate(antenna_list):
+        logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
         ds_dict[antenna] = seastar.oscar.level1.replace_dummy_values(
                 ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
         ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], window)
@@ -756,7 +756,7 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
         ds_ml[antenna][vars_to_keep] = ds_dict[antenna][vars_to_keep]
         ds_ml[antenna]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[antenna])
         ds_ml[antenna]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[antenna].StartTime)
-        ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2dB(ds_ml[antenna].Intensity)
+        ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2db(ds_ml[antenna].Intensity)
 
         #Rolling median to smooth out TimeLag errors
         if not np.isnan(ds_ml[antenna].TimeLag).all():
