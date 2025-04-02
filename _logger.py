@@ -4,7 +4,7 @@ import argparse
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Run the script with optional verbose mode.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode (INFO logs)")
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 # Logger configuration
 logging.basicConfig(
