@@ -226,10 +226,7 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, window=3,
-                                      vars_to_send=['Intensity',
-                                                    'Interferogram',
-                                                    'Coherence']):
+def compute_multilooking_Master_Slave(ds, dict_L1B_process):
     """
     Compute  multilooking Master/Slave L1b image products.
 
@@ -246,10 +243,11 @@ def compute_multilooking_Master_Slave(ds, window=3,
     ----------
     ds : ``xarray.Dataset``
         OSCAR L1a dataset
-    window : ``int``
-        Integer averaging window size. The default is 3.
-    vars_to_send:  list
-        default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
+    dict_L1B_process : ``dict``
+        Dictionnary containing information about the window for the rolling mean for the multilooking computation
+        and the vars to provide (vars_to_send) after the multilooking computation.
+        window : Integer averaging window size. The default is 3.
+        vars_to_send: default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
         can in addition take among: 'IntensityAvgComplexMasterSlave',
         'IntensityAvgMaster', 'IntensityAvgSlave'
 
@@ -271,8 +269,12 @@ def compute_multilooking_Master_Slave(ds, window=3,
     list_vars_to_send = set(['Intensity', 'Interferogram', 'Coherence',
                              'IntensityAvgComplexMasterSlave',
                             'IntensityAvgMaster', 'IntensityAvgSlave'])
-    vars_to_send = set(vars_to_send)
-    if len(vars_to_send.difference(list_vars_to_send)) > 0:
+
+    vars_to_send = dict_L1B_process.get('vars_to_send', 
+                                        ['Intensity', 'Interferogram', 'Coherence'])
+    window = dict_L1B_process.get('window', 3)
+    
+    if len(set(vars_to_send).difference(list_vars_to_send)) > 0:
         raise Exception("vars_to_send should be within the following variables"
                         "'Intensity', 'Interferogram', 'Coherence',"
                         "'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'")
@@ -677,7 +679,7 @@ def track_title_to_datetime(start_time):
     return np.datetime64(dt.strptime(start_time, '%Y%m%dT%H%M'))
 
 
-def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=False):
+def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, dict_L1B_process=dict(), write_nc=False):
     """
     Processing chain from L1AP tp L1B.
     
@@ -694,7 +696,13 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
         track : ``str``
             Track name as defined in config/XXX_TrackNames.ini file. Format should be "Track_x" for tracks over ocean and 
             "Track_Lx" for tracks over land with "x" the number of the track.
-        
+        dict_L1B_process : ``dict``
+            Dictionnary containing information about the window for the rolling mean for the multilooking computation,
+            the vars to keep (vars_to_keep) from L1AP to L1B file and the vars to provide (vars_to_send) after the multilooking computation.
+            window default value is 3
+            vars_to_keep default list is: ['LatImage', 'LonImage', 'IncidenceAngleImage',
+                                           'LookDirection', 'SquintImage', 'CentralFreq', 'OrbitHeadingImage']
+            vars_to_send default list is: ['Intensity', 'Interferogram', 'Coherence']
         write_nc (bool, optional): 
             Argument to write the data in a netcdf file. Defaults to False.
 
@@ -724,17 +732,9 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
     #               L1B PROCESSING
     #-----------------------------------------------------------
     ds_L1B = dict()
-    window = 7              # window can be 3 or 7
-
-    vars_to_keep = [
-            'LatImage',
-            'LonImage',
-            'IncidenceAngleImage',
-            'LookDirection',
-            'SquintImage',
-            'CentralFreq',
-            'OrbitHeadingImage'
-            ]
+    
+    vars_to_keep = dict_L1B_process.get('vars_to_keep',['LatImage','LonImage','IncidenceAngleImage',
+                                                        'LookDirection','SquintImage','CentralFreq','OrbitHeadingImage'])
 
     logger.info(f"Opening track: {track} on day: {acq_date}")
 
@@ -749,7 +749,7 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, write_nc=
         logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
         ds_dict[antenna] = seastar.oscar.level1.replace_dummy_values(
                 ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
-        ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], window)
+        ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], dict_L1B_process)
         ds_ml[antenna]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[antenna])
         ds_ml[antenna]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[antenna], antenna=antenna)
         ds_ml[antenna]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[antenna], options='from_SAR_time')         # Time difference between Master and Slave
