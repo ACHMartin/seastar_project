@@ -174,10 +174,9 @@ ncwriteatt([L1AP_file_path, L1AP_file_name], '/','ProcessingLevel', 'L1AP')
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','Track',track_name)
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','StartTime',start_time)
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','EndTime',end_time)
-[CrossRange_resolution, GroundRange_resolution, resolution_string] = compute_grid_resolution_string(L1AP_file_path, L1AP_file_name);
-ncwriteatt([L1AP_file_path, L1AP_file_name], '/','Resolution',resolution_string);
-ncwriteatt([L1AP_file_path, L1AP_file_name], '/','CrossRangeResolution',CrossRange_resolution);
-ncwriteatt([L1AP_file_path, L1AP_file_name], '/','GroundRangeResolution',GroundRange_resolution);
+[CrossRange_resolution, GroundRange_resolution] = compute_grid_resolution(L1AP_file_path, L1AP_file_name);
+ncwriteatt([L1AP_file_path, L1AP_file_name], '/','SingleLookCrossRangeGridResolution',CrossRange_resolution);
+ncwriteatt([L1AP_file_path, L1AP_file_name], '/','SingleLookGroundRangeGridResolution',GroundRange_resolution);
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','Codebase','seastar_project');
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','CodeVersion', processing_version)
 ncwriteatt([L1AP_file_path, L1AP_file_name], '/','Comments', 'Processed on ' + string(today("datetime")))
@@ -355,13 +354,11 @@ end
 
 end
 
-function [CrossRange_resolution, GroundRange_resolution, resolution_string] = compute_grid_resolution_string(L1AP_file_path, L1AP_file_name)
-%COMPUTE_GRID_RESOLUTION_STRING Builds a grid resolution string
+function [CrossRange_resolution, GroundRange_resolution] = compute_grid_resolution(L1AP_file_path, L1AP_file_name)
+%COMPUTE_GRID_RESOLUTION Compute the grid resolution
 %
-% Builds a grid resolution string for attributes writing using the
-% CrossRange and GroundRange data arrays. Returns an exception if the grids
-% have variable resolution.
-%
+% Computes the Single Look CrossRange and GroundRange grid resolution in
+% metres. Returns an exception if either grid resolution is variable.
 
 CrossRange = ncread([L1AP_file_path, L1AP_file_name],'CrossRange');
 GroundRange = ncread([L1AP_file_path, L1AP_file_name],'CrossRange');
@@ -371,10 +368,7 @@ GroundRange_resolution = unique(diff(GroundRange));
 errID = 'compute_grid_resolution_string:VariableResolution';
 msg = 'Unable to assign single grid resolution as grid spacing is not uniform';
 baseException = MException(errID,msg);
-if length(CrossRange_resolution) == 1 && length(GroundRange_resolution) == 1
-    resolution_string = [sprintf('%03d', CrossRange_resolution),...
-        'x', sprintf('%03d', GroundRange_resolution),'m'];
-else
+if length(CrossRange_resolution) ~= 1 || length(GroundRange_resolution) ~= 1
      throw(baseException)
 end
 end
