@@ -39,7 +39,6 @@ for file = 1 : num_L1A_files
     add_squint_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name);
 
     add_orbit_images_to_L1AP_netcdf(L1AP_file_path, L1AP_file_name)
-    pause
 end
 
 end
