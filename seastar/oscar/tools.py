@@ -224,7 +224,7 @@ def formatting_filename(ds):
         ds.attrs.get("Platform"),
         ds.attrs.get("ProcessingLevel"),
         ds.attrs.get("Track"),
-        ds.attrs.get("Resolution"),
+        f"{int(ds.attrs.get("MultiLookCrossRangeEffectiveResolution")).zfill(3)}x{int(ds.attrs.get("MultiLookGroundRangeEffectiveResolution")).zfill(3)}m",
         ds.attrs.get("L2Processor", ""),  # Only for L2
         ds.attrs.get("DopplerGMF", ""),  # Only for L2
         f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
@@ -284,7 +284,7 @@ def check_attrs_dataset(ds):
     
     # Extend the list of attributes for every dataset level
     if processing_level == 'L1B':
-        required_attrs_L1B = ["Resolution"]
+        required_attrs_L1B = ["MultiLookCrossRangeEffectiveResolution", "MultiLookGroundRangeEffectiveResolution"]
         missing_attrs.extend([attr for attr in required_attrs_L1B if attr not in ds.attrs])
     if processing_level == "L1C":
         required_attrs_L1C = ["Calibration", "CalibrationResolution", "NRCSGMF"]

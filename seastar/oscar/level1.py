@@ -355,8 +355,8 @@ def compute_multilooking_Master_Slave(ds, dict_L1B_process):
     ds_out.Coherence.attrs['units'] = ''
     
     # Addition of the resolution attribute
-    resolution = window * 8.
-    ds_out.attrs['Resolution'] = str(int(resolution)).zfill(3)+"x"+str(int(resolution)).zfill(3)+"m" 
+    ds_out.attrs['MultiLookCrossRangeEffectiveResolution'] = window * ds.attrs['SingleLookCrossRangeGridResolution']
+    ds_out.attrs['MultiLookGroundRangeEffectiveResolution'] = window * ds.attrs['SingleLookGroundRangeGridResolution']
     
     # Update of the processing level attribute
     ds_out.attrs['ProcessingLevel'] = "L1B"
