@@ -716,7 +716,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     # TODO: add a chek for campaign, acquisition date and track name
 
     # Getting the date for every tracks in the dict.
-    track_names_dict = seastar.utils.readers.read_OSCAR_track_names_config(campaign, acq_date)
+    track_names_dict = seastar.utils.readers.read_config_OSCAR('track', {"campaign" : campaign, "flight" : acq_date})  #read_OSCAR_track_names_config(campaign, acq_date)
     
     # Getting the date for the track we are interested in
     if track in track_names_dict.values():
