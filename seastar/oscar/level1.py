@@ -10,6 +10,7 @@ import warnings
 from datetime import datetime as dt
 from datetime import timezone
 
+from _version import __version__
 from _logger import logger
 
 
@@ -226,7 +227,10 @@ def add_central_electromagnetic_wavenumber(ds):
     return ds
 
 
-def compute_multilooking_Master_Slave(ds, dict_L1B_process):
+def compute_multilooking_Master_Slave(ds, window=3,
+                                      vars_to_send=['Intensity',
+                                                    'Interferogram',
+                                                    'Coherence']):
     """
     Compute  multilooking Master/Slave L1b image products.
 
@@ -243,11 +247,10 @@ def compute_multilooking_Master_Slave(ds, dict_L1B_process):
     ----------
     ds : ``xarray.Dataset``
         OSCAR L1a dataset
-    dict_L1B_process : ``dict``
-        Dictionnary containing information about the window for the rolling mean for the multilooking computation
-        and the vars to provide (vars_to_send) after the multilooking computation.
-        window : Integer averaging window size. The default is 3.
-        vars_to_send: default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
+    window : ``int``
+        Integer averaging window size. The default is 3.
+    vars_to_send:  list
+        default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
         can in addition take among: 'IntensityAvgComplexMasterSlave',
         'IntensityAvgMaster', 'IntensityAvgSlave'
 
@@ -266,17 +269,11 @@ def compute_multilooking_Master_Slave(ds, dict_L1B_process):
     Exception
         Raises exception if `SigmaImageSingleLookRealPart` is not a 2D variable
     """
-    
-    default_window=3        # Default value for the rolling mean
     list_vars_to_send = set(['Intensity', 'Interferogram', 'Coherence',
                              'IntensityAvgComplexMasterSlave',
                             'IntensityAvgMaster', 'IntensityAvgSlave'])
-
-    vars_to_send = dict_L1B_process.get('vars_to_send', 
-                                        ['Intensity', 'Interferogram', 'Coherence'])
-    window = dict_L1B_process.get('window', default_window)
-    
-    if len(set(vars_to_send).difference(list_vars_to_send)) > 0:
+    vars_to_send = set(vars_to_send)
+    if len(vars_to_send.difference(list_vars_to_send)) > 0:
         raise Exception(f"vars_to_send should be within the following variables: {list_vars_to_send}")
 
     if len(ds.SigmaImageSingleLookRealPart.dims) > 2:
@@ -761,7 +758,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
         ds_dict[antenna] = seastar.oscar.level1.replace_dummy_values(
                 ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
-        ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], dict_L1B_process)
+        ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], dict_L1B_process['window'])
         ds_ml[antenna]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[antenna])
         ds_ml[antenna]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[antenna], antenna=antenna)
         ds_ml[antenna]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[antenna], options='from_SAR_time')         # Time difference between Master and Slave
@@ -791,10 +788,13 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     # Checking dataset attributes
     ds_L1B = seastar.oscar.tools.check_attrs_dataset(ds_L1B)
 
+    #Updating of the CodeVersion in the attrs:
+    ds_L1B.attrs["CodeVersion"] = __version__
+
     # Updating of the history in the attrs:
     current_history = ds_L1B.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1B processing."            # Create a new history entry
-    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry       # Append to the history
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1B processing."             # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
 
     # Defining filename for datafile
