@@ -266,18 +266,18 @@ def compute_multilooking_Master_Slave(ds, dict_L1B_process):
     Exception
         Raises exception if `SigmaImageSingleLookRealPart` is not a 2D variable
     """
+    
+    default_window=3        # Default value for the rolling mean
     list_vars_to_send = set(['Intensity', 'Interferogram', 'Coherence',
                              'IntensityAvgComplexMasterSlave',
                             'IntensityAvgMaster', 'IntensityAvgSlave'])
 
     vars_to_send = dict_L1B_process.get('vars_to_send', 
                                         ['Intensity', 'Interferogram', 'Coherence'])
-    window = dict_L1B_process.get('window', 3)
+    window = dict_L1B_process.get('window', default_window)
     
     if len(set(vars_to_send).difference(list_vars_to_send)) > 0:
-        raise Exception("vars_to_send should be within the following variables"
-                        "'Intensity', 'Interferogram', 'Coherence',"
-                        "'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'")
+        raise Exception(f"vars_to_send should be within the following variables: {list_vars_to_send}")
 
     if len(ds.SigmaImageSingleLookRealPart.dims) > 2:
         raise Exception("The variable SigmaImageSingleLookRealPart is not a"
@@ -679,7 +679,7 @@ def track_title_to_datetime(start_time):
     return np.datetime64(dt.strptime(start_time, '%Y%m%dT%H%M'))
 
 
-def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, dict_L1B_process=dict(), write_nc=False):
+def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1B_process=dict(), write_nc=False):
     """
     Processing chain from L1AP tp L1B.
     
@@ -731,7 +731,6 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, dict_L1B_
     #-----------------------------------------------------------
     #               L1B PROCESSING
     #-----------------------------------------------------------
-    ds_L1B = dict()
     
     vars_to_keep = dict_L1B_process.get('vars_to_keep',['LatImage','LonImage','IncidenceAngleImage',
                                                         'LookDirection','SquintImage','CentralFreq','OrbitHeadingImage'])
@@ -753,24 +752,25 @@ def processing_OSCAR_L1APtoL1B(L1AP_folder, campaign, acq_date, track, dict_L1B_
         ds_ml[antenna]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[antenna])
         ds_ml[antenna]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[antenna], antenna=antenna)
         ds_ml[antenna]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[antenna], options='from_SAR_time')         # Time difference between Master and Slave
-        ds_ml[antenna][vars_to_keep] = ds_dict[antenna][vars_to_keep]
-        ds_ml[antenna]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[antenna])
-        ds_ml[antenna]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[antenna].StartTime)
-        ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2db(ds_ml[antenna].Intensity)
-
         #Rolling median to smooth out TimeLag errors
         if not np.isnan(ds_ml[antenna].TimeLag).all():
             ds_ml[antenna]['TimeLag'] = ds_ml[antenna].TimeLag\
                 .rolling({'CrossRange': 5}).median()\
                 .rolling({'GroundRange': 5}).median()
-
+                
+        ds_ml[antenna][vars_to_keep] = ds_dict[antenna][vars_to_keep]
+        ds_ml[antenna]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[antenna].StartTime)
+        ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2db(ds_ml[antenna].Intensity)
+        ds_ml[antenna]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[antenna])
+        
+        
     ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_list)
     
     #-----------------------------------------------------------
     
     # Building L1 dataset
     logger.info(f"Build L1 dataset for :  {track} of day: {acq_date}")
-    
+    ds_L1B = dict()
     ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_list)
     del ds_ml   
     ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
