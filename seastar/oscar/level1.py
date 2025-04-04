@@ -720,11 +720,12 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         raise ValueError("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
 
     # Checking campaign name:
-    if campaign in ["202205_IroiseSea", "202305_MedSea"]:
+    valid_campaign = ["202205_IroiseSea", "202305_MedSea"]
+    if campaign in valid_campaign:
         logger.info("Camapaign name has valid value.")
     else:
         logger.error(f"Unexpected campaign value: {campaign}")
-        raise ValueError(f"Unexpected campaign value: {campaign}. Shall be '202205_IroiseSea' or '202305_MedSea'.")
+        raise ValueError(f"Unexpected campaign value: {campaign}. Shall be {valid_campaign}.")
     
 
     # Getting the date for every tracks in the dict.
@@ -782,7 +783,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     
     # Building L1 dataset
     logger.info(f"Build L1 dataset for :  {track} of day: {acq_date}")
-    ds_L1B = dict()
+    
     ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_list)
     del ds_ml   
     ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
