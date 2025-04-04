@@ -214,9 +214,11 @@ def formatting_filename(ds):
         The dataset with updated metadata.
     filename : `str`
         Name of the OSCAR NetCDF file.
-    """
+    """    
+    # Checking dataset attributes
+    ds_L1B = check_attrs_dataset(ds_L1B)
     
-       # Construct the filename
+    # Construct the filename
     date_filename = ds.attrs.get("StartTime") + '-' + ds.attrs.get("EndTime").split("T")[1]
 
     filename_parts = [

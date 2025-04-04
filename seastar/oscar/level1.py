@@ -784,9 +784,6 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_list)
     del ds_ml   
     ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
-    
-    # Checking dataset attributes
-    ds_L1B = seastar.oscar.tools.check_attrs_dataset(ds_L1B)
 
     #Updating of the CodeVersion in the attrs:
     ds_L1B.attrs["CodeVersion"] = __version__
