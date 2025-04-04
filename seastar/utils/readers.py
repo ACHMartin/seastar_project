@@ -152,8 +152,8 @@ def read_OSCAR_track_names_config(campaign, flight):
         track time in file name.
 
     """
-    print('Reading Track name config...')
     config_file_name = campaign + '_' + 'TrackNames.ini'
+    logger.info(f"Reading Track name config file {config_file_name}...")
     track_names_config = ConfigParser()
     track_names_config.optionxform = str
     track_names_config.read(os.path.join(os.path.join('config', config_file_name)))
@@ -172,8 +172,8 @@ def read_campaign_config():
     campaign_names_dict : ``dict``
         Dict of {date : campaign_name}. 
     """
-    logger.info("Reading Campaign config...")
     config_file_name = 'Campaign_name_lookup.ini'
+    logger.info(f"Reading Campaign config file {config_file_name}...")
     campaign_names_config = ConfigParser()
     campaign_names_config.optionxform = str
     campaign_names_config.read(os.path.join(os.path.join('config', config_file_name)))
