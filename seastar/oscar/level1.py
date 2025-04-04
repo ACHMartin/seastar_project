@@ -712,8 +712,20 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
             Xarray dataset of the L1B OSCAR data.
     """
 
-    # Checking campaign, acquisition date and track name
-    # TODO: add a chek for campaign, acquisition date and track name
+    # checking acq_date format:
+    if seastar.oscar.tools.is_valid_acq_date(acq_date):
+        logger.info("'acq_date' format is okay")
+    else: 
+        logger.error("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
+        raise ValueError("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
+
+    # Checking campaign name:
+    if campaign in ["202205_IroiseSea", "202305_MedSea"]:
+        logger.info("Camapaign name has valid value.")
+    else:
+        logger.error(f"Unexpected campaign value: {campaign}")
+        raise ValueError(f"Unexpected campaign value: {campaign}. Shall be '202205_IroiseSea' or '202305_MedSea'.")
+    
 
     # Getting the date for every tracks in the dict.
     track_names_dict = seastar.utils.readers.read_config_OSCAR('track', {"campaign" : campaign, "flight" : acq_date})  #read_OSCAR_track_names_config(campaign, acq_date)

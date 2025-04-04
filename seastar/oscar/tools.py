@@ -335,3 +335,24 @@ def clean_units_attribute(ds):
             var.attrs['units'] = remove_brackets(var.attrs['units'])
     
     return ds
+
+
+def is_valid_acq_date(acq_date):
+    """Check acquisition date.
+    Check if the input acquisition date is a valid date string in 'YYYYMMDD' format.
+
+    Parameters
+    ----------
+        acq_date (_type_): ``str``
+            Acquisition date string to validate.
+
+    Returns
+    -------
+        bool
+            True if the date is valid and correctly formatted (YYYYMMDD), False otherwise.
+    """
+    try:
+        dt.strptime(acq_date, "%Y%m%d")
+        return bool(re.fullmatch(r"\d{8}", acq_date))
+    except ValueError:
+        return False
