@@ -30,15 +30,16 @@ def load_L1AP_OSCAR_data(file_path, file_list):
 
     Returns
     -------
-    ds : ``dict``, ``xarray.Dataset``
+    ds_dict : ``dict``, ``xarray.Dataset``
         OSCAR Fore/Mid/Aft antenna data as ``xarray.Dataset`` in a dict with
-        keys as ``int`` to identify each antenna
+        keys as the name of each antenna as a ``str``
 
     """
-    ds = dict()
+    ds_dict = dict()
     for ind, file_name in enumerate(file_list):
-        ds[ind] = readNetCDFFile(os.path.join(file_path,file_name))
-    return ds
+        antenna = identify_antenna_location_from_filename(file_name)
+        ds_dict[antenna] = readNetCDFFile(os.path.join(file_path,file_name))
+    return ds_dict
 
 
 def identify_antenna_location(ds):
@@ -125,18 +126,18 @@ def antenna_idents(ds):
 
     Returns
     -------
-    antenna_ident : ``list``
+    antenna_list : ``list``
         List of antenna identifiers in the form ['Fore', 'Mid', 'Aft'],
         corresponding to the data and keys stored in `ds`
 
     """
-    antenna_id = list()
+    antenna_list = list()
     for i in list(ds.keys()):
-        antenna_id.append(identify_antenna_location(ds[i]))
-    return antenna_id
+        antenna_list.append(identify_antenna_location(ds[i]))
+    return antenna_list
 
 
-def identify_antenna_location_from_filename(file_list):
+def identify_antenna_location_from_filename(file_name):
     """
     Identify antenna from filename.
 
@@ -147,19 +148,16 @@ def identify_antenna_location_from_filename(file_list):
 
     Returns
     -------
-    antenna_id : ``list``
-        List of antenna identifiers as strings like ['Mid', 'Fore', 'Aft']
+    antenna : ``str``
+        Name of antenna as strings like 'Mid', 'Fore' or 'Aft'.
 
     """
     r = re.compile(r'(?:\D*\d\D*\d\D*)$')
-    antenna_id = list()
-    for file_name in file_list:
-        antenna_filter = filter(r.match, file_name.split('_'))
-        antenna_number = "".join(map(str, antenna_filter))
-        antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
-        antenna = "".join({antenna_identifiers[i] for i in antenna_number if i in antenna_identifiers})
-        antenna_id.append(antenna)
-    return antenna_id
+    antenna_filter = filter(r.match, file_name.split('_'))
+    antenna_number = "".join(map(str, antenna_filter))
+    antenna_identifiers = {'0': 'Mid', '3': 'Fore', '7': 'Aft'}
+    antenna = "".join({antenna_identifiers[i] for i in antenna_number if i in antenna_identifiers})
+    return antenna
 
 
 def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
@@ -216,9 +214,11 @@ def formatting_filename(ds):
         The dataset with updated metadata.
     filename : `str`
         Name of the OSCAR NetCDF file.
-    """
+    """    
+    # Checking dataset attributes
+    ds_L1B = check_attrs_dataset(ds_L1B)
     
-       # Construct the filename
+    # Construct the filename
     date_filename = ds.attrs.get("StartTime") + '-' + ds.attrs.get("EndTime").split("T")[1]
 
     filename_parts = [
@@ -226,7 +226,9 @@ def formatting_filename(ds):
         ds.attrs.get("Platform"),
         ds.attrs.get("ProcessingLevel"),
         ds.attrs.get("Track"),
-        ds.attrs.get("Resolution"),
+        "{crossRes:03d}x{groundRes:03d}m".format(  
+                                                 crossRes=int(ds.attrs.get("MultiLookCrossRangeEffectiveResolution", 0)),
+                                                 groundRes=int(ds.attrs.get("MultiLookGroundRangeEffectiveResolution", 0))),
         ds.attrs.get("L2Processor", ""),  # Only for L2
         ds.attrs.get("DopplerGMF", ""),  # Only for L2
         f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
@@ -236,7 +238,7 @@ def formatting_filename(ds):
 
     filename = "_".join(filter(None, filename_parts)) + ".nc"
 
-    return ds, filename
+    return filename
     
     
 def check_attrs_dataset(ds):
@@ -286,7 +288,7 @@ def check_attrs_dataset(ds):
     
     # Extend the list of attributes for every dataset level
     if processing_level == 'L1B':
-        required_attrs_L1B = ["Resolution"]
+        required_attrs_L1B = ["MultiLookCrossRangeEffectiveResolution", "MultiLookGroundRangeEffectiveResolution"]
         missing_attrs.extend([attr for attr in required_attrs_L1B if attr not in ds.attrs])
     if processing_level == "L1C":
         required_attrs_L1C = ["Calibration", "CalibrationResolution", "NRCSGMF"]
@@ -337,3 +339,24 @@ def clean_units_attribute(ds):
             var.attrs['units'] = remove_brackets(var.attrs['units'])
     
     return ds
+
+
+def is_valid_acq_date(acq_date):
+    """Check acquisition date.
+    Check if the input acquisition date is a valid date string in 'YYYYMMDD' format.
+
+    Parameters
+    ----------
+        acq_date (_type_): ``str``
+            Acquisition date string to validate.
+
+    Returns
+    -------
+        bool
+            True if the date is valid and correctly formatted (YYYYMMDD), False otherwise.
+    """
+    try:
+        dt.strptime(acq_date, "%Y%m%d")
+        return bool(re.fullmatch(r"\d{8}", acq_date))
+    except ValueError:
+        return False
