@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import xarray as xr
+import os
 import scipy as sp
 import seastar
 import re
+import glob
 import warnings
 from datetime import datetime as dt
+from datetime import timezone
+
+from _version import __version__
+from _logger import logger
 
 
-def fill_missing_variables(ds_dict, antenna_id):
+def fill_missing_variables(ds_dict, antenna_list):
     """
     Fill missing variables in OSCAR datasets.
 
@@ -21,7 +27,7 @@ def fill_missing_variables(ds_dict, antenna_id):
     ds : ``dict``
         OSCAR data stored as a dict with antenna number as keys and loaded
         data in ``xarray.Dataset`` format as values
-    antenna_ident : ``list``
+    antenna_list : ``list``
         List of antenna identifiers in the form ['Fore', 'Mid', 'Aft'],
         corresponding to the data and keys stored in `ds`
 
@@ -32,13 +38,13 @@ def fill_missing_variables(ds_dict, antenna_id):
         data in ``xarray.Dataset`` format as values
 
     """
-    fore_id = list(ds_dict.keys())[antenna_id.index('Fore')]
-    mid_id = list(ds_dict.keys())[antenna_id.index('Mid')]
-    aft_id = list(ds_dict.keys())[antenna_id.index('Aft')]
-    antenna_list = [fore_id, mid_id, aft_id]
+    fore_id = list(ds_dict.keys())[antenna_list.index('Fore')]
+    mid_id = list(ds_dict.keys())[antenna_list.index('Mid')]
+    aft_id = list(ds_dict.keys())[antenna_list.index('Aft')]
+    antenna_list2 = [fore_id, mid_id, aft_id]
 
-    for antenna_1 in antenna_list:
-        for antenna_2 in [a for a in antenna_list if a not in [antenna_1]]:
+    for antenna_1 in antenna_list2:
+        for antenna_2 in [a for a in antenna_list2 if a not in [antenna_1]]:
             for var in ds_dict[antenna_1].data_vars:
                 if var not in ds_dict[antenna_2].data_vars:
                     ds_dict[antenna_2][var] = xr.DataArray(data=np.nan)
@@ -46,7 +52,7 @@ def fill_missing_variables(ds_dict, antenna_id):
     return ds_dict
 
 
-def merge_beams(ds_dict, antenna_id):
+def merge_beams(ds_dict, antenna_list):
     """
     Merge three beams into single dataset.
 
@@ -64,7 +70,7 @@ def merge_beams(ds_dict, antenna_id):
     ds : ``dict``
         OSCAR data stored as a dict with antenna number as keys and loaded
         data in ``xarray.Dataset`` format as values
-    antenna_ident : ``list``
+    antenna_list : ``list``
         List of antenna identifiers in the form ['Fore', 'Mid', 'Aft'],
         corresponding to the data and keys stored in `ds`
 
@@ -77,7 +83,7 @@ def merge_beams(ds_dict, antenna_id):
     ds_level1 = xr.concat(list(ds_dict.values()),
                           'Antenna', join='outer',
                           coords='all')
-    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_id))
+    ds_level1 = ds_level1.assign_coords(Antenna=('Antenna', antenna_list))
     key_list = list(ds_dict.keys())
     ds_level1.coords['latitude'] = xr.merge(
             [ds_dict[key_list[0]].LatImage
@@ -268,9 +274,7 @@ def compute_multilooking_Master_Slave(ds, window=3,
                             'IntensityAvgMaster', 'IntensityAvgSlave'])
     vars_to_send = set(vars_to_send)
     if len(vars_to_send.difference(list_vars_to_send)) > 0:
-        raise Exception("vars_to_send should be within the following variables"
-                        "'Intensity', 'Interferogram', 'Coherence',"
-                        "'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster', 'IntensityAvgSlave'")
+        raise Exception(f"vars_to_send should be within the following variables: {list_vars_to_send}")
 
     if len(ds.SigmaImageSingleLookRealPart.dims) > 2:
         raise Exception("The variable SigmaImageSingleLookRealPart is not a"
@@ -348,8 +352,8 @@ def compute_multilooking_Master_Slave(ds, window=3,
     ds_out.Coherence.attrs['units'] = ''
     
     # Addition of the resolution attribute
-    resolution = window * 8.
-    ds_out.attrs['Resolution'] = str(int(resolution)).zfill(3)+"x"+str(int(resolution)).zfill(3)+"m" 
+    ds_out.attrs['MultiLookCrossRangeEffectiveResolution'] = window * ds.attrs['SingleLookCrossRangeGridResolution']
+    ds_out.attrs['MultiLookGroundRangeEffectiveResolution'] = window * ds.attrs['SingleLookGroundRangeGridResolution']
     
     # Update of the processing level attribute
     ds_out.attrs['ProcessingLevel'] = "L1B"
@@ -670,3 +674,138 @@ def track_title_to_datetime(start_time):
         Dataset start time in the form "YYYYMMDDTHHMM"
     """
     return np.datetime64(dt.strptime(start_time, '%Y%m%dT%H%M'))
+
+
+def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1B_process=dict(), write_nc=False):
+    """
+    Processing chain from L1AP tp L1B.
+    
+    This function processes the OSCAR data from L1AP to L1B. It needs a triplet of L1AP file to generate a L1B file with data of the three antennas.
+    
+    Parameters
+    ----------
+        L1AP_folder : ``str``
+            Folder of the L1AP files.
+        campaign : ``str``
+            Campaign name as defined in config/Campaign_name_lookup.ini file. Example of campaign name: 202205_IroiseSea, 202305_MedSea.
+        acq_date : ``str``
+            Date of the data acquisition with the format "YYYYMMDD".
+        track : ``str``
+            Track name as defined in config/XXX_TrackNames.ini file. Format should be "Track_x" for tracks over ocean and 
+            "Track_Lx" for tracks over land with "x" the number of the track.
+        dict_L1B_process : ``dict``
+            Dictionnary containing information about the window for the rolling mean for the multilooking computation,
+            the vars to keep (vars_to_keep) from L1AP to L1B file and the vars to provide (vars_to_send) after the multilooking computation.
+            window default value is 3
+            vars_to_keep default list is: ['LatImage', 'LonImage', 'IncidenceAngleImage',
+                                           'LookDirection', 'SquintImage', 'CentralFreq', 'OrbitHeadingImage']
+            vars_to_send default list is: ['Intensity', 'Interferogram', 'Coherence']
+        write_nc (bool, optional): 
+            Argument to write the data in a netcdf file. Defaults to False.
+
+    Returns:
+    ----------
+        ds_L1B: ``xr.Dataset``
+            Xarray dataset of the L1B OSCAR data.
+    """
+
+    # checking acq_date format:
+    if seastar.oscar.tools.is_valid_acq_date(acq_date):
+        logger.info("'acq_date' format is okay")
+    else: 
+        logger.error("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
+        raise ValueError("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
+
+    # Checking campaign name:
+    valid_campaign = ["202205_IroiseSea", "202305_MedSea"]
+    if campaign in valid_campaign:
+        logger.info("Camapaign name has valid value.")
+    else:
+        logger.error(f"Unexpected campaign value: {campaign}")
+        raise ValueError(f"Unexpected campaign value: {campaign}. Shall be {valid_campaign}.")
+    
+
+    # Getting the date for every tracks in the dict.
+    track_names_dict = seastar.utils.readers.read_config_OSCAR('track', {"campaign" : campaign, "flight" : acq_date})  #read_OSCAR_track_names_config(campaign, acq_date)
+    
+    # Getting the date for the track we are interested in
+    if track in track_names_dict.values():
+        date_of_track = [key for key, v in track_names_dict.items() if v == track][0]
+        logger.info(f"Track '{track}' found, acquisition time: {date_of_track}")
+    else:
+        logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
+        
+    # Loading the file names of the files corresponding to date_of_track (triplet of file - one per antenna)
+    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(L1AP_folder + "/*" + date_of_track + "*.nc"))]
+
+    #-----------------------------------------------------------
+    #               L1B PROCESSING
+    #-----------------------------------------------------------
+    
+    vars_to_keep = dict_L1B_process.get('vars_to_keep',['LatImage','LonImage','IncidenceAngleImage',
+                                                        'LookDirection','SquintImage','CentralFreq','OrbitHeadingImage'])
+
+    logger.info(f"Opening track: {track} on day: {acq_date}")
+
+    ds_dict = seastar.oscar.tools.load_L1AP_OSCAR_data(L1AP_folder, L1AP_file_names) 
+
+    # Getting the antenna identificators
+    antenna_list = list(ds_dict.keys())
+    logger.info(f"Antenna: {antenna_list}")
+
+    ds_ml = dict()
+    for i, antenna in enumerate(antenna_list):
+        logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
+        ds_dict[antenna] = seastar.oscar.level1.replace_dummy_values(
+                ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
+        ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], dict_L1B_process['window'])
+        ds_ml[antenna]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[antenna])
+        ds_ml[antenna]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[antenna], antenna=antenna)
+        ds_ml[antenna]['TimeLag'] = seastar.oscar.level1.compute_time_lag_Master_Slave(ds_dict[antenna], options='from_SAR_time')         # Time difference between Master and Slave
+        #Rolling median to smooth out TimeLag errors
+        if not np.isnan(ds_ml[antenna].TimeLag).all():
+            ds_ml[antenna]['TimeLag'] = ds_ml[antenna].TimeLag\
+                .rolling({'CrossRange': 5}).median()\
+                .rolling({'GroundRange': 5}).median()
+                
+        ds_ml[antenna][vars_to_keep] = ds_dict[antenna][vars_to_keep]
+        ds_ml[antenna]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[antenna].StartTime)
+        ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2db(ds_ml[antenna].Intensity)
+        ds_ml[antenna]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[antenna])
+        
+        
+    ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_list)
+    
+    #-----------------------------------------------------------
+    
+    # Building L1 dataset
+    logger.info(f"Build L1 dataset for :  {track} of day: {acq_date}")
+    
+    ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_list)
+    del ds_ml   
+    ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
+
+    #Updating of the CodeVersion in the attrs:
+    ds_L1B.attrs["CodeVersion"] = __version__
+
+    # Updating of the history in the attrs:
+    current_history = ds_L1B.attrs.get("History", "")                                               # Get the current history or initialize it
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1B processing."             # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
+    ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
+
+    # Defining filename for datafile
+    filename = seastar.oscar.tools.formatting_filename(ds_L1B)
+
+    # Write the data in a NetCDF file
+    if write_nc: 
+        path_new_data = os.path.join(os.path.dirname(L1AP_folder).replace("L1AP", "L1B"), os.path.basename(L1AP_folder))
+        if not os.path.exists(path_new_data):
+            os.makedirs(path_new_data, exist_ok=True)
+            logger.info(f"Created directory {path_new_data}")
+        else: logger.info(f"Directory {path_new_data} already exists.")
+        
+        logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
+        ds_L1B.to_netcdf(os.path.join(path_new_data, filename)) 
+
+    return ds_L1B

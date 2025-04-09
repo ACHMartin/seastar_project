@@ -1,8 +1,14 @@
 import logging
+import argparse
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Run the script with optional verbose mode.")
+parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode (INFO logs)")
+args, unknown = parser.parse_known_args()
 
 # Logger configuration
 logging.basicConfig(
-    level=logging.INFO,  # Default level (can be DEBUG, WARNING, ERROR)
+    level=logging.INFO if args.verbose else logging.WARNING,  # Set level based on --verbose
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),  # Display logs in the console
@@ -12,6 +18,3 @@ logging.basicConfig(
 
 # Create the logger
 logger = logging.getLogger("seastar")  # Logger name based on your package
-
-# Optional: Adjust the level depending on the environment
-logger.setLevel(logging.DEBUG)  # Enable in development mode
