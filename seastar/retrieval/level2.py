@@ -7,6 +7,8 @@ import seastar
 from seastar.retrieval import cost_function, ambiguity_removal
 # from seastar.utils.tools import da2py
 
+from _logger import logger
+
 # import pdb # pdb.set_trace() # where we want to start to debug
 
 
@@ -250,4 +252,54 @@ def compute_current_magnitude_and_direction(level1, level2):
         coords={'longitude': level2.longitude, 'latitude': level2.latitude})
     level2['CurrentDirection'] = level2.CurrentDirection.assign_coords(
         coords={'longitude': level2.longitude, 'latitude': level2.latitude})
+    return level2
+
+
+def sequential_current_inversion(L1B_file, wind_dict, gmf):
+    
+    u10 = wind_dict.get('u10')
+    wind_direction = wind_dict.get('wind_direction')
+    
+    level1 = xr.open_dataset(L1B_file)
+    
+    # Compute auxiliary data
+    logger.info("compute auxiliary data")
+    aux = seastar.oscar.level1.init_auxiliary(level1.IncidenceAngleImage, u10, wind_direction)
+
+    #Compute RSC
+    logger.info("compute RSC")
+    rsc = [seastar.oscar.level1.compute_radial_surface_current(level1.sel(Antenna=a), aux.sel(Antenna=a), gmf = gmf) for a in level1.Antenna] 
+    level1['RadialSurfaceCurrent'] = xr.concat(rsc, 'Antenna', join='outer') 
+
+    #L2 Processing
+    #Initialise l2 dataset
+    logger.info("Initialise l2 dataset")
+    level2=seastar.oscar.level1.init_level2(level1)
+
+    #Compute current magnitude and direction
+    logger.info("Compute current magnitude and direction")
+    level2=seastar.retrieval.level2.compute_current_magnitude_and_direction(level1, level2)
+
+    #Compute current vectors
+    logger.info("Compute current vectors")
+    level2['CurrentVectorUComponent'], level2['CurrentVectorVComponent'] = \
+    seastar.utils.tools.currentVelDir2UV(level2['CurrentVelocity'], level2['CurrentDirection'])
+    
+    return level2
+
+
+def full_wind_current_inversion(L1_file, dict_L2_process= dict(), dict_ambiguity = dict()):
+    
+    #RSVnoise and Kp must have same shape as level1
+    
+    gmf = dict_L2_process.get("gmf")
+    
+    level1 = xr.open_dataset(L1_file).load
+    
+    uncertainty = xr.Dataset({"RSV":level1.RSV.copy(deep=True), "Kp":level1.Sigma0.copy(deep=True)})
+    uncertainty["RSV"][:] = RSV_noise
+    uncertainty["Kp"][:] = Kp
+    uncertainty, noise = seastar.performance.scene_generation.uncertainty_fct(level1, uncertainty)
+    level2 = seastar.retrieval.ds_L2.wind_current_retrieval(level1, noise, gmf, dict_ambiguity)
+    
     return level2

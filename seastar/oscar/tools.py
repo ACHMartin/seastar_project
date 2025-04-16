@@ -269,6 +269,7 @@ def check_attrs_dataset(ds):
     valid_levels = {"L1AP", "L1B", "L1C", "L2"}
     if processing_level not in valid_levels:
         logger.error(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
+        raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
     
     # List of the mandatory attributes for L1 dataset
     required_attrs = ["Campaign", 
