@@ -320,7 +320,7 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
 
     # Checking doppler GMF name: TODO: dev a function that test the entries
     gmf_dict = dict_L2_process['gmf']
-    # TODO: validate_gmf_dict(gmf_dict)         # Check the format of gmf_dict
+    seastar.oscar.tools.is_valid_gmf_dict(gmf_dict)         # Check the format of gmf_dict
     
     #-----------------------------------------------------------
     #               L2 PROCESSING
