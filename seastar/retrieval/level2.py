@@ -255,12 +255,10 @@ def compute_current_magnitude_and_direction(level1, level2):
     return level2
 
 
-def sequential_current_inversion(L1B_file, wind_dict, gmf):
+def sequential_current_retrieval(level1, dict_env, gmf):
     
-    u10 = wind_dict.get('u10')
-    wind_direction = wind_dict.get('wind_direction')
-    
-    level1 = xr.open_dataset(L1B_file)
+    u10 = dict_env['u10']
+    wind_direction = dict_env['wind_direction']
     
     # Compute auxiliary data
     logger.info("compute auxiliary data")
@@ -282,24 +280,8 @@ def sequential_current_inversion(L1B_file, wind_dict, gmf):
 
     #Compute current vectors
     logger.info("Compute current vectors")
-    level2['CurrentVectorUComponent'], level2['CurrentVectorVComponent'] = \
+    level2['CurrentU'], level2['CurrentV'] = \
     seastar.utils.tools.currentVelDir2UV(level2['CurrentVelocity'], level2['CurrentDirection'])
     
     return level2
 
-
-def full_wind_current_inversion(L1_file, dict_L2_process= dict(), dict_ambiguity = dict()):
-    
-    #RSVnoise and Kp must have same shape as level1
-    
-    gmf = dict_L2_process.get("gmf")
-    
-    level1 = xr.open_dataset(L1_file).load
-    
-    uncertainty = xr.Dataset({"RSV":level1.RSV.copy(deep=True), "Kp":level1.Sigma0.copy(deep=True)})
-    uncertainty["RSV"][:] = RSV_noise
-    uncertainty["Kp"][:] = Kp
-    uncertainty, noise = seastar.performance.scene_generation.uncertainty_fct(level1, uncertainty)
-    level2 = seastar.retrieval.ds_L2.wind_current_retrieval(level1, noise, gmf, dict_ambiguity)
-    
-    return level2
