@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """Functions to compute Level-2 (L2) products."""
+import os
 import multiprocessing
 import numpy as np
 import xarray as xr
 import seastar
+from datetime import datetime as dt
+from datetime import timezone
 from seastar.retrieval import cost_function, ambiguity_removal
 # from seastar.utils.tools import da2py
+from typing import Optional
 
+from _version import __version__
 from _logger import logger
 
 # import pdb # pdb.set_trace() # where we want to start to debug
@@ -285,3 +290,104 @@ def sequential_current_retrieval(level1, dict_env, gmf):
     
     return level2
 
+
+
+def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[dict]=None, dict_env: Optional[dict]=None, write_nc: Optional[bool]=False, L1_folder: Optional[str]="." ):
+    """
+    Processing OSCAR from L1 to L2.
+    Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows to calculate the wind direction and speed as well as the current speed and direction.
+
+    Parameters
+    ----------
+        ds_L1 : ``xr.Dataset"
+            L1B or L1C OSCAR dataset.
+        dict_L2_process : ``dict``
+            Dictionnary containing _description_. Defaults to dict().
+        dict_ambiguity : ``dict``, (optional)
+            _description_. Defaults to None.
+        dict_env : ``dict``, (optional)
+            _description_. Defaults to None.
+        write_nc : bool (optional)
+            Argument to write the data in a netcdf file. Defaults to False.
+        L1_folder : ``str``, (optional)
+            Path to save the L2 OSCAR data. Defaults to ".".
+
+    Returns:
+    ----------
+        ds_L2: ``xr.Dataset``
+            Xarray dataset of the L2 OSCAR data.
+    """
+
+    # Checking doppler GMF name: TODO: dev a function that test the entries
+    gmf_dict = dict_L2_process['gmf']
+    # TODO: validate_gmf_dict(gmf_dict)         # Check the format of gmf_dict
+    
+    #-----------------------------------------------------------
+    #               L2 PROCESSING
+    #-----------------------------------------------------------
+    # L2_processor, set by default on SCR (Sequential Current Retrieval) 
+    L2_processor = dict_L2_process.get("L2_processor","SCR")
+    
+    if L2_processor == "SCR":
+        logger.info(f"The processor chosen is: {L2_processor}")
+        print(dict_env)
+        
+        ds_L2 = seastar.retrieval.level2.sequential_current_retrieval(ds_L1, dict_env, gmf_dict['doppler']['name']) 
+        
+    elif L2_processor == "WCR":
+        logger.info(f"The processor chosen is: {L2_processor}")
+        ds_L1 = ds_L1.load()
+        
+        logger.info("Compute uncertainty")
+        uncertainty = xr.Dataset({"RSV":ds_L1.RadialSurfaceVelocity.copy(deep=True),
+                            "Kp":ds_L1.Intensity.copy(deep=True)})
+        uncertainty["RSV"] = dict_L2_process.get("RSV_Noise", 0.1)          # RSV_Noise, set by default at 0.1 
+        uncertainty["Kp"] = dict_L2_process.get("Kp", 0.1)                  # Kp, set by default at 0.1 
+
+        ds_L1 = ds_L1.rename({'Intensity': 'Sigma0'})
+        ds_L1 = ds_L1.rename({'RadialSurfaceVelocity': 'RSV'})
+        uncerty, noise = seastar.performance.scene_generation.uncertainty_fct( ds_L1, uncertainty)
+        logger.info("Sent to wind_current_retrieval")
+        ds_L2 = seastar.retrieval.level2.wind_current_retrieval(ds_L1, noise, gmf_dict, dict_ambiguity) # noise is a dataset same size as ds_L1
+        
+        ds_L2.attrs = ds_L1.attrs.copy()            # Copy the attrs from L1 to L2
+        
+    else:
+        logger.error("Unknown level 2 processor, should be in {valid_L2_processor}. The code will crash.")
+        raise ValueError("Unknown level 2 processor. The code will crash.")
+    
+    #Updating of the CodeVersion and ProcessingLevel in the attrs:
+    ds_L2.attrs["CodeVersion"] = __version__
+    ds_L2.attrs['ProcessingLevel'] = "L2"
+    
+    # Adding of L2 attrs
+    ds_L2.attrs['Sigma0GMF'] = gmf_dict['nrcs']['name']
+    ds_L2.attrs['DopplerGMF'] = gmf_dict['doppler']['name']
+    ds_L2.attrs['Kp'] = dict_L2_process.get("Kp", 0.1)
+    ds_L2.attrs['RSVNoise'] = dict_L2_process.get("RSV_Noise", 0.1)
+    ds_L2.attrs['L2Processor'] = L2_processor
+
+    # Updating of the history in the attrs:
+    current_history = ds_L2.attrs.get("History", "")                                               # Get the current history or initialize it
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L2 processing."             # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
+    ds_L2.attrs["History"] = updated_history                                                       # Update the dataset attributes
+
+    # Defining filename for datafile
+    filename = seastar.oscar.tools.formatting_filename(ds_L2)
+
+    # Write the data in a NetCDF file
+    if write_nc: 
+        if ds_L1.attrs["ProcessingLevel"] in os.path.dirname(L1_folder):
+            path_new_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2"), os.path.basename(L1_folder))
+        else:
+            path_new_data = L1_folder
+        if not os.path.exists(path_new_data):
+            os.makedirs(path_new_data, exist_ok=True)
+            logger.info(f"Created directory {path_new_data}")
+        else: logger.info(f"Directory {path_new_data} already exists.")
+        
+        logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
+        ds_L2.to_netcdf(os.path.join(path_new_data, filename)) 
+
+    return ds_L2
