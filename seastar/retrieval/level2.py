@@ -302,11 +302,21 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
         ds_L1 : ``xr.Dataset"
             L1B or L1C OSCAR dataset.
         dict_L2_process : ``dict``
-            Dictionnary containing _description_. Defaults to dict().
+            Dictionary containing the information needed for L2 processing:
+            "gmf" : gmf dictionary
+            "L2_processor" : L2 processor for wind current inversion. Can be "SCR" or "WCR",
+            "RSV_Noise": RSV_noise,
+            "Kp" : Kp (noise of NRCS).
+            Defaults to dict().
         dict_ambiguity : ``dict``, (optional)
-            _description_. Defaults to None.
+            Dictionary containing the information needed for ambiguity removal. Example:
+            dict_ambiguity = {"name" : "closest_truth",       # Can be "sort_by_cost" or "closest_truth"
+                              "method" : "wind",      # Can be "wind", "current", or "windcurrent"
+                              "truth" : geo}  
+            Defaults to None.
         dict_env : ``dict``, (optional)
-            _description_. Defaults to None.
+            Dictionary containing the environnement information needed for SCR inversion. Shall contain 'u10' and 'wind_direction'.
+            Defaults to None.
         write_nc : bool (optional)
             Argument to write the data in a netcdf file. Defaults to False.
         L1_folder : ``str``, (optional)
