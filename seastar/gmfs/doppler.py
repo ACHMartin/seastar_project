@@ -132,8 +132,8 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
 
     if 'OceanSurfaceWindSpeed' not in aux_geo.keys():
         import logging
-        aux_geo['OceanSurfaceWindSpeed'] = aux_geo['EarthRelativeWindSpeed']
-        aux_geo['OceanSurfaceWindDirection'] = aux_geo['EarthRelativeWindDirection']
+        aux_geo['OceanSurfaceWindSpeed'] = aux_geo['WindSpeed']
+        aux_geo['OceanSurfaceWindDirection'] = aux_geo['WindDirection']
         logging.warning('"WindSpeed" and "WindDirection" fields are deprecated. '
                         'You should use "OceanSurfaceWindSpeed" and "OceanSurfaceWindDirection" '
                         'instead in order to remove this warning.\n'
