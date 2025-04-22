@@ -146,13 +146,12 @@ def windUV2SpeedDir(u, v):
     return wspd, wdir
 
 
-def windCurrentComponent2to4(env: dict, basevarname: str):
+def wind_current_component_conversion(env: dict, basevarname: str) -> dict:
     '''
-    Complete U, V or Speed/Velocity, Direction
+    Add U, V to Speed/Velocity, Direction or the other way around for "Current", 
+    "Wind", "OceanSurfaceWind", "EarthRelativeWind".
     
-    WARNING by default take OceanSurfaceWind to create EarthRelativeWind
-    # #TODO do we need a function to check consistency between ERW, OSW and Current?
-    # Parameters
+    Parameters
     ------------
     env : ``dict``
         Dictionnary with with CurrentYYY and Wind keys (either EarthRelativeWindXXX or OceanSurfaceWindXXX)
@@ -187,7 +186,7 @@ def windCurrentComponent2to4(env: dict, basevarname: str):
     
     '''
 
-    list_basevarname = ['Current', 'OceanSurfaceWind', 'EarthRelativeWind']
+    list_basevarname = ['Current', 'OceanSurfaceWind', 'EarthRelativeWind','Wind']
     if basevarname not in list_basevarname:
         logger.error(f'"env" shall contain {list_basevarname}.')
     if basevarname == 'Current':

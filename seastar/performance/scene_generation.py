@@ -362,12 +362,10 @@ def satellite_looking_geometry(input):
     return sat_geometry
 
 
-def generate_constant_env_field(da: xr.DataArray, env: dict):
+def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
     '''
     Field generation of constant fields of the same dimension as the DataArray "da" with the "env" conditions
 
-    # WARNING by default take OceanSurfaceWind to create EarthRelativeWind
-    # #TODO do we need a function to check consistency between ERW, OSW and Current?
     Parameters
     ------------
     da : ``xarray.DataArray``
@@ -379,7 +377,7 @@ def generate_constant_env_field(da: xr.DataArray, env: dict):
     ds_env : ``xarray.Dataset``
         return a dataset or array of the same size and dims as "da" input, 
         with keys and values in "env" dictionnary
-        # with U, V, Speed/Velocity, Direction for Current, OceanSurfaceWind and EarthRelativeWind
+        for example with U, V, Speed/Velocity, Direction for Current, OceanSurfaceWind and EarthRelativeWind
     Examples:
     ----------
     .. code-block:: python
@@ -414,16 +412,6 @@ def generate_constant_env_field(da: xr.DataArray, env: dict):
         generate_constant_env_field(a, env)
         <xarray.DataSet (x: 5, y: 5)>
     '''
-
-    # to skip all this paragraph below to make it more universal?
-    # env = two_to_four(env, 'Current')
-    # if any(['OceanSurfaceWind' in var for var in env.keys()]):
-    #     env = two_to_four(env, 'OceanSurfaceWind')
-    # elif any(['EarthRelativeWind' in var for var in env.keys()]): # ERW is skipped if OSW exist
-    #     env = two_to_four(env, 'EarthRelativeWind')
-    # else:
-    #     logger.error('"env" shall contain either "OceanSurfaceWind" or "EarthRelativeWind" keys.')
-    # end to skip
     
     ds_env = xr.Dataset()
     # get the coordinates along the differents dims
