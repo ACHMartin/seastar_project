@@ -362,6 +362,68 @@ def satellite_looking_geometry(input):
     return sat_geometry
 
 
+def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
+    '''
+    Field generation of constant fields of the same dimension as the DataArray "da" with the "env" conditions
+
+    Parameters
+    ------------
+    da : ``xarray.DataArray``
+    env : ``dict``
+        Dictionnary for example with CurrentYYY and Wind keys (either EarthRelativeWindXXX or OceanSurfaceWindXXX)
+        with XXX being Speed, Direction, U or V. 'YYY' same as 'XXX' but 'Velocity' is used instead of 'Speed'.
+    Returns
+    ---------
+    ds_env : ``xarray.Dataset``
+        return a dataset or array of the same size and dims as "da" input, 
+        with keys and values in "env" dictionnary
+        for example with U, V, Speed/Velocity, Direction for Current, OceanSurfaceWind and EarthRelativeWind
+    Examples:
+    ----------
+    .. code-block:: python
+        a = xr.DataArray(np.arange(25).reshape(5, 5), dims=("x", "y"))
+        a
+        <xarray.DataArray (x: 5, y: 5)> Size: 200B
+        array([[ 0,  1,  2,  3,  4],
+            [ 5,  6,  7,  8,  9],
+            [10, 11, 12, 13, 14],
+            [15, 16, 17, 18, 19],
+            [20, 21, 22, 23, 24]])
+        Dimensions without coordinates: x, y
+    .. code-block:: python
+        env = {'CurrentVelocity': 1, 'CurrentDirection':0,
+                'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
+        env
+        {'CurrentVelocity': 1,
+        'CurrentDirection': 0,
+        'OceanSurfaceWindSpeed': 10,
+        'OceanSurfaceWindDirection': 180}
+
+    .. code-block:: python
+        windCurrentComponent2to4(env,'Current')
+        {'CurrentVelocity': 1,
+        'CurrentDirection': 0,
+        'OceanSurfaceWindSpeed': 10,
+        'OceanSurfaceWindDirection': 180,
+        'CurrentU': 6.123233995736766e-17,
+        'CurrentV': 1.0}
+
+    .. code-block:: python
+        generate_constant_env_field(a, env)
+        <xarray.DataSet (x: 5, y: 5)>
+    '''
+    
+    ds_env = xr.Dataset()
+    # get the coordinates along the differents dims
+    for var_dim in da.dims:
+        ds_env[var_dim] = da[var_dim]
+    ds_env[da.dims[0]] = da[da.dims[0]]
+    # construct the dataset with all elements in the dict
+    for var in env.keys():
+        ds_env[var] = (da.dims, np.full(da.shape, env[var]))      
+    
+    return(ds_env)
+
 def generate_wind_field_from_single_measurement(u10, wind_direction, da):
     """
     Generate 2D fields of wind velocity and direction.

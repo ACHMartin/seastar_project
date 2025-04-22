@@ -146,6 +146,91 @@ def windUV2SpeedDir(u, v):
     return wspd, wdir
 
 
+def wind_current_component_conversion(env: dict, basevarname: str) -> dict:
+    '''
+    Add U, V to Speed/Velocity, Direction or the other way around for "Current", 
+    "Wind", "OceanSurfaceWind", "EarthRelativeWind".
+    
+    Parameters
+    ------------
+    env : ``dict``
+        Dictionnary with with CurrentYYY and Wind keys (either EarthRelativeWindXXX or OceanSurfaceWindXXX)
+        with XXX being Speed, Direction, U or V. 'YYY' same as 'XXX' but 'Velocity' is used instead of 'Speed'.
+    basevarname: ``str``
+        Values are within: 'Current', 'OceanSurfaceWind', 'EarthRelativeWind'
+    Returns
+    ---------
+    env : ``dict``
+        return a dictionary with completed field U, V, Speed/Velocity, Direction
+        for Current, OceanSurfaceWind and EarthRelativeWind
+
+    Examples:
+    ----------
+    .. code-block:: python
+        env = {'CurrentVelocity': 1, 'CurrentDirection':0,
+                'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
+        env
+        {'CurrentVelocity': 1,
+        'CurrentDirection': 0,
+        'OceanSurfaceWindSpeed': 10,
+        'OceanSurfaceWindDirection': 180}
+
+    .. code-block:: python
+        windCurrentComponent2to4(env,'Current')
+        {'CurrentVelocity': 1,
+        'CurrentDirection': 0,
+        'OceanSurfaceWindSpeed': 10,
+        'OceanSurfaceWindDirection': 180,
+        'CurrentU': 6.123233995736766e-17,
+        'CurrentV': 1.0}
+    
+    '''
+
+    list_basevarname = ['Current', 'OceanSurfaceWind', 'EarthRelativeWind','Wind']
+    if basevarname not in list_basevarname:
+        logger.error(f'"env" shall contain {list_basevarname}.')
+    if basevarname == 'Current':
+        magnitude = ['Velocity']
+        log_error = "'env' dictionnary shall contain 'CurrentYYY' keys \
+            with 'YYY' being 'U', 'V' or 'Direction', 'Velocity' "
+    elif basevarname[-4:] == 'Wind':
+        magnitude = ['Speed']
+        log_error = f"'env' dictionnary shall contain {basevarname}XXX' keys \
+            with 'XXX' being 'U', 'V' or 'Direction', 'Speed' "
+
+    env_vars = [var for var in env.keys() if basevarname in var]
+    uv_list = [basevarname + el for el in ['U', 'V']]
+    md_list = [basevarname + el for el in magnitude + ['Direction']]
+    env_list = uv_list + md_list # U, V, Speed/Velocity, Direction
+    if len(env_vars)==0:
+        logger.error(log_error)
+    missing_env_vars = sorted([var for var in env_list if var not in env.keys()])
+    if len(missing_current_vars) > 2:
+        logger.error(log_error)
+    if (len(md_list & env.keys()) < 2) & (len(uv_list & env.keys()) < 2): # we don't have the good pair
+        logger.error(current_log_error)
+    if len(missing_current_vars) > 0:
+        if any([var in missing_env_vars for var in md_list]):
+            if basevarname == 'Current':
+                [env[ md_list[0] ], env[ md_list[1] ]] = seastar.utils.tools.currentUV2VelDir(
+                    env[ uv_list[0] ], env[ uv_list[1] ]
+                )
+            if basevarname[-4:] == 'Wind':
+                [new_env[ md_list[0] ], new_env[ md_list[1] ]] = seastar.utils.tools.windUV2SpeedDir(
+                    env[ uv_list[0] ], env[ uv_list[1] ]
+                )
+        if any([var in missing_env_vars for var in uv_list]):
+            if basevarname == 'Current':
+                [env[ uv_list[0] ], env[ uv_list[1] ]] = seastar.utils.tools.currentVelDir2UV(
+                    env[ md_list[0] ], env[ md_list[1] ]
+                )
+            if basevarname[-4:] == 'Wind':
+                [env[ uv_list[0] ], env[ uv_list[1] ]] = seastar.utils.tools.windSpeedDir2UV(
+                    env[ md_list[0] ], env[ md_list[1] ]
+                )
+
+    return(env)
+
 def EarthRelativeSpeedDir2all(ds):
     """
     Convert a dictionary with Earth Relative wind to Ocean Surface Wind
