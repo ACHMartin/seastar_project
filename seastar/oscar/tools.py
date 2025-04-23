@@ -231,8 +231,8 @@ def formatting_filename(ds):
                                                  groundRes=int(ds.attrs.get("MultiLookGroundRangeEffectiveResolution", 0))),
         ds.attrs.get("L2Processor", ""),  # Only for L2
         ds.attrs.get("DopplerGMF", ""),  # Only for L2
-        f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
-        f"RSV{ds.attrs.get("RSVNoise")}" if ds.attrs.get("RSVNoise") else "",  # Only for L2
+        f"Kp{ds.attrs.get('Kp')}" if ds.attrs.get('Kp') else "",  # Only for L2
+        f"RSV{ds.attrs.get('RSVNoise')}" if ds.attrs.get('RSVNoise') else "",  # Only for L2
         __version__,
     ]
 
