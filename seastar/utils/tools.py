@@ -146,7 +146,7 @@ def windUV2SpeedDir(u, v):
     return wspd, wdir
 
 
-def wind_current_component_conversion(env: dict, basevarname: str) -> dict:
+def wind_current_component_conversion(env: dict, basevarname: str or list) -> dict:
     '''
     Add U, V to Speed/Velocity, Direction or the other way around for "Current", 
     "Wind", "OceanSurfaceWind", "EarthRelativeWind".
@@ -176,7 +176,7 @@ def wind_current_component_conversion(env: dict, basevarname: str) -> dict:
         'OceanSurfaceWindDirection': 180}
 
     .. code-block:: python
-        windCurrentComponent2to4(env,'Current')
+        wind_current_component_conversion(env,'Current')
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,
         'OceanSurfaceWindSpeed': 10,
@@ -186,6 +186,15 @@ def wind_current_component_conversion(env: dict, basevarname: str) -> dict:
     
     '''
 
+    # case if basevarname is a list
+    if type(basevarname) is list:
+        env_list = [None] * len(basevarname)
+        for ee, _basevarname in enumerate(basevarname):
+            env_list[ee] = wind_current_component_conversion(env, _basevarname)
+        env = {k: v for el in env_list for k, v in el.items()} # merge the dict together
+        return(env)
+
+    # general case
     list_basevarname = ['Current', 'OceanSurfaceWind', 'EarthRelativeWind','Wind']
     if basevarname not in list_basevarname:
         logger.error(f'"env" shall contain {list_basevarname}.')
@@ -205,11 +214,11 @@ def wind_current_component_conversion(env: dict, basevarname: str) -> dict:
     if len(env_vars)==0:
         logger.error(log_error)
     missing_env_vars = sorted([var for var in env_list if var not in env.keys()])
-    if len(missing_current_vars) > 2:
+    if len(missing_env_vars) > 2:
         logger.error(log_error)
     if (len(md_list & env.keys()) < 2) & (len(uv_list & env.keys()) < 2): # we don't have the good pair
-        logger.error(current_log_error)
-    if len(missing_current_vars) > 0:
+        logger.error(log_error)
+    if len(missing_env_vars) > 0:
         if any([var in missing_env_vars for var in md_list]):
             if basevarname == 'Current':
                 [env[ md_list[0] ], env[ md_list[1] ]] = seastar.utils.tools.currentUV2VelDir(
