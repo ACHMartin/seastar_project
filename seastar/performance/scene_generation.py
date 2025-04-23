@@ -415,9 +415,8 @@ def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
     
     ds_env = xr.Dataset()
     # get the coordinates along the differents dims
-    for var_dim in da.dims:
+    for var_dim in da.sizes:
         ds_env[var_dim] = da[var_dim]
-    ds_env[da.dims[0]] = da[da.dims[0]]
     # construct the dataset with all elements in the dict
     for var in env.keys():
         ds_env[var] = (da.dims, np.full(da.shape, env[var]))      

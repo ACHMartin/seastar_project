@@ -146,7 +146,7 @@ def windUV2SpeedDir(u, v):
     return wspd, wdir
 
 
-def wind_current_component_conversion(env: dict, basevarname: str or list) -> dict:
+def wind_current_component_conversion(env_dict: dict, basevarname: str or list) -> dict:
     '''
     Add U, V to Speed/Velocity, Direction or the other way around for "Current", 
     "Wind", "OceanSurfaceWind", "EarthRelativeWind".
@@ -186,6 +186,7 @@ def wind_current_component_conversion(env: dict, basevarname: str or list) -> di
     
     '''
 
+    env = env_dict
     # case if basevarname is a list
     if type(basevarname) is list:
         env_list = [None] * len(basevarname)
