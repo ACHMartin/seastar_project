@@ -789,8 +789,9 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     ds_L1B.attrs["CodeVersion"] = __version__
 
     # Updating of the history in the attrs:
-    current_history = ds_L1B.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1B processing."             # Create a new history entry
+    current_history = ds_L1B.attrs.get("History", "")                                          # Get the current history or initialize it
+    str_time = dt.now(timezone.utc).strftime('%d-%b-%Y %H:%M:%S')
+    new_entry = f"{str_time} L1B processing."                                                  # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
 
