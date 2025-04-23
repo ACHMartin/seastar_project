@@ -221,20 +221,20 @@ def wind_current_component_conversion(env: dict, basevarname: str or list) -> di
     if len(missing_env_vars) > 0:
         if any([var in missing_env_vars for var in md_list]):
             if basevarname == 'Current':
-                [env[ md_list[0] ], env[ md_list[1] ]] = seastar.utils.tools.currentUV2VelDir(
+                [env[ md_list[0] ], env[ md_list[1] ]] = currentUV2VelDir(
                     env[ uv_list[0] ], env[ uv_list[1] ]
                 )
             if basevarname[-4:] == 'Wind':
-                [new_env[ md_list[0] ], new_env[ md_list[1] ]] = seastar.utils.tools.windUV2SpeedDir(
+                [new_env[ md_list[0] ], new_env[ md_list[1] ]] = windUV2SpeedDir(
                     env[ uv_list[0] ], env[ uv_list[1] ]
                 )
         if any([var in missing_env_vars for var in uv_list]):
             if basevarname == 'Current':
-                [env[ uv_list[0] ], env[ uv_list[1] ]] = seastar.utils.tools.currentVelDir2UV(
+                [env[ uv_list[0] ], env[ uv_list[1] ]] = currentVelDir2UV(
                     env[ md_list[0] ], env[ md_list[1] ]
                 )
             if basevarname[-4:] == 'Wind':
-                [env[ uv_list[0] ], env[ uv_list[1] ]] = seastar.utils.tools.windSpeedDir2UV(
+                [env[ uv_list[0] ], env[ uv_list[1] ]] = windSpeedDir2UV(
                     env[ md_list[0] ], env[ md_list[1] ]
                 )
 
