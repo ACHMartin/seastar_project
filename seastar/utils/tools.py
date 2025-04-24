@@ -187,7 +187,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
     
     '''
 
-    env = env_dict
+    env = env_dict.copy() 
     # case if basevarname is a list
     if type(basevarname) is list:
         env_list = [None] * len(basevarname)
