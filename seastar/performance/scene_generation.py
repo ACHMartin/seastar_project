@@ -103,6 +103,8 @@ def truth_fct(geo, inst, gmf):
     # truth.attrs['gmf'] = gmf
     truth.attrs['gmf_nrcs'] = gmf['nrcs']['name']
     truth.attrs['gmf_doppler'] = gmf['doppler']['name']
+    if 'geo_name' in geo.attrs:
+        truth.attrs['geo_name'] = geo.attrs['geo_name']
 
     truth = truth.set_coords([
         # 'CentralWavenumber',
@@ -460,3 +462,87 @@ def generate_wind_field_from_single_measurement(u10, wind_direction, da):
     return u10Image, WindDirectionImage
 
 
+def compute_truth_level1(
+        inst: xr.Dataset, geo: xr.Dataset, gmf: dict, 
+        write_nc: Optional[bool]=False, 
+        main_path: Optional[str]='.'
+        ) -> [xr.Dataset, xr.Dataset]:
+    '''
+    Generate 'Truth' and 'Level1' datasets from instrumental 'inst' and
+    environmental/geophysical conditions 'geo' with given 'gmf'
+
+    Parameters
+    ----------
+    inst : ``xr.Dataset``
+        Dataset of dimension ['across', 'antenna'], with fields 'IncidenceAngleImage', 'AntennaAzimuthImage', 
+        'uncerty_Kp', 'uncerty_RSV', 'Polarization'.
+    geo : ``xr.Dataset``
+        Dataset of dimension ['across', 'along'], with fields, as a minimum,
+        'OceanSurfaceWindSpeed', 'OceanSurfaceWindDirection' ('WindSpeed' and 'WindDirection' works 
+        but is not recommended), 'CurrentVelocity', 'CurrentDirection'
+    gmf : ``dict``
+        The geophysical model function (gmf) dictionnary is typically of the form:
+        gmf={'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+    write_nc: ``bool``, optional
+        Argument to write the data in a netcdf file. Defaults to False.
+    main_path: ``str``, optional
+        Path for writing the 'truth' and 'level1' datasets if 'write_nc=True'
+        The files are saved respectively in "main_path/truth/truth_filename.nc" and
+        "main_path/level1/level1_filename.nc"
+
+    Returns
+    -------
+    truth: ``xarray.Dataset``
+        Environmental conditions + observables (sigma0, RSV for all antennas) without noise.
+        fields of dimension 'Antenna', 'across', 'along': 'uncerty_Kp', 'uncerty_RSV', 'Sigma0', 'RSV'
+        + the same fields as the input 'geo'. 
+    level1: ``xarray.Dataset``
+        Noisy observables (sigma0, RSV for all antennas)
+    '''
+
+    # check across are the same size
+    if not inst.across.size == geo.across.size:
+        raise Exception('across shall be equals between inst and geo')
+    if not inst.across.equals(geo.across):
+        geo['across'] = inst.across
+    
+    truth = truth_fct(geo, inst, gmf)
+
+    uncertainty_in = xr.Dataset()
+    uncertainty_in['Kp'] = inst['uncerty_Kp']
+    uncertainty_in['RSV'] = inst['uncerty_RSV']
+    [uncerty, noise] = uncertainty_fct(
+                            truth,
+                            uncertainty_in
+                        )
+
+    # add attrs for truth
+    truth.attrs['geo_name'] = geo.attrs['geo_name']
+    file_str = 'truth_' + inst.attrs['filename'] \
+        + '_' + geo.attrs['geo_name'] + '.nc'
+    truth.attrs['filename'] = file_str
+    truth.attrs['history'] = 'inst: ' + inst.attrs['filename'] \
+                        + '; geo: ' + geo.attrs['geo_name'] \
+                        + '; nrcs gmf: ' + truth.attrs['gmf_nrcs'] \
+                        + '; dop gmf: ' +  truth.attrs['gmf_doppler']
+
+    level1 = noise_generation(truth, noise)
+    level1['noise_Sigma0'] = noise['Sigma0']
+    level1['noise_RSV'] = noise['RSV']
+
+    # add attrs for level1
+    file_str = 'level1_' + truth.attrs['filename'][6:-3] + '.nc'
+    level1.attrs['filename'] = file_str
+    level1.attrs['history'] = 'truth: ' + truth.attrs['filename'] + '; ' + truth.attrs['history']
+
+    def save_path_filename(ds: xr.Dataset, main_path: str, level: str):
+        path = os.path.join(main_path, level) # truth or level1
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+        file_path = os.path.join(path, ds.attrs.filename)
+        ds.to_netcdf(path=file_path)
+    
+    if write_nc:
+        save_path_filename(truth, main_path, 'truth')
+        save_path_filename(level1, main_path, 'level1')
+
+    return(truth, level1)
