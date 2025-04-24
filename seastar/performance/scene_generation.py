@@ -3,6 +3,8 @@
 
 import numpy as np
 import xarray as xr
+import pathlib
+from typing import Optional
 from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict
@@ -466,7 +468,7 @@ def compute_truth_level1(
         inst: xr.Dataset, geo: xr.Dataset, gmf: dict, 
         write_nc: Optional[bool]=False, 
         main_path: Optional[str]='.'
-        ) -> [xr.Dataset, xr.Dataset]:
+        ) -> xr.Dataset, xr.Dataset:
     '''
     Generate 'Truth' and 'Level1' datasets from instrumental 'inst' and
     environmental/geophysical conditions 'geo' with given 'gmf'
