@@ -537,15 +537,64 @@ def compute_truth_level1(
     file_str = 'level1_' + truth.attrs['filename'][6:-3] + '.nc'
     level1.attrs['filename'] = file_str
     level1.attrs['history'] = 'truth: ' + truth.attrs['filename'] + '; ' + truth.attrs['history']
-
-    def save_path_filename(ds: xr.Dataset, main_path: str, level: str):
-        path = os.path.join(main_path, level) # truth or level1
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-        file_path = os.path.join(path, ds.attrs['filename'])
-        ds.to_netcdf(path=file_path)
     
     if write_nc:
         save_path_filename(truth, main_path, 'truth')
         save_path_filename(level1, main_path, 'level1')
 
     return(truth, level1)
+
+def save_path_filename(ds: xr.Dataset, main_path: str, level: str):
+    path = os.path.join(main_path, level) # truth or level1
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    file_path = os.path.join(path, ds.attrs['filename'])
+    ds.to_netcdf(path=file_path)
+
+def compute_level2(
+        level1: xr.Dataset, gmf: dict, 
+        write_nc: Optional[bool]=False, 
+        main_path: Optional[str]='.'
+        ) -> xr.Dataset:
+    '''
+    Retrieve 'Level2' data from 'Level1' observables.
+
+    Parameters
+    ----------
+    level1 : ``xr.Dataset``
+        Dataset of dimension ['Antenna','across', 'along'], with fields 'IncidenceAngleImage', 'AntennaAzimuthImage', 
+        'Polarization', Sigma0, RSV, noise_Sigma0, noise_RSV
+    gmf : ``dict``
+        The geophysical model function (gmf) dictionnary is typically of the form:
+        gmf={'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+    write_nc: ``bool``, optional
+        Argument to write the data in a netcdf file. Defaults to False.
+    main_path: ``str``, optional
+        Path for writing the 'truth' and 'level1' datasets if 'write_nc=True'
+        The files are saved respectively in "main_path/truth/truth_filename.nc" and
+        "main_path/level1/level1_filename.nc"
+
+    Returns
+    -------
+    truth: ``xarray.Dataset``
+        Environmental conditions + observables (sigma0, RSV for all antennas) without noise.
+        fields of dimension 'Antenna', 'across', 'along': 'uncerty_Kp', 'uncerty_RSV', 'Sigma0', 'RSV'
+        + the same fields as the input 'geo'. 
+    level1: ``xarray.Dataset``
+        Noisy observables (sigma0, RSV for all antennas)
+    '''
+    level1 = level1.load() # needed for multiprocessing
+
+    noise = xr.Dataset()
+    noise['Sigma0'] = level1['noise_Sigma0']
+    noise['RSV'] = level1['noise_RSV']
+
+    lmout = seastar.retrieval.level2.run_find_minima(level1, noise, gmf, serial=False)
+    # lmout = seastar.retrieval.level2.run_find_minima(level1, noise, gmf)
+
+    file_str = 'level2_' + level1.attrs['filename'][6:-3] + '.nc'
+    lmout.attrs['filename'] = file_str
+    lmout.attrs['history'] = 'level1: ' + level1.attrs['filename'] + ';\n ' + level1.attrs['history']
+    if write_nc:
+        save_path_filename(lmout, main_path, 'level2')
+        
+    return(lmout)
