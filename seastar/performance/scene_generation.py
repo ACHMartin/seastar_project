@@ -541,7 +541,7 @@ def compute_truth_level1(
     def save_path_filename(ds: xr.Dataset, main_path: str, level: str):
         path = os.path.join(main_path, level) # truth or level1
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-        file_path = os.path.join(path, ds.attrs.filename)
+        file_path = os.path.join(path, ds.attrs['filename'])
         ds.to_netcdf(path=file_path)
     
     if write_nc:
