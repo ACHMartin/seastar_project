@@ -6,8 +6,7 @@ import xarray as xr
 import seastar
 from seastar.retrieval import cost_function, ambiguity_removal
 # from seastar.utils.tools import da2py
-
-# import pdb # pdb.set_trace() # where we want to start to debug
+from tqdm import tqdm
 
 
 def find_minima_parallel_task(element):
@@ -152,7 +151,10 @@ def run_find_minima(level1, noise, gmf, serial=False):
             lmoutmap = map(find_minima_parallel_task, input_mp)
         else:
             with multiprocessing.Pool() as pool:
-                lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+                results = []
+                for result in tqdm(pool.imap(find_minima_parallel_task, input_mp), total=len(input_mp)):
+                    results.append(result)
+            lmoutmap = results
 
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap = lmmap.set_index(z=list_L1s0)
