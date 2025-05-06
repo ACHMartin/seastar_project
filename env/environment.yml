@@ -16,3 +16,4 @@ dependencies:
   - cartopy
   - utm
   - pytest
+  - tqdm

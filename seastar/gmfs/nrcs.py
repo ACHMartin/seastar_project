@@ -5,7 +5,50 @@ import numpy as np
 import xarray as xr
 from scipy.interpolate import interpn
 import seastar
+from os.path import abspath, dirname, join
 
+
+def _load_gmf_table(fname, shape):
+    """Loads and reshapes a GMF table from a binary file."""
+    gmf_table = np.fromfile(fname, dtype=np.float32)
+    gmf_table = gmf_table[1:-1].reshape(shape, order="F")
+    return gmf_table
+
+def get_gmf_table_and_points(gmf_model):
+    """
+    Loads the GMF table and corresponding points for a given GMF model.
+
+    Args:
+        gmf_model (str): The GMF model to load ('nscat4ds' or 'cmod7').
+
+    Returns:
+        tuple: A tuple containing the GMF table (numpy array) and the points
+               (tuple of numpy arrays for wspd, rdir, inci, and optionally pol).
+    """
+    dirpath = abspath(dirname(__file__))
+    m, n, p = 250, 73, 51  # Common dimensions
+
+    wspd = np.linspace(0.2, 50, m)
+    rdir = np.linspace(0, 180, n)
+    inci = np.linspace(16, 66, p)
+
+    if gmf_model == 'nscat4ds':
+        q = 2
+        pol = np.linspace(1, 2, q)
+        fname_vv = join(dirpath, 'nscat4ds_250_73_51_vv.dat_little_endian')
+        fname_hh = join(dirpath, 'nscat4ds_250_73_51_hh.dat_little_endian')
+        gmf_table_vv = _load_gmf_table(fname_vv, (m, n, p))
+        gmf_table_hh = _load_gmf_table(fname_hh, (m, n, p))
+        gmf_table = np.stack([gmf_table_vv, gmf_table_hh], axis=-1)
+        points = (wspd, rdir, inci, pol)
+    elif gmf_model == 'cmod7':
+        fname_vv = join(dirpath, 'cmod7_vv.dat_little_endian')
+        gmf_table = _load_gmf_table(fname_vv, (m, n, p))
+        points = (wspd, rdir, inci)
+    else:
+        raise ValueError(f"Unknown GMF model: {gmf_model}. Available models are 'nscat4ds' and 'cmod7'.")
+
+    return gmf_table, points
 
 def compute_nrcs(L1_combined, aux_geo, gmf):
     """
@@ -94,6 +137,8 @@ def compute_nrcs(L1_combined, aux_geo, gmf):
     nrcs.attrs['units'] = ['']
     return nrcs
 
+gmf_table_global_nscat4ds, points_global_nscat4ds = get_gmf_table_and_points('nscat4ds')
+
 def nscat4ds(u10, phi, inc, pol):
     """
     Compute sigma0 due to wind.
@@ -143,38 +188,7 @@ def nscat4ds(u10, phi, inc, pol):
                         'and is not allowed yet. Given polarisation: ' + pol)
     varin = np.stack([u10, phi, inc, pol],axis=-1)
 
-    # Construct Path
-    dirpath = seastar.gmfs.nrcs.__file__[:-7]
-    # fname_big = 'nscat4ds_250_73_51_vv.dat_big_endian'
-    fname_vv = dirpath + 'nscat4ds_250_73_51_vv.dat_little_endian'
-    fname_hh = dirpath + 'nscat4ds_250_73_51_hh.dat_little_endian'
-
-    # Dimensions of GMF table
-    m = 250  # wind speed min/max = 0.2-50 (step 0.2) [m/s] --> 250 pts
-    n = 73   # dir min/max = 0-180 (step 2.5) [deg]   -->  73 pts
-    p = 51   # inc min/max = 16-66 (step 1) [deg]     -->  51 pts
-    q = 2    # polarisation = 1, 2 --> 2 pts
-
-    wspd = np.linspace(0.2, 50, m)
-    rdir = np.linspace(0, 180, n)
-    inci = np.linspace(16, 66, p)
-    pol  = np.linspace(1, 2, q)
-
-    gmf_table_vv = np.fromfile(fname_vv, dtype=np.float32)
-    gmf_table_hh = np.fromfile(fname_hh, dtype=np.float32)
-
-    # Remove head and tail
-    gmf_table_vv = gmf_table_vv[1:-1]
-    gmf_table_hh = gmf_table_hh[1:-1]
-
-    # To access the table as a three-dimensional Fortran-ordered m x n x p matrix,
-    # reshape it
-    gmf_table_vv = gmf_table_vv.reshape((m, n, p), order="F")
-    gmf_table_hh = gmf_table_hh.reshape((m, n, p), order="F")
-
-    gmf_table = np.stack([gmf_table_vv, gmf_table_hh], axis=-1)
-
-    points = (wspd, rdir, inci, pol)
+    gmf_table, points = gmf_table_global_nscat4ds, points_global_nscat4ds
 
     s0 = interpn(points, gmf_table, varin,
                 method='linear',
@@ -189,6 +203,8 @@ def nscat4ds(u10, phi, inc, pol):
     return(
         s0
     )
+
+gmf_table_global_cmod7, points_global_cmod7 = get_gmf_table_and_points('cmod7')
 
 def cmod7(u10, phi, inc, pol=1):
     """
@@ -238,38 +254,7 @@ def cmod7(u10, phi, inc, pol=1):
                         'Given polarisation: ' + pol)
     varin = np.stack([u10, phi, inc],axis=-1)
 
-    # Construct Path
-    dirpath = seastar.gmfs.nrcs.__file__[:-7]
-    # fname_big = 'cmod7_vv.dat_big_endian'
-    fname_vv = dirpath + 'cmod7_vv.dat_little_endian'
-    
-
-    # Dimensions of GMF table
-    m = 250  # wind speed min/max = 0.2-50 (step 0.2) [m/s] --> 250 pts
-    n = 73   # dir min/max = 0-180 (step 2.5) [deg]   -->  73 pts
-    p = 51   # inc min/max = 16-66 (step 1) [deg]     -->  51 pts
-    #q = 1    # polarisation = 1 --> 1 pts
-
-    wspd = np.linspace(0.2, 50, m)
-    rdir = np.linspace(0, 180, n)
-    inci = np.linspace(16, 66, p)
-    #pol  = np.linspace(1, 1, q)
-
-    gmf_table_vv = np.fromfile(fname_vv, dtype=np.float32)
-    #gmf_table_hh = np.fromfile(fname_hh, dtype=np.float32)
-
-    # Remove head and tail
-    gmf_table_vv = gmf_table_vv[1:-1]
-    #gmf_table_hh = gmf_table_hh[1:-1]
-
-    # To access the table as a three-dimensional Fortran-ordered m x n x p matrix,
-    # reshape it
-    gmf_table = gmf_table_vv.reshape((m, n, p), order="F")
-    #gmf_table_hh = gmf_table_hh.reshape((m, n, p), order="F")
-
-    #gmf_table = np.stack([gmf_table_vv, gmf_table_hh], axis=-1)
-
-    points = (wspd, rdir, inci)
+    gmf_table, points = gmf_table_global_cmod7, points_global_cmod7
 
     s0 = interpn(points, gmf_table, varin,
                 method='linear',
