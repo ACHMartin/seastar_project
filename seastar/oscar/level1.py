@@ -887,7 +887,38 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
     return da_out, CalImage
 
 def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dict, write_nc=False):
+    """
+    L1B to L1C processing chain.
+    
+    Processes OSCAR L1B data to L1C by applying a calibration file.
 
+    Parameters
+    ----------
+    L1B_folder : ``str``
+        Path to folder on disk containing OSCAR L1B files to process
+    campaign : ``str``
+        OSCAR campaign name
+    acq_date : ``str``
+        Acquisition date of the data in the form YYYYMMDD
+    track : ``str``
+        Track name of data to process in the form of e.g., `Track_1`
+    calib_dict : ``dict``
+        Dict containing the following (name:content):
+            {'ds_LandCalib':landCalib calibration dataset,
+             'LandCalib_file_name':File name of LandCalib calibration file,
+             'ds_OceanPattern':OceanPattern calibration dataset,
+             'OceanPattern_file_name':File name of LOceanPattern calibration file,
+             'calib_file_path':Path to folder on disk containing calibration files
+             }
+    write_nc : ``bool``, optional
+        Option to write L1C file to disk. The default is False.
+
+    Returns
+    -------
+    ds_L1C : ``xr.Dataset``
+        Calibrated OSCAR L1C dataset
+
+    """
     # checking acq_date format:
     if seastar.oscar.tools.is_valid_acq_date(acq_date):
         logger.info("'acq_date' format is okay")
