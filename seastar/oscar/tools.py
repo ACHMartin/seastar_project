@@ -360,3 +360,29 @@ def is_valid_acq_date(acq_date):
         return bool(re.fullmatch(r"\d{8}", acq_date))
     except ValueError:
         return False
+    
+def find_file_by_track_name(files, track):
+    """
+    Find file by track name
+    
+    Matches a full OSCAR L1 or L2 file name by track name and returns the matched file name.
+    `files` as generated using, e.g., `os.listdir('path_to_L1_data')`.
+
+    Parameters
+    ----------
+    files : ``list`` of ``str``
+        List of OSCAR L1 or L2 file names to search
+    track : ``str``
+        OSCAR Track name in the form, e.g., 'Track_1'
+
+    Returns
+    -------
+    ``str``
+        Full OSCAR file name matched with track name
+
+    """
+    
+    escaped_track = re.escape(track)
+    # Match the exact string followed by _ or . or end of string, but NOT more letters/numbers
+    pattern = rf'{escaped_track}(?=(_|\.|$))'
+    return [f for f in files if re.search(pattern, f)][0]
