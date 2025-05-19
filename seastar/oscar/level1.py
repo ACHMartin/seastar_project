@@ -862,7 +862,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         da_out = ss.utils.tools.db2lin(ss.utils.tools.lin2db(ds_L1B.Intensity) - ss.utils.tools.lin2db(CalImage))
         da_out.attrs['long_name'] = 'Sigma0'
         da_out.attrs['units'] = ''
-        da_out.attrs['description'] = 'Calibrated NESZ using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
+        da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
     elif calib.lower() == 'interferogram':
         if calib_type == 'LandCalib':
             Interferogram_calib = ds_calibration.InterferogramSmoothed
