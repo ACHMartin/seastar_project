@@ -841,14 +841,10 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         Calibration image of the variable chosen by `calib`
 
     """
-    if calib.lower() not in ['sigma0', 'interferogram']:
+    valid_calib = ['sigma0', 'interferogram']
+    if calib.lower() not in valid_calib:
         raise Exception('Calibration option of ' + calib + ' is not valid. Please select from Sigma0 or Interferogram')
 
-    if all(x in list(ds_calibration.data_vars) for x in ['Sigma0', 'Interferogram']):
-        calib_type='OceanPattern'
-    else:
-        calib_type='LandCalib'
-    
     if calib.lower() == 'sigma0':
         CalImage = xr.concat([xr.DataArray(data=np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
                                                      ds_calibration.IncidenceAngle.data,
@@ -864,7 +860,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         da_out.attrs['units'] = ''
         da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
     elif calib.lower() == 'interferogram':
-        if calib_type == 'LandCalib':
+        if ds_calibration.Calibration == 'LandCalib':
             Interferogram_calib = ds_calibration.InterferogramSmoothed
         else:
             Interferogram_calib = ds_calibration.Interferogram
@@ -878,11 +874,11 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
                       join='outer')
         CalImage.attrs['long_name'] = 'Interferogram Calibration'
         CalImage.attrs['units'] = 'rad'
-        CalImage.attrs['description'] = 'Interferogram bias from LandCalib in radians'
+        CalImage.attrs['description'] = 'Interferogram bias from ' + ds_calibration.Calibration + ' in radians'
         da_out = ds_L1B.Interferogram - CalImage
         da_out.attrs['long_name'] = 'Interferogram'
         da_out.attrs['units'] = 'rad'
-        da_out.attrs['description'] = 'Interferometric phase calibrated using ' + calib_type + ' OSCAR data'
+        da_out.attrs['description'] = 'Interferometric phase calibrated using ' + ds_calibration.Calibration + ' OSCAR data'
     
     return da_out, CalImage
 
