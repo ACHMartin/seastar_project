@@ -862,7 +862,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         da_out = ss.utils.tools.db2lin(ss.utils.tools.lin2db(ds_L1B.Intensity) - ss.utils.tools.lin2db(CalImage))
         da_out.attrs['long_name'] = 'Sigma0'
         da_out.attrs['units'] = ''
-        da_out.attrs['description'] = 'Calibrated NESZ using NSCAT4DS and over-ocean OSCAR data'
+        da_out.attrs['description'] = 'Calibrated NESZ using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
     elif calib.lower() == 'interferogram':
         if calib_type == 'LandCalib':
             Interferogram_calib = ds_calibration.InterferogramSmoothed
@@ -929,7 +929,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     # Checking campaign name:
     valid_campaign = ["202205_IroiseSea", "202305_MedSea"]
     if campaign in valid_campaign:
-        logger.info("Camapaign name has valid value.")
+        logger.info("Campaign name has valid value.")
     else:
         logger.error(f"Unexpected campaign value: {campaign}")
         raise ValueError(f"Unexpected campaign value: {campaign}. Shall be {valid_campaign}.")
@@ -951,7 +951,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
 
     # Loading data
     logger.info(f"Opening track: {track} on day: {acq_date}")
-    L1B_file_name = seastar.oscar.tools.find_file_by_track_name(L1B_file_list, track='Track_1')
+    L1B_file_name = seastar.oscar.tools.find_file_by_track_name(L1B_file_list, track=track)
     ds_L1B = xr.open_dataset(os.path.join(L1B_folder, L1B_file_name))
     ds_L1C = ds_L1B.copy(deep=True)
     ds_L1C.attrs['ProcessingLevel'] = 'L1C'
