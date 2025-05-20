@@ -386,3 +386,46 @@ def find_file_by_track_name(files, track):
     # Match the exact string followed by _ or . or end of string, but NOT more letters/numbers
     pattern = rf'{escaped_track}(?=(_|\.|$))'
     return [f for f in files if re.search(pattern, f)][0]
+
+def coarsen_grid_resolution(ds, options):
+    """
+    Coarsen grid resolution.
+    
+    Coarsens an OSCAR dataset to new grid resolution specified in `options`.
+    Dataset is coarsened to `MultiLookCrossRangeEffectiveResolution` x
+    `MultiLookGroundRangeEffectiveResolution` in metres using the mean of
+    variables data within this footprint.
+
+    Parameters
+    ----------
+    ds : ``xr.Dataset``
+        OSCAR L1B or L1C dataset containing the attrs `SingleLookCrossRangeGridResolution`
+        and `SingleLookGroundRangeGridResolution`.
+    options : ``dict``
+        Options dict containing keys `MultiLookCrossRangeEffectiveResolution`
+        and `MultiLookGroundRangeEffectiveResolution`.
+
+    Returns
+    -------
+    ds : ``xr.Dataset``
+        OSCAR coarsened dataset.
+
+    """
+    
+    valid_options = ['MultiLookCrossRangeEffectiveResolution', 'MultiLookGroundRangeEffectiveResolution']
+    # Raise exception if both valid options not in options input
+    if not all([option in calib_dict.keys() for option in valid_options]):
+        raise Exception(str(valid_options) + ' not in options.')
+    if calib.lower() not in valid_calib:
+        raise Exception('Calibration option of ' + calib + ' is not valid. Please select from Sigma0 or Interferogram')
+    # Compute corsening intervals as final resolution / pixel resolution
+    p_CrossRange = int(options.get('MultiLookCrossRangeEffectiveResolution') / ds.attrs.get('SingleLookCrossRangeGridResolution'))
+    p_GroundRange = int(options.get('MultiLookGroundRangeEffectiveResolution') / ds.attrs.get('SingleLookGroundRangeGridResolution'))
+    # Coarsen data using mean
+    ds = ds.coarsen(GroundRange=p_GroundRange,boundary='trim').mean().coarsen(CrossRange=p_CrossRange,boundary='trim').mean()
+    # Add attributes
+    ds.attrs['MultiLookCrossRangeGridResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
+    ds.attrs['MultiLookGroundRangeGridResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
+    ds.attrs['MultiLookCrossRangeEffectiveResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
+    ds.attrs['MultiLookGroundRangeEffectiveResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
+    return ds

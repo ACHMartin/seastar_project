@@ -882,7 +882,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
     
     return da_out, CalImage
 
-def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dict, write_nc=False):
+def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dict, write_nc=False, coarsen=False):
     """
     L1B to L1C processing chain.
     
@@ -908,6 +908,8 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
              }
     write_nc : ``bool``, optional
         Option to write L1C file to disk. The default is False.
+    coarsen : `bool``, optional
+        Argument to coarsen the grid to a lower resolution. Defaults to False.
 
     Returns
     -------
@@ -1007,6 +1009,12 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     ds_L1C.attrs['Calibration'] = 'NRCS calibrated using OceanPattern calibration, Interferograms calibrated with LandCalib'
     ds_L1C.attrs['CalibrationResolution'] = np.float64(8.0)
     
+    #Optional dataset grid coarsening
+    if coarsen:
+        logger.info(f"Coarsening {track} to {str(calib_dict.get('MultiLookCrossRangeEffectiveResolution')) + 'x' + str(calib_dict.get('MultiLookGroundRangeEffectiveResolution')) + 'm'}")
+        ds_L1C = seastar.oscar.tools.coarsen_grid_resolution(ds_L1C, calib_dict)
+    
+    # Defining the filename
     filename = ss.oscar.tools.formatting_filename(ds_L1C)
 
     # Write the data in a NetCDF file
