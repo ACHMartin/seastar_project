@@ -340,8 +340,7 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
     
     if L2_processor == "SCR":
         logger.info(f"The processor chosen is: {L2_processor}")
-        print(dict_env)
-        
+
         ds_L2 = seastar.retrieval.level2.sequential_current_retrieval(ds_L1, dict_env, gmf_dict['doppler']['name']) 
         
     elif L2_processor == "WCR":
