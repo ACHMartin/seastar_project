@@ -350,8 +350,16 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
         logger.info("Compute uncertainty")
         uncertainty = xr.Dataset({"RSV":ds_L1.RadialSurfaceVelocity.copy(deep=True),
                             "Kp":ds_L1.Intensity.copy(deep=True)})
-        uncertainty["RSV"] = dict_L2_process.get("RSV_Noise", 0.1)          # RSV_Noise, set by default at 0.1 
-        uncertainty["Kp"] = dict_L2_process.get("Kp", 0.1)                  # Kp, set by default at 0.1 
+        
+        if "RSV_Noise" not in dict_L2_process:
+            logger.error("Missing 'RSV_Noise' in dict_L2_process. The code will crash.")
+            raise KeyError("Missing 'RSV_Noise' in dict_L2_process")
+        if "Kp" not in dict_L2_process:
+            logger.error("Missing 'Kp' in dict_L2_process. The code will crash.")
+            raise KeyError("Missing 'Kp' in dict_L2_process")
+
+        uncertainty["RSV"] = dict_L2_process["RSV_Noise"]
+        uncertainty["Kp"] = dict_L2_process["Kp"]
 
         if "Sigma0" not in ds_L1:
             if "Intensity" in ds_L1:
