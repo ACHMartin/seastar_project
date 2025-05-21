@@ -354,8 +354,15 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
         uncertainty["RSV"] = dict_L2_process.get("RSV_Noise", 0.1)          # RSV_Noise, set by default at 0.1 
         uncertainty["Kp"] = dict_L2_process.get("Kp", 0.1)                  # Kp, set by default at 0.1 
 
-        ds_L1 = ds_L1.rename({'Intensity': 'Sigma0'})
-        ds_L1 = ds_L1.rename({'RadialSurfaceVelocity': 'RSV'})
+        if "Sigma0" not in ds_L1:
+            if "Intensity" in ds_L1:
+                logger.warning("Variable 'Sigma0' is missing from the dataset, we create it from 'Intensity'.")
+                ds_L1["Sigma0"] = ds_L1.Intensity
+            else:
+                logger.error("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
+                raise ValueError("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
+
+        ds_L1["RSV"] = ds_L1.RadialSurfaceVelocity
         uncerty, noise = seastar.performance.scene_generation.uncertainty_fct( ds_L1, uncertainty)
         logger.info("Sent to wind_current_retrieval")
         ds_L2 = seastar.retrieval.level2.wind_current_retrieval(ds_L1, noise, gmf_dict, dict_ambiguity) # noise is a dataset same size as ds_L1
