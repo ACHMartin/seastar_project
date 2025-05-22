@@ -385,7 +385,7 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
     ds_L2.attrs['Sigma0GMF'] = gmf_dict['nrcs']['name']
     ds_L2.attrs['DopplerGMF'] = gmf_dict['doppler']['name']
     ds_L2.attrs['Kp'] = dict_L2_process.get("Kp", 0.1)
-    ds_L2.attrs['RSVNoise'] = dict_L2_process.get("RSV_Noise", 0.1)
+    ds_L2.attrs['RSV_Noise'] = dict_L2_process.get("RSV_Noise", 0.1)
     ds_L2.attrs['L2Processor'] = L2_processor
 
     # Updating of the history in the attrs:
