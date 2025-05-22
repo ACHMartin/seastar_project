@@ -11,6 +11,7 @@ from shapely.geometry import Point
 from scipy.ndimage import binary_erosion as erode
 # import seastar
 
+from _logger import logger
 
 def add_version(ds, attr='seastar_version'):
     """

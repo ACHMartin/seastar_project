@@ -119,9 +119,6 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     ds_wa : xarray.Dataset
         A Dataset containing the Wind Artefact Surface Velocity (WASV) for
         the given geophysical and geometric conditions.
-
-
-
     """
 
     # Initialisation
