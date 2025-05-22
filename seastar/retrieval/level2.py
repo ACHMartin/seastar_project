@@ -262,12 +262,9 @@ def compute_current_magnitude_and_direction(level1, level2):
 
 def sequential_current_retrieval(level1, dict_env, gmf):
     
-    u10 = dict_env['u10']
-    wind_direction = dict_env['wind_direction']
-    
     # Compute auxiliary data
     logger.info("compute auxiliary data")
-    aux = seastar.oscar.level1.init_auxiliary(level1.IncidenceAngleImage, u10, wind_direction)
+    aux = seastar.performance.scene_generation.generate_constant_env_field(level1.IncidenceAngleImage, dict_env)
 
     #Compute RSC
     logger.info("compute RSC")
