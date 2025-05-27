@@ -261,7 +261,28 @@ def compute_current_magnitude_and_direction(level1, level2):
 
 
 def sequential_current_retrieval(level1, dict_env, gmf):
+    """
+    Sequential current retrieval (SCR) processing.
+    Compute surface current velocity and direction from radial surface current
+    (RSC) components measured from level1 B or C products.
+
+    Parameters
+    ----------
+    level1 : ``xarray.Dataset``
+        L1 dataset
+    dict_env ``xarray.Dataset``
+        Dictionary containing the environment information needed for SCR inversion.        
+    gmf ``str``
+        Name of the Doppler GMF to use for the retrieval.
+
+    Returns
+    -------
+    level2 : ``xarray.Dataset``
+        L2 dataset.
+    """
     
+    level1 = level1.copy()
+
     # Compute auxiliary data
     logger.info("compute auxiliary data")
     aux = seastar.performance.scene_generation.generate_constant_env_field(level1.IncidenceAngleImage, dict_env)
@@ -301,7 +322,7 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
         dict_L2_process : ``dict``
             Dictionary containing the information needed for L2 processing:
             "gmf" : gmf dictionary
-            "L2_processor" : L2 processor for wind current inversion. Can be "SCR" or "WCR",
+            "L2_processor" : L2 processor for wind current inversion. Can be "SCR" or "WCR", set by default on SCR,
             "RSV_Noise": RSV_noise,
             "Kp" : Kp (noise of NRCS).
             Defaults to dict().
@@ -325,7 +346,6 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
             Xarray dataset of the L2 OSCAR data.
     """
 
-    # Checking doppler GMF name: TODO: dev a function that test the entries
     gmf_dict = dict_L2_process['gmf']
     seastar.oscar.tools.is_valid_gmf_dict(gmf_dict)         # Check the format of gmf_dict
     
