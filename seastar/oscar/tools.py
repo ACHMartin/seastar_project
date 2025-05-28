@@ -226,7 +226,10 @@ def formatting_filename(ds):
         ds.attrs.get("Platform"),
         ds.attrs.get("ProcessingLevel"),
         ds.attrs.get("Track"),
-        "{crossRes:03d}x{groundRes:03d}m".format(  
+        "Grd{crossRes:03d}x{groundRes:03d}m".format(  
+                                                 crossRes=int(ds.attrs.get("SingleLookCrossRangeGridResolution", 0)),
+                                                 groundRes=int(ds.attrs.get("SingleLookGroundRangeGridResolution", 0))),
+        "Eff{crossRes:03d}x{groundRes:03d}m".format(  
                                                  crossRes=int(ds.attrs.get("MultiLookCrossRangeEffectiveResolution", 0)),
                                                  groundRes=int(ds.attrs.get("MultiLookGroundRangeEffectiveResolution", 0))),
         ds.attrs.get("L2Processor", ""),  # Only for L2
