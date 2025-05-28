@@ -1006,15 +1006,16 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         )
     )
     ds_L1C.attrs['NRCSGMF'] = calib_dict['ds_OceanPattern'].attrs['NRCSGMF']
-    ds_L1C.attrs['Calibration'] = 'NRCS calibrated using OceanPattern calibration, Interferograms calibrated with LandCalib'
-    ds_L1C.attrs['CalibrationResolution'] = np.float64(8.0)
-    
-    #Optional dataset grid coarsening
-    if coarsen:
-        logger.info(f"Coarsening {track} to {str(calib_dict.get('MultiLookCrossRangeEffectiveResolution')) + 'x' + str(calib_dict.get('MultiLookGroundRangeEffectiveResolution')) + 'm'}")
-        ds_L1C = seastar.oscar.tools.coarsen_grid_resolution(ds_L1C, calib_dict)
-    
-    # Defining the filename
+    ds_L1C.attrs['Calibration'] = ' '.join(['NRCS calibrated using OceanPattern calibration. OceanPattern process uses data from a star pattern of multiple acquisitions taken at different headings',
+    'relative to the wind direction. Median along-track data are then grouped by incidence angle and antenna look direction to produce data variables relative to azimuth for a discrete',
+    'set of incidence angles. Curves are fitted to these points. Similar curves are generated using the NRCS GMF (',
+                                           calib_dict['ds_OceanPattern'].attrs['NRCSGMF'],
+                                           ') and the difference',
+    'between the fitted curves and the GMF averaged over azimuth are taken as the NRCS calibration bias for a given incidence angle. Interferograms calibrated with LandCalib. LandCalib',
+    'process uses an OSCAR acquisition over land and finds land pixes using the GSHHS global coastline dataset to generate a land mask. Applying this land mask to OSCAR L1B Interferogram imagery',
+    'the along-track median is taken to generate Interferogram bias wrt the cross range (incidence angle) dimension. These data are then smoothed with a polynomial fit to generate Interferogram',
+    'bias curves for the Fore and Aft antenna directions (Mid is set to zero)'])
+
     filename = ss.oscar.tools.formatting_filename(ds_L1C)
 
     # Write the data in a NetCDF file
