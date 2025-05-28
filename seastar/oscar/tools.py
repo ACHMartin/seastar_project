@@ -427,8 +427,8 @@ def coarsen_grid_resolution(ds, options):
     # Coarsen data using mean
     ds = ds.coarsen(GroundRange=p_GroundRange,boundary='trim').mean().coarsen(CrossRange=p_CrossRange,boundary='trim').mean()
     # Add attributes
-    ds.attrs['MultiLookCrossRangeGridResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
-    ds.attrs['MultiLookGroundRangeGridResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
+    ds.attrs['SingleLookCrossRangeGridResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
+    ds.attrs['SingleLookGroundRangeGridResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
     ds.attrs['MultiLookCrossRangeEffectiveResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
     ds.attrs['MultiLookGroundRangeEffectiveResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
     return ds
