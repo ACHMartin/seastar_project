@@ -407,6 +407,10 @@ def coarsen_grid_resolution(ds, options):
     options : ``dict``
         Options dict containing keys `MultiLookCrossRangeEffectiveResolution`
         and `MultiLookGroundRangeEffectiveResolution`.
+    Raises
+    ------
+    Exception
+        Raises an exception if not all required entries found in calib_dict
 
     Returns
     -------
@@ -417,10 +421,8 @@ def coarsen_grid_resolution(ds, options):
     
     valid_options = ['MultiLookCrossRangeEffectiveResolution', 'MultiLookGroundRangeEffectiveResolution']
     # Raise exception if both valid options not in options input
-    if not all([option in calib_dict.keys() for option in valid_options]):
+    if not all([option in options.keys() for option in valid_options]):
         raise Exception(str(valid_options) + ' not in options.')
-    if calib.lower() not in valid_calib:
-        raise Exception('Calibration option of ' + calib + ' is not valid. Please select from Sigma0 or Interferogram')
     # Compute corsening intervals as final resolution / pixel resolution
     p_CrossRange = int(options.get('MultiLookCrossRangeEffectiveResolution') / ds.attrs.get('SingleLookCrossRangeGridResolution'))
     p_GroundRange = int(options.get('MultiLookGroundRangeEffectiveResolution') / ds.attrs.get('SingleLookGroundRangeGridResolution'))
@@ -431,4 +433,11 @@ def coarsen_grid_resolution(ds, options):
     ds.attrs['SingleLookGroundRangeGridResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
     ds.attrs['MultiLookCrossRangeEffectiveResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
     ds.attrs['MultiLookGroundRangeEffectiveResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
+    # Updating of the history in the attrs:
+    current_history = ds.attrs.get("History", "")                                               # Get the current history or initialize it
+    resolution_str = str(ds.attrs['SingleLookCrossRangeGridResolution']) + 'x' + str(ds.attrs['SingleLookGroundRangeGridResolution']) + 'm'
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} Coarsened grid resolution to " + resolution_str + '.'              # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
+    ds.attrs["History"] = updated_history                                                       # Update the dataset attributes
+    
     return ds
