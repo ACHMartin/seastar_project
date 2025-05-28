@@ -855,7 +855,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         CalImage.attrs['long_name'] = 'Sigma0 Calibration'
         CalImage.attrs['units'] = ''
         CalImage.attrs['description'] = 'Sigma0 bias with GMF from OceanPattern calibration in linear units '
-        da_out = ss.utils.tools.db2lin(ss.utils.tools.lin2db(ds_L1B.Intensity) - ss.utils.tools.lin2db(CalImage))
+        da_out = seastar.utils.tools.db2lin(seastar.utils.tools.lin2db(ds_L1B.Intensity) - seastar.utils.tools.lin2db(CalImage))
         da_out.attrs['long_name'] = 'Sigma0'
         da_out.attrs['units'] = ''
         da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
@@ -961,7 +961,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
 
     # Loading data
     logger.info(f"Opening track: {track} on day: {acq_date}")
-    L1B_file_name = seastar.oscar.tools.find_file_by_track_name(L1B_file_list, track=track)
+    L1B_file_name = seastar.oscar.tools.find_file_by_track_name(os.listdir(L1B_folder), track=track)
     ds_L1B = xr.open_dataset(os.path.join(L1B_folder, L1B_file_name))
     ds_L1C = ds_L1B.copy(deep=True)
     ds_L1C.attrs['ProcessingLevel'] = 'L1C'
@@ -970,14 +970,14 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     logger.info(f"Calibrating NRCS for :  {track} of day: {acq_date}")
     ds_L1C['Sigma0'], ds_L1C['Sigma0CalImage'] = apply_calibration(ds_L1B, calib_dict['ds_OceanPattern'], 'Sigma0')
     ds_L1C['Sigma0'].attrs['calibration_file_name'] = calib_dict['OceanPattern_file_name']
-    ds_L1C['Sigma0'].attrs['calibration_file_short_name'] = ss.utils.readers.short_file_name_from_md5(
-        ss.utils.readers.md5_checksum_from_file(
+    ds_L1C['Sigma0'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(
             os.path.join(calib_dict['calib_file_path'], calib_dict['OceanPattern_file_name'])
         )
     )
     ds_L1C['Sigma0CalImage'].attrs['calibration_file_name'] = calib_dict['OceanPattern_file_name']
-    ds_L1C['Sigma0CalImage'].attrs['calibration_file_short_name'] = ss.utils.readers.short_file_name_from_md5(
-        ss.utils.readers.md5_checksum_from_file(
+    ds_L1C['Sigma0CalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(
             os.path.join(calib_dict['calib_file_path'], calib_dict['OceanPattern_file_name'])
         )
     )
@@ -985,14 +985,14 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     logger.info(f"Calibrating Interferogram for :  {track} of day: {acq_date}")
     ds_L1C['Interferogram'], ds_L1C['InterferogramCalImage'] = apply_calibration(ds_L1B, calib_dict['ds_LandCalib'], 'Interferogram')
     ds_L1C['Interferogram'].attrs['calibration_file_name'] = calib_dict['LandCalib_file_name']
-    ds_L1C['Interferogram'].attrs['calibration_file_short_name'] = ss.utils.readers.short_file_name_from_md5(
-        ss.utils.readers.md5_checksum_from_file(
+    ds_L1C['Interferogram'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(
             os.path.join(calib_dict['calib_file_path'], calib_dict['LandCalib_file_name'])
         )
     )
     ds_L1C['InterferogramCalImage'].attrs['calibration_file_name'] = calib_dict['LandCalib_file_name']
-    ds_L1C['InterferogramCalImage'].attrs['calibration_file_short_name'] = ss.utils.readers.short_file_name_from_md5(
-        ss.utils.readers.md5_checksum_from_file(
+    ds_L1C['InterferogramCalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(
             os.path.join(calib_dict['calib_file_path'], calib_dict['LandCalib_file_name'])
         )
     )
@@ -1002,18 +1002,18 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     
     # Updating of the history in the attrs:
     current_history = ds_L1C.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{datetime.datetime.now(datetime.UTC).strftime("%d-%b-%Y %H:%M:%S")} L1C processing."             # Create a new history entry
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1C processing."             # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1C.attrs["History"] = updated_history                                                       # Update the dataset attributes
     ds_L1C.attrs['OceanPatternCalibrationFileName'] = calib_dict['OceanPattern_file_name']
-    ds_L1C.attrs['OceanPatternCalibrationFileShortName'] = ss.utils.readers.short_file_name_from_md5(
-        ss.utils.readers.md5_checksum_from_file(
+    ds_L1C.attrs['OceanPatternCalibrationFileShortName'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(
             os.path.join(calib_dict['calib_file_path'], calib_dict['OceanPattern_file_name'])
         )
     )
     ds_L1C.attrs['LandCalibFileName'] = calib_dict['LandCalib_file_name']
-    ds_L1C.attrs['LandCalibFileShortName'] = ss.utils.readers.short_file_name_from_md5(
-        ss.utils.readers.md5_checksum_from_file(
+    ds_L1C.attrs['LandCalibFileShortName'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(
             os.path.join(calib_dict['calib_file_path'], calib_dict['LandCalib_file_name'])
         )
     )
@@ -1028,7 +1028,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     'the along-track median is taken to generate Interferogram bias wrt the cross range (incidence angle) dimension. These data are then smoothed with a polynomial fit to generate Interferogram',
     'bias curves for the Fore and Aft antenna directions (Mid is set to zero)'])
 
-    filename = ss.oscar.tools.formatting_filename(ds_L1C)
+    filename = seastar.oscar.tools.formatting_filename(ds_L1C)
 
     # Write the data in a NetCDF file
     if write_nc: 
