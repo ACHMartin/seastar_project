@@ -910,6 +910,11 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         Option to write L1C file to disk. The default is False.
     coarsen : `bool``, optional
         Argument to coarsen the grid to a lower resolution. Defaults to False.
+    
+    Raises
+    ------
+    Exception
+        Raises an exception if not all required entries found in calib_dict
 
     Returns
     -------
@@ -917,6 +922,15 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         Calibrated OSCAR L1C dataset
 
     """
+    #Checking calib_dict
+    valid_dict_keys = ['OceanPattern_file_name','ds_OceanPattern',
+                       'LandCalib_file_name', 'ds_LandCalib', 'calib_file_path']
+    if not all([i in calib_dict.keys() for i in valid_dict_keys]):
+        pattern = re.compile(r'^(' + '|'.join(map(re.escape, calib_dict.keys())) + r')$')
+        missing_keys = [entry for entry in valid_dict_keys if not pattern.match(entry)]
+        raise Exception(str(missing_keys) + ' missing from calib_dict')
+    
+    
     # checking acq_date format:
     if seastar.oscar.tools.is_valid_acq_date(acq_date):
         logger.info("'acq_date' format is okay")
