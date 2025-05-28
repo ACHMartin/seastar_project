@@ -882,7 +882,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
     
     return da_out, CalImage
 
-def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dict, write_nc=False, coarsen=False):
+def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dict, write_nc=False):
     """
     L1B to L1C processing chain.
     
@@ -908,8 +908,6 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
              }
     write_nc : ``bool``, optional
         Option to write L1C file to disk. The default is False.
-    coarsen : `bool``, optional
-        Argument to coarsen the grid to a lower resolution. Defaults to False.
     
     Raises
     ------
