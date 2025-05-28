@@ -294,7 +294,7 @@ def check_attrs_dataset(ds):
         required_attrs_L1B = ["MultiLookCrossRangeEffectiveResolution", "MultiLookGroundRangeEffectiveResolution"]
         missing_attrs.extend([attr for attr in required_attrs_L1B if attr not in ds.attrs])
     if processing_level == "L1C":
-        required_attrs_L1C = ["Calibration", "CalibrationResolution", "NRCSGMF"]
+        required_attrs_L1C = ["Calibration", "NRCSGMF"]
         missing_attrs.extend([attr for attr in required_attrs_L1C if attr not in ds.attrs])
     if processing_level == "L2":
         required_attrs_L2 = ["DopplerGMF", "Kp", "RSVNoise", "L2Processor"]
