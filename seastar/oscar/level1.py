@@ -855,7 +855,7 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         CalImage.attrs['long_name'] = 'Sigma0 Calibration'
         CalImage.attrs['units'] = ''
         CalImage.attrs['description'] = 'Sigma0 bias with GMF from OceanPattern calibration in linear units '
-        da_out = seastar.utils.tools.db2lin(seastar.utils.tools.lin2db(ds_L1B.Intensity) - seastar.utils.tools.lin2db(CalImage))
+        da_out = seastar.utils.tools.db2lin(seastar.utils.tools.lin2db(ds_L1B.Intensity) - CalImage)
         da_out.attrs['long_name'] = 'Sigma0'
         da_out.attrs['units'] = ''
         da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
