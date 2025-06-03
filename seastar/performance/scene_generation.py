@@ -400,7 +400,7 @@ def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
         'OceanSurfaceWindDirection': 180}
 
     .. code-block:: python
-        windCurrentComponent2to4(env,'Current')
+        seastar.utils.tools.wind_current_component_conversion(env,'Current')
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,
         'OceanSurfaceWindSpeed': 10,

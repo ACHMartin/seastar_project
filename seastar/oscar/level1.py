@@ -600,6 +600,7 @@ def init_level2(level1):
 
     """
     level2 = xr.Dataset()
+    level2.attrs = level1.attrs.copy()
 #    level2.coords['longitude'] = level1.sel(Antenna='Fore').LonImage
 #    level2.coords['latitude'] = level1.sel(Antenna='Fore').LatImage
     level2.coords['longitude'] = level1.longitude
@@ -622,8 +623,8 @@ def init_auxiliary(level1, u10, wind_direction):
                                                     wind_direction,
                                                     level1)
     aux = xr.Dataset()
-    aux['EarthRelativeWindSpeed'] = WindSpeed
-    aux['EarthRelativeWindDirection'] = WindDirection
+    aux['WindSpeed'] = WindSpeed
+    aux['WindDirection'] = WindDirection
 
     return aux
 
