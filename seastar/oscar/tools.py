@@ -8,6 +8,7 @@ from seastar.utils.tools import list_duplicates
 from scipy import interpolate
 import xarray as xr
 from datetime import datetime as dt
+from datetime import timezone
 import re
 from _version import __version__
 from _logger import logger
@@ -226,13 +227,16 @@ def formatting_filename(ds):
         ds.attrs.get("Platform"),
         ds.attrs.get("ProcessingLevel"),
         ds.attrs.get("Track"),
-        "{crossRes:03d}x{groundRes:03d}m".format(  
+        "Grd{crossRes:03d}x{groundRes:03d}m".format(  
+                                                 crossRes=int(ds.attrs.get("SingleLookCrossRangeGridResolution", 0)),
+                                                 groundRes=int(ds.attrs.get("SingleLookGroundRangeGridResolution", 0))),
+        "Eff{crossRes:03d}x{groundRes:03d}m".format(  
                                                  crossRes=int(ds.attrs.get("MultiLookCrossRangeEffectiveResolution", 0)),
                                                  groundRes=int(ds.attrs.get("MultiLookGroundRangeEffectiveResolution", 0))),
         ds.attrs.get("L2Processor", ""),  # Only for L2
         ds.attrs.get("DopplerGMF", ""),  # Only for L2
-        f"Kp{ds.attrs.get('Kp')}" if ds.attrs.get('Kp') else "",  # Only for L2
-        f"RSV{ds.attrs.get('RSVNoise')}" if ds.attrs.get('RSVNoise') else "",  # Only for L2
+        f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
+        f"RSV{ds.attrs.get("RSVNoise")}" if ds.attrs.get("RSVNoise") else "",  # Only for L2
         __version__,
     ]
 
@@ -269,7 +273,6 @@ def check_attrs_dataset(ds):
     valid_levels = {"L1AP", "L1B", "L1C", "L2"}
     if processing_level not in valid_levels:
         logger.error(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
-        raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
     
     # List of the mandatory attributes for L1 dataset
     required_attrs = ["Campaign", 
@@ -292,7 +295,7 @@ def check_attrs_dataset(ds):
         required_attrs_L1B = ["MultiLookCrossRangeEffectiveResolution", "MultiLookGroundRangeEffectiveResolution"]
         missing_attrs.extend([attr for attr in required_attrs_L1B if attr not in ds.attrs])
     if processing_level == "L1C":
-        required_attrs_L1C = ["Calibration", "CalibrationResolution", "NRCSGMF"]
+        required_attrs_L1C = ["Calibration", "NRCSGMF"]
         missing_attrs.extend([attr for attr in required_attrs_L1C if attr not in ds.attrs])
     if processing_level == "L2":
         required_attrs_L2 = ["DopplerGMF", "Kp", "RSVNoise", "L2Processor"]
@@ -361,7 +364,7 @@ def is_valid_acq_date(acq_date):
         return bool(re.fullmatch(r"\d{8}", acq_date))
     except ValueError:
         return False
-    
+
 def is_valid_gmf_dict(gmf_dict):
     """
     Check the gmf dict in OSCAR L2 processing chain. Shall be:
@@ -404,3 +407,81 @@ def is_valid_gmf_dict(gmf_dict):
             raise ValueError(f"Invalid value '{value}' for key '{key}'. Expected values: {valid_values[key]}")
 
     return True
+
+def find_file_by_track_name(files, track):
+    """
+    Find file by track name
+    
+    Matches a full OSCAR L1 or L2 file name by track name and returns the matched file name.
+    `files` as generated using, e.g., `os.listdir('path_to_L1_data')`.
+
+    Parameters
+    ----------
+    files : ``list`` of ``str``
+        List of OSCAR L1 or L2 file names to search
+    track : ``str``
+        OSCAR Track name in the form, e.g., 'Track_1'
+
+    Returns
+    -------
+    ``str``
+        Full OSCAR file name matched with track name
+
+    """
+    
+    escaped_track = re.escape(track)
+    # Match the exact string followed by _ or . or end of string, but NOT more letters/numbers
+    pattern = rf'{escaped_track}(?=(_|\.|$))'
+    return [f for f in files if re.search(pattern, f)][0]
+
+def coarsen_grid_resolution(ds, options):
+    """
+    Coarsen grid resolution.
+    
+    Coarsens an OSCAR dataset to new grid resolution specified in `options`.
+    Dataset is coarsened to `MultiLookCrossRangeEffectiveResolution` x
+    `MultiLookGroundRangeEffectiveResolution` in metres using the mean of
+    variables data within this footprint.
+
+    Parameters
+    ----------
+    ds : ``xr.Dataset``
+        OSCAR L1B or L1C dataset containing the attrs `SingleLookCrossRangeGridResolution`
+        and `SingleLookGroundRangeGridResolution`.
+    options : ``dict``
+        Options dict containing keys `MultiLookCrossRangeEffectiveResolution`
+        and `MultiLookGroundRangeEffectiveResolution`.
+    Raises
+    ------
+    Exception
+        Raises an exception if not all required entries found in calib_dict
+
+    Returns
+    -------
+    ds : ``xr.Dataset``
+        OSCAR coarsened dataset.
+
+    """
+    
+    valid_options = ['MultiLookCrossRangeEffectiveResolution', 'MultiLookGroundRangeEffectiveResolution']
+    # Raise exception if both valid options not in options input
+    if not all([option in options.keys() for option in valid_options]):
+        raise Exception(str(valid_options) + ' not in options.')
+    # Compute corsening intervals as final resolution / pixel resolution
+    p_CrossRange = int(options.get('MultiLookCrossRangeEffectiveResolution') / ds.attrs.get('SingleLookCrossRangeGridResolution'))
+    p_GroundRange = int(options.get('MultiLookGroundRangeEffectiveResolution') / ds.attrs.get('SingleLookGroundRangeGridResolution'))
+    # Coarsen data using mean
+    ds = ds.coarsen(GroundRange=p_GroundRange,boundary='trim').mean().coarsen(CrossRange=p_CrossRange,boundary='trim').mean()
+    # Add attributes
+    ds.attrs['SingleLookCrossRangeGridResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
+    ds.attrs['SingleLookGroundRangeGridResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
+    ds.attrs['MultiLookCrossRangeEffectiveResolution'] = options.get('MultiLookCrossRangeEffectiveResolution')
+    ds.attrs['MultiLookGroundRangeEffectiveResolution'] = options.get('MultiLookGroundRangeEffectiveResolution')
+    # Updating of the history in the attrs:
+    current_history = ds.attrs.get("History", "")                                               # Get the current history or initialize it
+    resolution_str = str(ds.attrs['SingleLookCrossRangeGridResolution']) + 'x' + str(ds.attrs['SingleLookGroundRangeGridResolution']) + 'm'
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} Coarsened grid resolution to " + resolution_str + '.'              # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
+    ds.attrs["History"] = updated_history                                                       # Update the dataset attributes
+    
+    return ds
