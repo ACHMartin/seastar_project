@@ -364,3 +364,46 @@ def is_valid_acq_date(acq_date):
         return bool(re.fullmatch(r"\d{8}", acq_date))
     except ValueError:
         return False
+
+def is_valid_gmf_dict(gmf_dict):
+    """
+    Check the gmf dict in OSCAR L2 processing chain. Shall be:
+    gmf={
+        'nrcs': {'name': 'nscat4ds'},
+        'doppler': {'name': 'mouche12' or 'yurovsky19'},
+    }
+
+    Parameters
+    ----------
+        gmf_dict : ``dict``
+            Dictionnary containing the information about the NRCS GMF and Doppler GMF
+
+    Returns:
+        bool
+            True if the format of the dictionnaire is correct.
+    """
+    # Clés et valeurs valides attendues
+    valid_keys = {"nrcs", "doppler"}
+    valid_values = {
+        "nrcs": {"nscat4ds"},
+        "doppler": {"mouche12", "yurovsky19"}
+    }
+
+    # Vérifie que toutes les clés sont valides
+    for key in gmf_dict:
+        if key not in valid_keys:
+            logger.error(f"Invalid key: {key}. Expected keys: {valid_keys}. The code will crash.")
+            raise ValueError(f"Invalid key: {key}. Expected keys: {valid_keys}")
+
+        # Vérifie que la clé "name" existe pour chaque bloc
+        if "name" not in gmf_dict[key]:
+            logger.error(f"Missing 'name' field for key: {key}. The code will crash.")
+            raise ValueError(f"Missing 'name' field for key: {key}")
+
+        # Vérifie que la valeur est bien dans la liste autorisée
+        value = gmf_dict[key]["name"]
+        if value not in valid_values[key]:
+            logger.error(f"Invalid value '{value}' for key '{key}'. Expected values: {valid_values[key]}. The code will crash.")
+            raise ValueError(f"Invalid value '{value}' for key '{key}'. Expected values: {valid_values[key]}")
+
+    return True
