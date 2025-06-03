@@ -235,8 +235,8 @@ def formatting_filename(ds):
                                                  groundRes=int(ds.attrs.get("MultiLookGroundRangeEffectiveResolution", 0))),
         ds.attrs.get("L2Processor", ""),  # Only for L2
         ds.attrs.get("DopplerGMF", ""),  # Only for L2
-        f"Kp{ds.attrs.get("Kp")}" if ds.attrs.get("Kp") else "",  # Only for L2
-        f"RSV{ds.attrs.get("RSVNoise")}" if ds.attrs.get("RSVNoise") else "",  # Only for L2
+        f"Kp{ds.attrs.get('Kp')}" if ds.attrs.get('Kp') else "",  # Only for L2
+        f"RSV{ds.attrs.get('RSVNoise')}" if ds.attrs.get('RSVNoise') else "",  # Only for L2
         __version__,
     ]
 
@@ -273,6 +273,7 @@ def check_attrs_dataset(ds):
     valid_levels = {"L1AP", "L1B", "L1C", "L2"}
     if processing_level not in valid_levels:
         logger.error(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
+        raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
     
     # List of the mandatory attributes for L1 dataset
     required_attrs = ["Campaign", 
