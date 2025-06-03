@@ -888,7 +888,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     """
     L1B to L1C processing chain.
     
-    Processes OSCAR L1B data to L1C by applying a calibration file.
+    Processes OSCAR L1B data to L1C by applying one or more calibration files.
 
     Parameters
     ----------
@@ -902,11 +902,8 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         Track name of data to process in the form of e.g., `Track_1`
     calib_dict : ``dict``
         Dict containing the following (name:content):
-            {'ds_LandCalib':landCalib calibration dataset,
-             'LandCalib_file_name':File name of LandCalib calibration file,
-             'ds_OceanPattern':OceanPattern calibration dataset,
-             'OceanPattern_file_name':File name of LOceanPattern calibration file,
-             'calib_file_path':Path to folder on disk containing calibration files
+            {'Sigma0_calib_file': full filename including path for Sigma0 calib file,
+             'Interferogram_calib_file': full filename including path for Interferogram calib file,
              }
     write_nc : ``bool``, optional
         Option to write L1C file to disk. The default is False.
@@ -923,8 +920,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
 
     """
     #Checking calib_dict
-    valid_dict_keys = ['OceanPattern_file_name','ds_OceanPattern',
-                       'LandCalib_file_name', 'ds_LandCalib', 'calib_file_path']
+    valid_dict_keys = ['Sigma0_calib_file', 'Interferogram_calib_file']
     if not all([i in calib_dict.keys() for i in valid_dict_keys]):
         pattern = re.compile(r'^(' + '|'.join(map(re.escape, calib_dict.keys())) + r')$')
         missing_keys = [entry for entry in valid_dict_keys if not pattern.match(entry)]
@@ -961,6 +957,16 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     #               L1C PROCESSING
     #-----------------------------------------------------------
 
+    # Loading calib files
+    Interferogram_calib_file = calib_dict2.get('Interferogram_calib_file')
+    Sigma0_calib_file = calib_dict2.get('Sigma0_calib_file')
+    
+    logger.info(f"Loading Interferogram calibration file: {Interferogram_calib_file}")
+    Interferogram_calib_file_path, Interferogram_calib_file_name = os.path.split(Interferogram_calib_file)
+    ds_Interferogram_calib = xr.open_dataset(Interferogram_calib_file)
+    logger.info(f"Loading Sigma0 calibration file: {Sigma0_calib_file}")
+    Sigma0_calib_file_path, Sigma0_calib_file_name = os.path.split(Sigma0_calib_file)
+    ds_Sigma0_calib = xr.open_dataset(Sigma0_calib_file)
     # Loading data
     logger.info(f"Opening track: {track} on day: {acq_date}")
     L1B_file_name = seastar.oscar.tools.find_file_by_track_name(os.listdir(L1B_folder), track=track)
@@ -969,34 +975,27 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     ds_L1C.attrs['ProcessingLevel'] = 'L1C'
     
     # Radiometric Calibration
-    logger.info(f"Calibrating NRCS for :  {track} of day: {acq_date}")
-    ds_L1C['Sigma0'], ds_L1C['Sigma0CalImage'] = apply_calibration(ds_L1B, calib_dict['ds_OceanPattern'], 'Sigma0')
-    ds_L1C['Sigma0'].attrs['calibration_file_name'] = calib_dict['OceanPattern_file_name']
+    logger.info(f"Calibrating Sigma0 for :  {track} of day: {acq_date}")
+    ds_L1C['Sigma0'], ds_L1C['Sigma0CalImage'] = apply_calibration(ds_L1B, ds_Sigma0_calib, 'Sigma0')
+    ds_L1C['Sigma0'].attrs['calibration_file_name'] = Sigma0_calib_file_name
     ds_L1C['Sigma0'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
-        seastar.utils.readers.md5_checksum_from_file(
-            os.path.join(calib_dict['calib_file_path'], calib_dict['OceanPattern_file_name'])
-        )
+        seastar.utils.readers.md5_checksum_from_file(Sigma0_calib_file)
     )
-    ds_L1C['Sigma0CalImage'].attrs['calibration_file_name'] = calib_dict['OceanPattern_file_name']
+    ds_L1C['Sigma0CalImage'].attrs['calibration_file_name'] = Sigma0_calib_file_name
     ds_L1C['Sigma0CalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
-        seastar.utils.readers.md5_checksum_from_file(
-            os.path.join(calib_dict['calib_file_path'], calib_dict['OceanPattern_file_name'])
-        )
+        seastar.utils.readers.md5_checksum_from_file(Sigma0_calib_file)
     )
+    
     # Interferometric Calibration
     logger.info(f"Calibrating Interferogram for :  {track} of day: {acq_date}")
-    ds_L1C['Interferogram'], ds_L1C['InterferogramCalImage'] = apply_calibration(ds_L1B, calib_dict['ds_LandCalib'], 'Interferogram')
-    ds_L1C['Interferogram'].attrs['calibration_file_name'] = calib_dict['LandCalib_file_name']
+    ds_L1C['Interferogram'], ds_L1C['InterferogramCalImage'] = apply_calibration(ds_L1B, ds_Interferogram_calib, 'Interferogram')
+    ds_L1C['Interferogram'].attrs['calibration_file_name'] = Interferogram_calib_file_name
     ds_L1C['Interferogram'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
-        seastar.utils.readers.md5_checksum_from_file(
-            os.path.join(calib_dict['calib_file_path'], calib_dict['LandCalib_file_name'])
-        )
+        seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
     )
-    ds_L1C['InterferogramCalImage'].attrs['calibration_file_name'] = calib_dict['LandCalib_file_name']
+    ds_L1C['InterferogramCalImage'].attrs['calibration_file_name'] = Interferogram_calib_file_name
     ds_L1C['InterferogramCalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
-        seastar.utils.readers.md5_checksum_from_file(
-            os.path.join(calib_dict['calib_file_path'], calib_dict['LandCalib_file_name'])
-        )
+        seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
     )
     
     #Updating of the CodeVersion in the attrs:
@@ -1007,23 +1006,19 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1C processing."             # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1C.attrs["History"] = updated_history                                                       # Update the dataset attributes
-    ds_L1C.attrs['OceanPatternCalibrationFileName'] = calib_dict['OceanPattern_file_name']
+    ds_L1C.attrs['OceanPatternCalibrationFileName'] = Sigma0_calib_file_name
     ds_L1C.attrs['OceanPatternCalibrationFileShortName'] = seastar.utils.readers.short_file_name_from_md5(
-        seastar.utils.readers.md5_checksum_from_file(
-            os.path.join(calib_dict['calib_file_path'], calib_dict['OceanPattern_file_name'])
-        )
+        seastar.utils.readers.md5_checksum_from_file(Sigma0_calib_file)
     )
-    ds_L1C.attrs['LandCalibFileName'] = calib_dict['LandCalib_file_name']
+    ds_L1C.attrs['LandCalibFileName'] = Interferogram_calib_file_name
     ds_L1C.attrs['LandCalibFileShortName'] = seastar.utils.readers.short_file_name_from_md5(
-        seastar.utils.readers.md5_checksum_from_file(
-            os.path.join(calib_dict['calib_file_path'], calib_dict['LandCalib_file_name'])
-        )
+        seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
     )
-    ds_L1C.attrs['NRCSGMF'] = calib_dict['ds_OceanPattern'].attrs['NRCSGMF']
+    ds_L1C.attrs['NRCSGMF'] = ds_Sigma0_calib.attrs['NRCSGMF']
     ds_L1C.attrs['Calibration'] = ' '.join(['NRCS calibrated using OceanPattern calibration. OceanPattern process uses data from a star pattern of multiple acquisitions taken at different headings',
     'relative to the wind direction. Median along-track data are then grouped by incidence angle and antenna look direction to produce data variables relative to azimuth for a discrete',
     'set of incidence angles. Curves are fitted to these points. Similar curves are generated using the NRCS GMF (',
-                                           calib_dict['ds_OceanPattern'].attrs['NRCSGMF'],
+                                           ds_Sigma0_calib.attrs['NRCSGMF'],
                                            ') and the difference',
     'between the fitted curves and the GMF averaged over azimuth are taken as the NRCS calibration bias for a given incidence angle. Interferograms calibrated with LandCalib. LandCalib',
     'process uses an OSCAR acquisition over land and finds land pixes using the GSHHS global coastline dataset to generate a land mask. Applying this land mask to OSCAR L1B Interferogram imagery',
