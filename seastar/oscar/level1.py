@@ -848,12 +848,17 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         raise Exception('Calibration option of ' + calib + ' is not valid. Please select from Sigma0 or Interferogram')
 
     if calib.lower() == 'sigma0':
-        CalImage = xr.concat([xr.DataArray(data=np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
-                                                     ds_calibration.IncidenceAngle.data,
-                                                     ds_calibration.Sigma0.sel(Antenna=ant).data),
-                                      coords=ds_L1B.Intensity.sel(Antenna=ant).coords,
+
+        interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
+                                         ds_calibration.IncidenceAngle.data,
+                                         ds_calibration.Sigma0.sel(Antenna=ant).data)
+                               for ant in ds_L1B.Antenna]
+        data_arrays = [xr.DataArray(data=interpolated_values[x],
+                                    coords=ds_L1B.Intensity.sel(Antenna=ant).coords,
                                     dims=ds_L1B.Intensity.sel(Antenna=ant).dims)
-                               for ant in ds_L1B.Antenna], dim='Antenna', join='outer')
+                      for x, ant in enumerate(ds_L1B.Antenna)]
+        CalImage = xr.concat(data_arrays, dim='Antenna', join='outer')
+        
         CalImage.attrs['long_name'] = 'Sigma0 Calibration'
         CalImage.attrs['units'] = ''
         CalImage.attrs['description'] = 'Sigma0 bias with GMF from OceanPattern calibration in linear units '
@@ -866,14 +871,17 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
             Interferogram_calib = ds_calibration.InterferogramSmoothed
         else:
             Interferogram_calib = ds_calibration.Interferogram
-        CalImage = xr.concat([xr.DataArray(data=np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
-                                                     ds_calibration.IncidenceAngle.data,
-                                                     Interferogram_calib.sel(Antenna=ant).data),
-                                      coords=ds_L1B.Interferogram.sel(Antenna=ant).coords,
+        
+        interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
+                                         ds_calibration.IncidenceAngle.data,
+                                         ds_calibration.Interferogram.sel(Antenna=ant).data)
+                               for ant in ds_L1B.Antenna]
+        data_arrays = [xr.DataArray(data=interpolated_values[x],
+                                    coords=ds_L1B.Interferogram.sel(Antenna=ant).coords,
                                     dims=ds_L1B.Interferogram.sel(Antenna=ant).dims)
-                       for ant in ds_L1B.Antenna],
-                      dim='Antenna',
-                      join='outer')
+                      for x, ant in enumerate(ds_L1B.Antenna)]
+        CalImage = xr.concat(data_arrays, dim='Antenna', join='outer')
+
         CalImage.attrs['long_name'] = 'Interferogram Calibration'
         CalImage.attrs['units'] = 'rad'
         CalImage.attrs['description'] = 'Interferogram bias from ' + ds_calibration.Calibration + ' in radians'
