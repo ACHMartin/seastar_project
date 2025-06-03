@@ -365,6 +365,10 @@ def is_valid_acq_date(acq_date):
     except ValueError:
         return False
 
+
+
+
+
 def is_valid_gmf_dict(gmf_dict):
     """
     Check the gmf dict in OSCAR L2 processing chain. Shall be:
