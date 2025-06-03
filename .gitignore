@@ -161,3 +161,4 @@ cython_debug/
 
 # VS Code
 seastar/.vscode/settings.json
+seastar_project.code-workspace

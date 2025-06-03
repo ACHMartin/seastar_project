@@ -198,9 +198,9 @@ def create_null_lmout_dict(lmout_dict):
     lmout_null = lmout_dict.copy()
     for var in lmout_dict.keys():
         if isinstance(lmout_dict[var], np.ndarray):
-            lmout_null[var] = np.full(lmout_dict[var].shape, np.NaN)
+            lmout_null[var] = np.full(lmout_dict[var].shape, np.nan)
         else:
-            lmout_null[var] = np.NaN
+            lmout_null[var] = np.nan
 
     lmout_null['message'] = 'x0 found to be infeasible and out of bounds'
     lmout_null['success'] = False
