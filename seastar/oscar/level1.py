@@ -958,8 +958,8 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     #-----------------------------------------------------------
 
     # Loading calib files
-    Interferogram_calib_file = calib_dict2.get('Interferogram_calib_file')
-    Sigma0_calib_file = calib_dict2.get('Sigma0_calib_file')
+    Interferogram_calib_file = calib_dict.get('Interferogram_calib_file')
+    Sigma0_calib_file = calib_dict.get('Sigma0_calib_file')
     
     logger.info(f"Loading Interferogram calibration file: {Interferogram_calib_file}")
     Interferogram_calib_file_path, Interferogram_calib_file_name = os.path.split(Interferogram_calib_file)
