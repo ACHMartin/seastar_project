@@ -64,8 +64,7 @@ def ambiguity_closest_to_truth(lmout, truth, windcurrentratio=10):
 
     ind_dict = dict({
         'windcurrent': err.dist_x_reduce.sum(dim='x_reduce')\
-            .argmin(dim='Ambiguities')\
-            .drop_vars('x_reduce'),
+            .argmin(dim='Ambiguities'),
         'wind': err.dist_x_reduce.sel(x_reduce='uv')\
             .argmin(dim='Ambiguities')\
             .drop_vars('x_reduce'),
