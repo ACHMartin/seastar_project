@@ -867,11 +867,6 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         da_out.attrs['units'] = ''
         da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
     elif calib.lower() == 'interferogram':
-        if ds_calibration.Calibration == 'LandCalib':
-            Interferogram_calib = ds_calibration.InterferogramSmoothed
-        else:
-            Interferogram_calib = ds_calibration.Interferogram
-        
         interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
                                          ds_calibration.IncidenceAngle.data,
                                          ds_calibration.Interferogram.sel(Antenna=ant).data)
