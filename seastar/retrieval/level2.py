@@ -14,6 +14,8 @@ from typing import Optional
 from _version import __version__
 from _logger import logger
 
+import sys
+
 # import pdb # pdb.set_trace() # where we want to start to debug
 
 
@@ -346,6 +348,7 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
             Xarray dataset of the L2 OSCAR data.
     """
 
+
     gmf_dict = dict_L2_process['gmf']
     seastar.oscar.tools.is_valid_gmf_dict(gmf_dict)         # Check the format of gmf_dict
     
@@ -419,14 +422,20 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
     # Defining filename for datafile
     filename = seastar.oscar.tools.formatting_filename(ds_L2)
 
+    # Merge lmout inside ds_L2 dataset
+    ds_L2B = ds_L2B.rename({'x': 'x_L2B'})
+    ds_L2B = ds_L2B.rename({'cost': 'cost_L2B'})
+
+    ds_L2A = xr.merge([ds_L2A, lmout], compat='override')
+
     # Write the data in a NetCDF file
     if write_nc: 
         if ds_L1.attrs["ProcessingLevel"] in os.path.dirname(L1_folder):
             path_L2A_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2A"), os.path.basename(L1_folder))
             path_L2B_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2B"), os.path.basename(L1_folder))
         else:
-            path_L2A_data = L1_folder
-            path_L2B_data = L1_folder
+            path_L2A_data = os.path.join(L1_folder, "L2A")
+            path_L2B_data = os.path.join(L1_folder, "L2B")
         if not os.path.exists(path_L2A_data):
             os.makedirs(path_L2A_data, exist_ok=True)
             logger.info(f"Created directory {path_L2A_data}")
@@ -441,7 +450,6 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
         ds_L2.to_netcdf(os.path.join(path_L2B_data, filename)) 
 
         logger.info(f"Writing in {os.path.join(path_L2A_data, filename)}")
-        ds_L2A = xr.merge([ds_L2, lmout])  # Merging the solution with the L2 dataset
-        ds_L2A.to_netcdf(os.path.join(path_L2A_data, filename)) 
+        lmout.to_netcdf(os.path.join(path_L2A_data, filename)) 
 
-    return ds_L2A, ds_L2
+    return lmout, ds_L2
