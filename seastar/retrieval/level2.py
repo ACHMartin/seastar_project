@@ -401,13 +401,33 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
         ds_L2.attrs['RSV_Noise'] = dict_L2_process["RSV_Noise"]
         ds_L2.attrs['Sigma0GMF'] = gmf_dict['nrcs']['name']
 
+        logger.info("Merging L2 data with sol giving L2A data")
+        ds_L2A = xr.merge([ds_L2, sol])
+
+        # Defining filename for datafile of L2A products  
+        ds_L2A.attrs['ProcessingLevel'] = "L2A"
+        filename_L2A = seastar.oscar.tools.formatting_filename(ds_L2A)
+
+        # Write the data in a NetCDF file
+        if ds_L1.attrs["ProcessingLevel"] in os.path.dirname(L1_folder):
+            path_L2A_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2A"), os.path.basename(L1_folder))
+        else:
+            path_L2A_data = os.path.join(L1_folder, "L2A")
+        if not os.path.exists(path_L2A_data):
+            os.makedirs(path_L2A_data, exist_ok=True)
+            logger.info(f"Created directory {path_L2A_data}")
+        else: logger.info(f"Directory {path_L2A_data} already exists.")
+        
+        logger.info(f"Writing in {os.path.join(path_L2A_data, filename_L2A)}")
+        ds_L2A.to_netcdf(os.path.join(path_L2A_data, filename_L2A)) 
+
     else:
         logger.error("Unknown level 2 processor, should be in {valid_L2_processor}. The code will crash.")
         raise ValueError("Unknown level 2 processor. The code will crash.")
     
     #Updating of the CodeVersion and ProcessingLevel in the attrs:
     ds_L2.attrs["CodeVersion"] = __version__
-    ds_L2.attrs['ProcessingLevel'] = "L2"
+    ds_L2.attrs['ProcessingLevel'] = "L2B"
     
     # Adding of L2 attrs
     ds_L2.attrs['DopplerGMF'] = gmf_dict['doppler']['name']
@@ -422,34 +442,18 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
     # Defining filename for datafile
     filename = seastar.oscar.tools.formatting_filename(ds_L2)
 
-    # Merge lmout inside ds_L2 dataset
-    ds_L2B = ds_L2B.rename({'x': 'x_L2B'})
-    ds_L2B = ds_L2B.rename({'cost': 'cost_L2B'})
-
-    ds_L2A = xr.merge([ds_L2A, lmout], compat='override')
-
     # Write the data in a NetCDF file
     if write_nc: 
         if ds_L1.attrs["ProcessingLevel"] in os.path.dirname(L1_folder):
-            path_L2A_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2A"), os.path.basename(L1_folder))
             path_L2B_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2B"), os.path.basename(L1_folder))
         else:
-            path_L2A_data = os.path.join(L1_folder, "L2A")
             path_L2B_data = os.path.join(L1_folder, "L2B")
-        if not os.path.exists(path_L2A_data):
-            os.makedirs(path_L2A_data, exist_ok=True)
-            logger.info(f"Created directory {path_L2A_data}")
-        else: logger.info(f"Directory {path_L2A_data} already exists.")
         if not os.path.exists(path_L2B_data):
             os.makedirs(path_L2B_data, exist_ok=True)
             logger.info(f"Created directory {path_L2B_data}")
         else: logger.info(f"Directory {path_L2B_data} already exists.")
     
-        
         logger.info(f"Writing in {os.path.join(path_L2B_data, filename)}")
         ds_L2.to_netcdf(os.path.join(path_L2B_data, filename)) 
 
-        logger.info(f"Writing in {os.path.join(path_L2A_data, filename)}")
-        lmout.to_netcdf(os.path.join(path_L2A_data, filename)) 
-
-    return lmout, ds_L2
+    return ds_L2
