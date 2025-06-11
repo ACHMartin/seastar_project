@@ -481,7 +481,7 @@ def coarsen_grid_resolution(ds, options):
     # Updating of the history in the attrs:
     current_history = ds.attrs.get("History", "")                                               # Get the current history or initialize it
     resolution_str = str(ds.attrs['SingleLookCrossRangeGridResolution']) + 'x' + str(ds.attrs['SingleLookGroundRangeGridResolution']) + 'm'
-    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} Coarsened grid resolution to " + resolution_str + '.'              # Create a new history entry
+    new_entry = f"{dt.now(timezone.utc).strftime(r'%d-%b-%Y %H:%M:%S')} Coarsened grid resolution to " + resolution_str + '.'              # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds.attrs["History"] = updated_history                                                       # Update the dataset attributes
     
