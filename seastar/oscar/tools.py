@@ -270,7 +270,7 @@ def check_attrs_dataset(ds):
 
     # Ensure processing_level is valid
     processing_level = ds.attrs.get("ProcessingLevel")
-    valid_levels = {"L1AP", "L1B", "L1C", "L2"}
+    valid_levels = {"L1AP", "L1B", "L1C", "L2A", "L2B"}
     if processing_level not in valid_levels:
         logger.error(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
         raise ValueError(f"Invalid processing level: {processing_level}. Must be one of {valid_levels}.")
@@ -298,7 +298,7 @@ def check_attrs_dataset(ds):
     if processing_level == "L1C":
         required_attrs_L1C = ["Calibration", "NRCSGMF"]
         missing_attrs.extend([attr for attr in required_attrs_L1C if attr not in ds.attrs])
-    if processing_level == "L2":
+    if "L2" in processing_level:
         required_attrs_L2 = ["DopplerGMF", "Kp", "RSVNoise", "L2Processor"]
         missing_attrs.extend([attr for attr in required_attrs_L2 if attr not in ds.attrs])
 
