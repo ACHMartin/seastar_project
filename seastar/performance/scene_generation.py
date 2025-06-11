@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Functions to generate seastar scenes."""
 
+import os
+import pathlib
+from typing import Optional
 import numpy as np
 import xarray as xr
 from scipy.optimize import least_squares
@@ -103,6 +106,8 @@ def truth_fct(geo, inst, gmf):
     # truth.attrs['gmf'] = gmf
     truth.attrs['gmf_nrcs'] = gmf['nrcs']['name']
     truth.attrs['gmf_doppler'] = gmf['doppler']['name']
+    if 'geo_name' in geo.attrs:
+        truth.attrs['geo_name'] = geo.attrs['geo_name']
 
     truth = truth.set_coords([
         # 'CentralWavenumber',
@@ -362,6 +367,67 @@ def satellite_looking_geometry(input):
     return sat_geometry
 
 
+def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
+    '''
+    Field generation of constant fields of the same dimension as the DataArray "da" with the "env" conditions
+
+    Parameters
+    ------------
+    da : ``xarray.DataArray``
+    env : ``dict``
+        Dictionnary for example with CurrentYYY and Wind keys (either EarthRelativeWindXXX or OceanSurfaceWindXXX)
+        with XXX being Speed, Direction, U or V. 'YYY' same as 'XXX' but 'Velocity' is used instead of 'Speed'.
+    Returns
+    ---------
+    ds_env : ``xarray.Dataset``
+        return a dataset or array of the same size and dims as "da" input, 
+        with keys and values in "env" dictionnary
+        for example with U, V, Speed/Velocity, Direction for Current, OceanSurfaceWind and EarthRelativeWind
+    Examples:
+    ----------
+    .. code-block:: python
+        a = xr.DataArray(np.arange(25).reshape(5, 5), dims=("x", "y"))
+        a
+        <xarray.DataArray (x: 5, y: 5)> Size: 200B
+        array([[ 0,  1,  2,  3,  4],
+            [ 5,  6,  7,  8,  9],
+            [10, 11, 12, 13, 14],
+            [15, 16, 17, 18, 19],
+            [20, 21, 22, 23, 24]])
+        Dimensions without coordinates: x, y
+    .. code-block:: python
+        env = {'CurrentVelocity': 1, 'CurrentDirection':0,
+                'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
+        env
+        {'CurrentVelocity': 1,
+        'CurrentDirection': 0,
+        'OceanSurfaceWindSpeed': 10,
+        'OceanSurfaceWindDirection': 180}
+
+    .. code-block:: python
+        seastar.utils.tools.wind_current_component_conversion(env,'Current')
+        {'CurrentVelocity': 1,
+        'CurrentDirection': 0,
+        'OceanSurfaceWindSpeed': 10,
+        'OceanSurfaceWindDirection': 180,
+        'CurrentU': 6.123233995736766e-17,
+        'CurrentV': 1.0}
+
+    .. code-block:: python
+        generate_constant_env_field(a, env)
+        <xarray.DataSet (x: 5, y: 5)>
+    '''
+    
+    ds_env = xr.Dataset()
+    # get the coordinates along the differents dims
+    for var_dim in da.sizes:
+        ds_env[var_dim] = da[var_dim]
+    # construct the dataset with all elements in the dict
+    for var in env.keys():
+        ds_env[var] = (da.dims, np.full(da.shape, env[var]))      
+    
+    return(ds_env)
+
 def generate_wind_field_from_single_measurement(u10, wind_direction, da):
     """
     Generate 2D fields of wind velocity and direction.
@@ -399,3 +465,136 @@ def generate_wind_field_from_single_measurement(u10, wind_direction, da):
     return u10Image, WindDirectionImage
 
 
+def compute_truth_level1(
+        inst: xr.Dataset, geo: xr.Dataset, gmf: dict, 
+        write_nc: Optional[bool]=False, 
+        main_path: Optional[str]='.'
+        ) -> tuple[xr.Dataset, xr.Dataset]:
+    '''
+    Generate 'Truth' and 'Level1' datasets from instrumental 'inst' and
+    environmental/geophysical conditions 'geo' with given 'gmf'
+
+    Parameters
+    ----------
+    inst : ``xr.Dataset``
+        Dataset of dimension ['across', 'antenna'], with fields 'IncidenceAngleImage', 'AntennaAzimuthImage', 
+        'uncerty_Kp', 'uncerty_RSV', 'Polarization'.
+    geo : ``xr.Dataset``
+        Dataset of dimension ['across', 'along'], with fields, as a minimum,
+        'OceanSurfaceWindSpeed', 'OceanSurfaceWindDirection' ('WindSpeed' and 'WindDirection' works 
+        but is not recommended), 'CurrentVelocity', 'CurrentDirection'
+    gmf : ``dict``
+        The geophysical model function (gmf) dictionnary is typically of the form:
+        gmf={'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+    write_nc: ``bool``, optional
+        Argument to write the data in a netcdf file. Defaults to False.
+    main_path: ``str``, optional
+        Path for writing the 'truth' and 'level1' datasets if 'write_nc=True'
+        The files are saved respectively in "main_path/truth/truth_filename.nc" and
+        "main_path/level1/level1_filename.nc"
+
+    Returns
+    -------
+    truth: ``xarray.Dataset``
+        Environmental conditions + observables (sigma0, RSV for all antennas) without noise.
+        fields of dimension 'Antenna', 'across', 'along': 'uncerty_Kp', 'uncerty_RSV', 'Sigma0', 'RSV'
+        + the same fields as the input 'geo'. 
+    level1: ``xarray.Dataset``
+        Noisy observables (sigma0, RSV for all antennas)
+    '''
+
+    # check across are the same size
+    if not inst.across.size == geo.across.size:
+        raise Exception('across shall be equals between inst and geo')
+    if not inst.across.equals(geo.across):
+        geo['across'] = inst.across
+    
+    truth = truth_fct(geo, inst, gmf)
+
+    uncertainty_in = xr.Dataset()
+    uncertainty_in['Kp'] = inst['uncerty_Kp']
+    uncertainty_in['RSV'] = inst['uncerty_RSV']
+    [uncerty, noise] = uncertainty_fct(
+                            truth,
+                            uncertainty_in
+                        )
+
+    # add attrs for truth
+    truth.attrs['geo_name'] = geo.attrs['geo_name']
+    file_str = 'truth_' + inst.attrs['filename'] \
+        + '_' + geo.attrs['geo_name'] + '.nc'
+    truth.attrs['filename'] = file_str
+    truth.attrs['history'] = 'inst: ' + inst.attrs['filename'] \
+                        + '; geo: ' + geo.attrs['geo_name'] \
+                        + '; nrcs gmf: ' + truth.attrs['gmf_nrcs'] \
+                        + '; dop gmf: ' +  truth.attrs['gmf_doppler']
+
+    level1 = noise_generation(truth, noise)
+    level1['noise_Sigma0'] = noise['Sigma0']
+    level1['noise_RSV'] = noise['RSV']
+
+    # add attrs for level1
+    file_str = 'level1_' + truth.attrs['filename'][6:-3] + '.nc'
+    level1.attrs['filename'] = file_str
+    level1.attrs['history'] = 'truth: ' + truth.attrs['filename'] + '; ' + truth.attrs['history']
+    
+    if write_nc:
+        save_path_filename(truth, main_path, 'truth')
+        save_path_filename(level1, main_path, 'level1')
+
+    return(truth, level1)
+
+def save_path_filename(ds: xr.Dataset, main_path: str, level: str):
+    path = os.path.join(main_path, level) # truth or level1
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    file_path = os.path.join(path, ds.attrs['filename'])
+    ds.to_netcdf(path=file_path)
+
+def compute_level2(
+        level1: xr.Dataset, gmf: dict, 
+        write_nc: Optional[bool]=False, 
+        main_path: Optional[str]='.'
+        ) -> xr.Dataset:
+    '''
+    Retrieve 'Level2' data from 'Level1' observables.
+
+    Parameters
+    ----------
+    level1 : ``xr.Dataset``
+        Dataset of dimension ['Antenna','across', 'along'], with fields 'IncidenceAngleImage', 'AntennaAzimuthImage', 
+        'Polarization', Sigma0, RSV, noise_Sigma0, noise_RSV
+    gmf : ``dict``
+        The geophysical model function (gmf) dictionnary is typically of the form:
+        gmf={'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+    write_nc: ``bool``, optional
+        Argument to write the data in a netcdf file. Defaults to False.
+    main_path: ``str``, optional
+        Path for writing the 'truth' and 'level1' datasets if 'write_nc=True'
+        The files are saved respectively in "main_path/truth/truth_filename.nc" and
+        "main_path/level1/level1_filename.nc"
+
+    Returns
+    -------
+    truth: ``xarray.Dataset``
+        Environmental conditions + observables (sigma0, RSV for all antennas) without noise.
+        fields of dimension 'Antenna', 'across', 'along': 'uncerty_Kp', 'uncerty_RSV', 'Sigma0', 'RSV'
+        + the same fields as the input 'geo'. 
+    level1: ``xarray.Dataset``
+        Noisy observables (sigma0, RSV for all antennas)
+    '''
+    level1 = level1.load() # needed for multiprocessing
+
+    noise = xr.Dataset()
+    noise['Sigma0'] = level1['noise_Sigma0']
+    noise['RSV'] = level1['noise_RSV']
+
+    lmout = seastar.retrieval.level2.run_find_minima(level1, noise, gmf, serial=False)
+    # lmout = seastar.retrieval.level2.run_find_minima(level1, noise, gmf)
+
+    file_str = 'level2_' + level1.attrs['filename'][6:-3] + '.nc'
+    lmout.attrs['filename'] = file_str
+    lmout.attrs['history'] = 'level1: ' + level1.attrs['filename'] + ';\n ' + level1.attrs['history']
+    if write_nc:
+        save_path_filename(lmout, main_path, 'level2')
+        
+    return(lmout)

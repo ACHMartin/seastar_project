@@ -600,6 +600,7 @@ def init_level2(level1):
 
     """
     level2 = xr.Dataset()
+    level2.attrs = level1.attrs.copy()
 #    level2.coords['longitude'] = level1.sel(Antenna='Fore').LonImage
 #    level2.coords['latitude'] = level1.sel(Antenna='Fore').LatImage
     level2.coords['longitude'] = level1.longitude
@@ -622,8 +623,8 @@ def init_auxiliary(level1, u10, wind_direction):
                                                     wind_direction,
                                                     level1)
     aux = xr.Dataset()
-    aux['EarthRelativeWindSpeed'] = WindSpeed
-    aux['EarthRelativeWindDirection'] = WindDirection
+    aux['WindSpeed'] = WindSpeed
+    aux['WindDirection'] = WindDirection
 
     return aux
 
@@ -789,8 +790,9 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     ds_L1B.attrs["CodeVersion"] = __version__
 
     # Updating of the history in the attrs:
-    current_history = ds_L1B.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1B processing."             # Create a new history entry
+    current_history = ds_L1B.attrs.get("History", "")                                          # Get the current history or initialize it
+    str_time = dt.now(timezone.utc).strftime('%d-%b-%Y %H:%M:%S')
+    new_entry = f"{str_time} L1B processing."                                                  # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
 
@@ -809,3 +811,234 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         ds_L1B.to_netcdf(os.path.join(path_new_data, filename)) 
 
     return ds_L1B
+
+
+def apply_calibration(ds_L1B, ds_calibration, calib):
+    """
+    Apply calibration to L1B data.
+    
+    Applies calibration curves contained in a calibration dataset to an OSCAR
+    L1B dataset. Option `calib` to switch between `Sigma0` or `Interferogram`
+    calibration
+
+    Parameters
+    ----------
+    ds_L1B : ``xr.Dataset``
+        OSCAR L1B dataset containing `Sigma0` or `Interferogram` data
+    ds_calibration : ``xr.Dataset``
+        Calibration dataset
+    calib : ``str``
+        Option for `Sigma0` or `Interferogram` calibration. Case insensitive
+
+    Raises
+    ------
+    Exception
+        Raises an exception if `calib` is not in the form `Sigma0` or `Interferogram`
+
+    Returns
+    -------
+    da_out : ``xr.DataArray``
+        Calibrated L1B data of the variable chosen by `calib`
+    CalImage : ``xr.DataArray``
+        Calibration image of the variable chosen by `calib`
+
+    """
+    valid_calib = ['sigma0', 'interferogram']
+    if calib.lower() not in valid_calib:
+        raise Exception('Calibration option of ' + calib + ' is not valid. Please select from Sigma0 or Interferogram')
+
+    if calib.lower() == 'sigma0':
+
+        interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
+                                         ds_calibration.IncidenceAngle.data,
+                                         ds_calibration.Sigma0.sel(Antenna=ant).data)
+                               for ant in ds_L1B.Antenna]
+        data_arrays = [xr.DataArray(data=interpolated_values[x],
+                                    coords=ds_L1B.Intensity.sel(Antenna=ant).coords,
+                                    dims=ds_L1B.Intensity.sel(Antenna=ant).dims)
+                      for x, ant in enumerate(ds_L1B.Antenna)]
+        CalImage = xr.concat(data_arrays, dim='Antenna', join='outer')
+        
+        CalImage.attrs['long_name'] = 'Sigma0 Calibration'
+        CalImage.attrs['units'] = ''
+        CalImage.attrs['description'] = 'Sigma0 bias with GMF from OceanPattern calibration in linear units '
+        da_out = seastar.utils.tools.db2lin(seastar.utils.tools.lin2db(ds_L1B.Intensity) - CalImage)
+        da_out.attrs['long_name'] = 'Sigma0'
+        da_out.attrs['units'] = ''
+        da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
+    elif calib.lower() == 'interferogram':
+        interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
+                                         ds_calibration.IncidenceAngle.data,
+                                         ds_calibration.Interferogram.sel(Antenna=ant).data)
+                               for ant in ds_L1B.Antenna]
+        data_arrays = [xr.DataArray(data=interpolated_values[x],
+                                    coords=ds_L1B.Interferogram.sel(Antenna=ant).coords,
+                                    dims=ds_L1B.Interferogram.sel(Antenna=ant).dims)
+                      for x, ant in enumerate(ds_L1B.Antenna)]
+        CalImage = xr.concat(data_arrays, dim='Antenna', join='outer')
+
+        CalImage.attrs['long_name'] = 'Interferogram Calibration'
+        CalImage.attrs['units'] = 'rad'
+        CalImage.attrs['description'] = 'Interferogram bias from ' + ds_calibration.Calibration + ' in radians'
+        da_out = ds_L1B.Interferogram - CalImage
+        da_out.attrs['long_name'] = 'Interferogram'
+        da_out.attrs['units'] = 'rad'
+        da_out.attrs['description'] = 'Interferometric phase calibrated using ' + ds_calibration.Calibration + ' OSCAR data'
+    
+    return da_out, CalImage
+
+def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dict, write_nc=False):
+    """
+    L1B to L1C processing chain.
+    
+    Processes OSCAR L1B data to L1C by applying one or more calibration files.
+
+    Parameters
+    ----------
+    L1B_folder : ``str``
+        Path to folder on disk containing OSCAR L1B files to process
+    campaign : ``str``
+        OSCAR campaign name
+    acq_date : ``str``
+        Acquisition date of the data in the form YYYYMMDD
+    track : ``str``
+        Track name of data to process in the form of e.g., `Track_1`
+    calib_dict : ``dict``
+        Dict containing the following (name:content):
+            {'Sigma0_calib_file': full filename including path for Sigma0 calib file,
+             'Interferogram_calib_file': full filename including path for Interferogram calib file,
+             }
+    write_nc : ``bool``, optional
+        Option to write L1C file to disk. The default is False.
+    
+    Raises
+    ------
+    Exception
+        Raises an exception if not all required entries found in calib_dict
+
+    Returns
+    -------
+    ds_L1C : ``xr.Dataset``
+        Calibrated OSCAR L1C dataset
+
+    """
+    #Checking calib_dict
+    valid_dict_keys = ['Sigma0_calib_file', 'Interferogram_calib_file']
+    if not all([i in calib_dict.keys() for i in valid_dict_keys]):
+        pattern = re.compile(r'^(' + '|'.join(map(re.escape, calib_dict.keys())) + r')$')
+        missing_keys = [entry for entry in valid_dict_keys if not pattern.match(entry)]
+        raise Exception(str(missing_keys) + ' missing from calib_dict')
+    
+    
+    # checking acq_date format:
+    if seastar.oscar.tools.is_valid_acq_date(acq_date):
+        logger.info("'acq_date' format is okay")
+    else: 
+        logger.error("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
+        raise ValueError("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
+
+    # Checking campaign name:
+    valid_campaign = ["202205_IroiseSea", "202305_MedSea"]
+    if campaign in valid_campaign:
+        logger.info("Campaign name has valid value.")
+    else:
+        logger.error(f"Unexpected campaign value: {campaign}")
+        raise ValueError(f"Unexpected campaign value: {campaign}. Shall be {valid_campaign}.")
+    
+
+    # Getting the date for every tracks in the dict.
+    track_names_dict = seastar.utils.readers.read_config_OSCAR('track', {"campaign" : campaign, "flight" : acq_date})  #read_OSCAR_track_names_config(campaign, acq_date)
+    
+    # Getting the date for the track we are interested in
+    if track in track_names_dict.values():
+        date_of_track = [key for key, v in track_names_dict.items() if v == track][0]
+        logger.info(f"Track '{track}' found, acquisition time: {date_of_track}")
+    else:
+        logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
+        
+    #-----------------------------------------------------------
+    #               L1C PROCESSING
+    #-----------------------------------------------------------
+
+    # Loading calib files
+    Interferogram_calib_file = calib_dict.get('Interferogram_calib_file')
+    Sigma0_calib_file = calib_dict.get('Sigma0_calib_file')
+    
+    logger.info(f"Loading Interferogram calibration file: {Interferogram_calib_file}")
+    Interferogram_calib_file_path, Interferogram_calib_file_name = os.path.split(Interferogram_calib_file)
+    ds_Interferogram_calib = xr.open_dataset(Interferogram_calib_file)
+    logger.info(f"Loading Sigma0 calibration file: {Sigma0_calib_file}")
+    Sigma0_calib_file_path, Sigma0_calib_file_name = os.path.split(Sigma0_calib_file)
+    ds_Sigma0_calib = xr.open_dataset(Sigma0_calib_file)
+    # Loading data
+    logger.info(f"Opening track: {track} on day: {acq_date}")
+    L1B_file_name = seastar.oscar.tools.find_file_by_track_name(os.listdir(L1B_folder), track=track)
+    ds_L1B = xr.open_dataset(os.path.join(L1B_folder, L1B_file_name))
+    ds_L1C = ds_L1B.copy(deep=True)
+    ds_L1C.attrs['ProcessingLevel'] = 'L1C'
+    
+    # Radiometric Calibration
+    logger.info(f"Calibrating Sigma0 for :  {track} of day: {acq_date}")
+    ds_L1C['Sigma0'], ds_L1C['Sigma0CalImage'] = apply_calibration(ds_L1B, ds_Sigma0_calib, 'Sigma0')
+    ds_L1C['Sigma0'].attrs['calibration_file_name'] = Sigma0_calib_file_name
+    ds_L1C['Sigma0'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(Sigma0_calib_file)
+    )
+    ds_L1C['Sigma0CalImage'].attrs['calibration_file_name'] = Sigma0_calib_file_name
+    ds_L1C['Sigma0CalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(Sigma0_calib_file)
+    )
+    
+    # Interferometric Calibration
+    logger.info(f"Calibrating Interferogram for :  {track} of day: {acq_date}")
+    ds_L1C['Interferogram'], ds_L1C['InterferogramCalImage'] = apply_calibration(ds_L1B, ds_Interferogram_calib, 'Interferogram')
+    ds_L1C['Interferogram'].attrs['calibration_file_name'] = Interferogram_calib_file_name
+    ds_L1C['Interferogram'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
+    )
+    ds_L1C['InterferogramCalImage'].attrs['calibration_file_name'] = Interferogram_calib_file_name
+    ds_L1C['InterferogramCalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
+    )
+    
+    #Updating of the CodeVersion in the attrs:
+    ds_L1C.attrs["CodeVersion"] = __version__
+    
+    # Updating of the history in the attrs:
+    current_history = ds_L1C.attrs.get("History", "")                                               # Get the current history or initialize it
+    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1C processing."             # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
+    ds_L1C.attrs["History"] = updated_history                                                       # Update the dataset attributes
+    ds_L1C.attrs['OceanPatternCalibrationFileName'] = Sigma0_calib_file_name
+    ds_L1C.attrs['OceanPatternCalibrationFileShortName'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(Sigma0_calib_file)
+    )
+    ds_L1C.attrs['LandCalibFileName'] = Interferogram_calib_file_name
+    ds_L1C.attrs['LandCalibFileShortName'] = seastar.utils.readers.short_file_name_from_md5(
+        seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
+    )
+    ds_L1C.attrs['NRCSGMF'] = ds_Sigma0_calib.attrs['NRCSGMF']
+    ds_L1C.attrs['Calibration'] = ' '.join(['NRCS calibrated using OceanPattern calibration. OceanPattern process uses data from a star pattern of multiple acquisitions taken at different headings',
+    'relative to the wind direction. Median along-track data are then grouped by incidence angle and antenna look direction to produce data variables relative to azimuth for a discrete',
+    'set of incidence angles. Curves are fitted to these points. Similar curves are generated using the NRCS GMF (',
+                                           ds_Sigma0_calib.attrs['NRCSGMF'],
+                                           ') and the difference',
+    'between the fitted curves and the GMF averaged over azimuth are taken as the NRCS calibration bias for a given incidence angle. Interferograms calibrated with LandCalib. LandCalib',
+    'process uses an OSCAR acquisition over land and finds land pixes using the GSHHS global coastline dataset to generate a land mask. Applying this land mask to OSCAR L1B Interferogram imagery',
+    'the along-track median is taken to generate Interferogram bias wrt the cross range (incidence angle) dimension. These data are then smoothed with a polynomial fit to generate Interferogram',
+    'bias curves for the Fore and Aft antenna directions (Mid is set to zero)'])
+
+    filename = seastar.oscar.tools.formatting_filename(ds_L1C)
+
+    # Write the data in a NetCDF file
+    if write_nc: 
+        path_new_data = os.path.join(os.path.dirname(L1B_folder).replace("L1B", "L1C"), os.path.basename(L1B_folder))
+        if not os.path.exists(path_new_data):
+            os.makedirs(path_new_data, exist_ok=True)
+            logger.info(f"Created directory {path_new_data}")
+        else: logger.info(f"Directory {path_new_data} already exists.")
+        
+        logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
+        ds_L1C.to_netcdf(os.path.join(path_new_data, filename)) 
+
+    return ds_L1C
