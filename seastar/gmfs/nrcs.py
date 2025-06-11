@@ -11,6 +11,9 @@ from os.path import abspath, dirname, join
 def _load_gmf_table(fname, shape):
     """Loads and reshapes a GMF table from a binary file."""
     gmf_table = np.fromfile(fname, dtype=np.float32)
+    # Remove head and tail
+    # To access the table as a three-dimensional Fortran-ordered m x n x p matrix (shape),
+    # reshape it
     gmf_table = gmf_table[1:-1].reshape(shape, order="F")
     return gmf_table
 
@@ -26,14 +29,18 @@ def get_gmf_table_and_points(gmf_model):
                (tuple of numpy arrays for wspd, rdir, inci, and optionally pol).
     """
     dirpath = abspath(dirname(__file__))
-    m, n, p = 250, 73, 51  # Common dimensions
+
+    # Common dimensions of GMF table
+    m = 250  # wind speed min/max = 0.2-50 (step 0.2) [m/s] --> 250 pts
+    n = 73   # dir min/max = 0-180 (step 2.5) [deg]   -->  73 pts
+    p = 51   # inc min/max = 16-66 (step 1) [deg]     -->  51 pts
 
     wspd = np.linspace(0.2, 50, m)
     rdir = np.linspace(0, 180, n)
     inci = np.linspace(16, 66, p)
 
     if gmf_model == 'nscat4ds':
-        q = 2
+        q = 2 # polarisation = 1, 2 --> 2 pts
         pol = np.linspace(1, 2, q)
         fname_vv = join(dirpath, 'nscat4ds_250_73_51_vv.dat_little_endian')
         fname_hh = join(dirpath, 'nscat4ds_250_73_51_hh.dat_little_endian')
