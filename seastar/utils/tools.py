@@ -187,7 +187,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
     
     '''
 
-    env = env_dict
+    env = env_dict.copy() 
     # case if basevarname is a list
     if type(basevarname) is list:
         env_list = [None] * len(basevarname)
@@ -227,7 +227,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
                     env[ uv_list[0] ], env[ uv_list[1] ]
                 )
             if basevarname[-4:] == 'Wind':
-                [new_env[ md_list[0] ], new_env[ md_list[1] ]] = windUV2SpeedDir(
+                [env[ md_list[0] ], env[ md_list[1] ]] = windUV2SpeedDir(
                     env[ uv_list[0] ], env[ uv_list[1] ]
                 )
         if any([var in missing_env_vars for var in uv_list]):
