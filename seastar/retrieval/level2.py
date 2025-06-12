@@ -435,7 +435,7 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
 
     # Updating of the history in the attrs:
     current_history = ds_L2.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{dt.now(timezone.utc).strftime('%d-%b-%Y %H:%M:%S')} L2 processing."             # Create a new history entry
+    new_entry = f"{dt.now(timezone.utc).strftime(r'%d-%b-%Y %H:%M:%S')} L2 processing."             # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L2.attrs["History"] = updated_history                                                       # Update the dataset attributes
 

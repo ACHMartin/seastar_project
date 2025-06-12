@@ -1006,7 +1006,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     
     # Updating of the history in the attrs:
     current_history = ds_L1C.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{dt.now(timezone.utc).strftime("%d-%b-%Y %H:%M:%S")} L1C processing."             # Create a new history entry
+    new_entry = f"{dt.now(timezone.utc).strftime(r'%d-%b-%Y %H:%M:%S')} L1C processing."             # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1C.attrs["History"] = updated_history                                                       # Update the dataset attributes
     ds_L1C.attrs['OceanPatternCalibrationFileName'] = Sigma0_calib_file_name
