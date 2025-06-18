@@ -1000,10 +1000,16 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     ds_L1C['InterferogramCalImage'].attrs['calibration_file_short_name'] = seastar.utils.readers.short_file_name_from_md5(
         seastar.utils.readers.md5_checksum_from_file(Interferogram_calib_file)
     )
+
+    # Updating RSV with new Interferogram
     
+    logger.info(f"Re-computing RadialSurfaceVelocity using calibrated Interferograms for :  {track} of day: {acq_date}")
+    rsv_list = [compute_radial_surface_velocity(ds_L1C.sel(Antenna=ant)) for ant in ds_L1C.Antenna]
+    ds_L1C['RadialSurfaceVelocity'] = xr.concat(rsv_list, dim='Antenna', join='outer')
+    ds_L1C['RadialSurfaceVelocity'].attrs['description'] = 'Radial Surface Velocity computed with calibrated Interferograms'
     #Updating of the CodeVersion in the attrs:
     ds_L1C.attrs["CodeVersion"] = __version__
-    
+
     # Updating of the history in the attrs:
     current_history = ds_L1C.attrs.get("History", "")                                               # Get the current history or initialize it
     new_entry = f"{dt.now(timezone.utc).strftime(r'%d-%b-%Y %H:%M:%S')} L1C processing."             # Create a new history entry
