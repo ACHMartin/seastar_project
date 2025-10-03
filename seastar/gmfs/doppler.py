@@ -3,11 +3,14 @@
 """Module to compute Doppler shift variables from airborne SAR imagery."""
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 # import pdb
 from scipy.constants import c  # speed of light in vacuum
 import seastar
-
+from typing import Union, Optional
+from os.path import abspath, dirname, join
+from numpy.polynomial import Legendre as L
 
 def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
     """
@@ -198,6 +201,15 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         for pol_str in ['VV', 'HH']:
             wasv_rsv[ind[pol_str]] = dc[pol_str].values[ind[pol_str]]
 
+    elif gmf[:5] == 'oscar':
+        wasv_rsv = oscar_empirical_wasv(
+            aux_geo.OceanSurfaceWindSpeed,
+            relative_wind_direction,
+            L1.IncidenceAngleImage,
+            L1.Polarization,
+            gmf=gmf
+        )
+
     else:
         raise Exception(
             'Error, unknown gmf, should be yurovsky19 or mouche 12'
@@ -215,6 +227,140 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     ds_wa.attrs['DopplerGMF'] = gmf
     
     return ds_wa
+
+def oscar_empirical_wasv(
+        u10: float or np.ndarray or xr.DataArray,
+        phi: float or np.ndarray or xr.DataArray,
+        inc: float or np.ndarray or xr.DataArray,
+        pol: float or np.ndarray or xr.DataArray,
+        gmf: str) -> float or np.ndarray or xr.DataArray:
+
+    """
+    Compute Doppler shift due to the empirical geophysical model function 
+    derived from oscar measurements.
+
+    Parameters
+    ----------
+    u10 : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Wind speed (m/s) at 10m above sea surface.
+    phi : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Angle between wind and look directions (degrees) in range 0 (upwind) :
+            90 (crosswind) : 180 (downwind).
+    inc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Incidence angle of radar beam (degrees from nadir).
+    pol : str
+        Polarisation of radar beam (VV).
+    gmf : str
+        Valid GMF:
+        'oscar20220522T11-18_v20250318'
+
+    Raises
+    ------
+    Exception
+        Exception raised if unknown gmf. It should be one of the described above.
+
+    Returns
+    -------
+    wasv_rsv: ``float``, ``numpy.ndarray``, ``xarray.DataArray``
+        Radial surface velocity 
+    uncerty_rsv: ``float``, ``numpy.ndarray``, ``xarray.DataArray``
+        Uncertainty on the rsv as infered from the fit
+    """
+
+    if gmf == 'oscar20220522T11-18_v20250318':
+        wasv_rsv = get_second_harmonic_inci_legendre(phi, inc, gmf=gmf)
+    else:
+        raise Exception(
+            'Error, unknown gmf. See documentation.'
+            )
+    
+    return wasv_rsv
+
+
+def _load_second_harmonic_inci_legendre(gmf: str) -> list:
+    """
+    Load empirical GMF following a second harmonic fit in azimuth, 
+    with Legendre polymonial fit in incidence angle
+
+    The curve is of the form: An + Bn*cos(phi) + Cn*cos(2phi)
+    With, An, Bn, Cn Legendre polymonial of order 'n' over the normalised 
+    domain in incidence angle: x = 2*(inci - inci_centre)/inci_range 
+
+    Parameters
+    ----------
+    gmf : str
+        One of the following string format:
+        "oscar20220522T11-18_v20250318"
+
+    Raises
+    ------
+    Exception
+        Exception raised if unknown gmf. It should be one of the described above.
+
+    Returns
+    -------
+        List of parameters
+
+    """
+    dirpath = abspath(dirname(__file__))
+
+    if gmf == 'oscar20220522T11-18_v20250318':
+        fname = join(dirpath, 'GMF_OSCAR_20220522_T11-18_v20250318.csv')
+    else:
+        raise Exception(
+            'Error, unknown gmf. See documentation.'
+            )
+    
+    df = pd.read_csv(fname)
+    # a = L(list(df['A']), domain=np.array([-0.5,0.5]), window=np.array([-1,1]))
+    # b = L(list(df['B']), domain=np.array([-0.5,0.5]), window=np.array([-1,1]))
+    # c = L(list(df['C']), domain=np.array([-0.5,0.5]), window=np.array([-1,1]))
+    a = L(list(df['A']))
+    b = L(list(df['B']))
+    c = L(list(df['C']))
+    inci_angle_centre = np.unique(df['centre'])
+    inci_angle_range = np.unique(df['range'])
+
+    if len(inci_angle_centre) > 1:
+        raise Exception(
+            'Error, centre in the CSV table should be a constant value.'
+            )
+    if len(inci_angle_range) > 1:
+        raise Exception(
+            'Error, range in the CSV table should be a constant value.'
+        )
+    return(list([a,b,c,inci_angle_centre,inci_angle_range]))
+
+def get_second_harmonic_inci_legendre(phi, inc, gmf: str) -> list:
+    """
+    Load empirical GMF following a second harmonic fit in azimuth, 
+    with Legendre polymonial fit in incidence angle
+
+    The curve is of the form: An + Bn*cos(phi) + Cn*cos(2phi)
+    With, An, Bn, Cn Legendre polymonial of order 'n' over the normalised 
+    domain in incidence angle: x = 2*(inci - inci_centre)/inci_range 
+
+    Parameters
+    ----------
+    phi : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Angle between wind and look directions (degrees) in range 0 (upwind) :
+            90 (crosswind) : 180 (downwind).
+    inc : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+        Incidence angle of radar beam (degrees from nadir).
+    gmf : str
+        One of the following string format:
+        "oscar20220522T11-18_v20250318"
+
+    Returns
+    -------
+        
+
+    """
+    [a,b,c,centre,range] = _load_second_harmonic_inci_legendre(gmf)
+
+    x = 2*(inc - centre)/range
+    wasv_rsv = a(x) + b(x)*np.cos(np.radians(phi)) + c(x)*np.cos(np.radians(2*phi))
+    return(wasv_rsv)
 
 
 def convertDoppler2Velocity(freq_GHz, dop, inci):
