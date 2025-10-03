@@ -331,6 +331,9 @@ def _load_second_harmonic_inci_legendre(gmf: str) -> list:
         )
     return(list([a,b,c,inci_angle_centre,inci_angle_range]))
 
+gmf_coeffs_oscar20220522T11_18_v20250318 = _load_second_harmonic_inci_legendre('oscar20220522T11-18_v20250318')
+
+
 def get_second_harmonic_inci_legendre(phi, inc, gmf: str) -> list:
     """
     Load empirical GMF following a second harmonic fit in azimuth, 
@@ -356,7 +359,7 @@ def get_second_harmonic_inci_legendre(phi, inc, gmf: str) -> list:
         
 
     """
-    [a,b,c,centre,range] = _load_second_harmonic_inci_legendre(gmf)
+    [a,b,c,centre,range] = gmf_coeffs_oscar20220522T11_18_v20250318
 
     x = 2*(inc - centre)/range
     wasv_rsv = a(x) + b(x)*np.cos(np.radians(phi)) + c(x)*np.cos(np.radians(2*phi))
