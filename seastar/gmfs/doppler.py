@@ -251,7 +251,7 @@ def oscar_empirical_wasv(
     pol : str
         Polarisation of radar beam (VV).
     gmf : str
-        Valid GMF:
+        Valid GMFs:
         'oscar20220522T11-18_v20250318'
 
     Raises
@@ -359,7 +359,8 @@ def get_second_harmonic_inci_legendre(phi, inc, gmf: str) -> list:
         
 
     """
-    [a,b,c,centre,range] = gmf_coeffs_oscar20220522T11_18_v20250318
+    if gmf == 'oscar20220522T11-18_v20250318':
+        [a,b,c,centre,range] = gmf_coeffs_oscar20220522T11_18_v20250318
 
     x = 2*(inc - centre)/range
     wasv_rsv = a(x) + b(x)*np.cos(np.radians(phi)) + c(x)*np.cos(np.radians(2*phi))
