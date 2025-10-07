@@ -213,6 +213,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     else:
         raise Exception(
             'Error, unknown gmf, should be yurovsky19 or mouche 12'
+            #TODO use key instead, key for the full file 
             )
 
     ds_wa = xr.DataArray(
@@ -227,6 +228,11 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     ds_wa.attrs['DopplerGMF'] = gmf
     
     return ds_wa
+
+valid_oscar_wasv_gmf = {
+    'oscar20220522T11-18_v20250318',
+
+}
 
 def oscar_empirical_wasv(
         u10: float or np.ndarray or xr.DataArray,
@@ -271,7 +277,7 @@ def oscar_empirical_wasv(
         wasv_rsv = get_second_harmonic_inci_legendre(phi, inc, gmf=gmf)
     else:
         raise Exception(
-            'Error, unknown gmf. See documentation.'
+            f'Error, unknown gmf. Expected OSCAR WASV GMF: {valid_oscar_wasv_gmf}.'
             )
     
     return wasv_rsv
@@ -308,13 +314,10 @@ def _load_second_harmonic_inci_legendre(gmf: str) -> list:
         fname = join(dirpath, 'GMF_OSCAR_20220522_T11-18_v20250318.csv')
     else:
         raise Exception(
-            'Error, unknown gmf. See documentation.'
+            'Error, unknown gmf. Expected OSCAR WASV GMF: {valid_oscar_wasv_gmf}.'
             )
     
     df = pd.read_csv(fname)
-    # a = L(list(df['A']), domain=np.array([-0.5,0.5]), window=np.array([-1,1]))
-    # b = L(list(df['B']), domain=np.array([-0.5,0.5]), window=np.array([-1,1]))
-    # c = L(list(df['C']), domain=np.array([-0.5,0.5]), window=np.array([-1,1]))
     a = L(list(df['A']))
     b = L(list(df['B']))
     c = L(list(df['C']))
@@ -361,6 +364,10 @@ def get_second_harmonic_inci_legendre(phi, inc, gmf: str) -> list:
     """
     if gmf == 'oscar20220522T11-18_v20250318':
         [a,b,c,centre,range] = gmf_coeffs_oscar20220522T11_18_v20250318
+
+    if isinstance(inc, xr.core.dataarray.DataArray):
+        centre = xr.full_like(inc, centre[0])
+        range = xr.full_like(inc, range[0])
 
     x = 2*(inc - centre)/range
     wasv_rsv = a(x) + b(x)*np.cos(np.radians(phi)) + c(x)*np.cos(np.radians(2*phi))
