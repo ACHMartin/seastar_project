@@ -272,8 +272,8 @@ def oscar_empirical_wasv(
     -------
     wasv_rsv: ``float``, ``numpy.ndarray``, ``xarray.DataArray``
         Radial surface velocity 
-    uncerty_rsv: ``float``, ``numpy.ndarray``, ``xarray.DataArray``
-        Uncertainty on the rsv as infered from the fit
+    # TODO uncerty_rsv: ``float``, ``numpy.ndarray``, ``xarray.DataArray``
+    #     Uncertainty on the rsv as infered from the fit
     """
 
     if gmf == 'oscar20220522T11-18_v20250318':
@@ -362,7 +362,8 @@ def get_second_harmonic_inci_legendre(phi, inc, gmf: str) -> list:
 
     Returns
     -------
-        
+    wasv_rsv: ``float``, ``numpy.ndarray``, ``xarray.DataArray``
+        Radial surface velocity (m/s)    
 
     """
     if gmf == 'oscar20220522T11-18_v20250318':
