@@ -11,6 +11,12 @@ import seastar
 from typing import Union, Optional
 from os.path import abspath, dirname, join
 from numpy.polynomial import Legendre as L
+from _logger import logger
+
+valid_oscar_wasv_gmf = {
+    'oscar20220522T11-18_v20250318',
+}
+valid_wasv_gmf = valid_oscar_wasv_gmf.union({'mouche12', 'yurovsky19'})
 
 def compute_total_surface_motion(L1, aux_geo, gmf, **kwargs):
     """
@@ -211,6 +217,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
         )
 
     else:
+
         raise Exception(
             'Error, unknown gmf, should be yurovsky19 or mouche 12'
             #TODO use key instead, key for the full file 
@@ -229,10 +236,6 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
     
     return ds_wa
 
-valid_oscar_wasv_gmf = {
-    'oscar20220522T11-18_v20250318',
-
-}
 
 def oscar_empirical_wasv(
         u10: float or np.ndarray or xr.DataArray,
@@ -276,9 +279,9 @@ def oscar_empirical_wasv(
     if gmf == 'oscar20220522T11-18_v20250318':
         wasv_rsv = get_second_harmonic_inci_legendre(phi, inc, gmf=gmf)
     else:
-        raise Exception(
-            f'Error, unknown gmf. Expected OSCAR WASV GMF: {valid_oscar_wasv_gmf}.'
-            )
+        msg_err = f'Error, unknown gmf. Expected OSCAR WASV GMF: {valid_oscar_wasv_gmf}.'
+        logger.error(msg_err)
+        raise KeyError(msg_err)
     
     return wasv_rsv
 
@@ -313,9 +316,9 @@ def _load_second_harmonic_inci_legendre(gmf: str) -> list:
     if gmf == 'oscar20220522T11-18_v20250318':
         fname = join(dirpath, 'GMF_OSCAR_20220522_T11-18_v20250318.csv')
     else:
-        raise Exception(
-            'Error, unknown gmf. Expected OSCAR WASV GMF: {valid_oscar_wasv_gmf}.'
-            )
+        msg_err = f'Error, unknown gmf. Expected OSCAR WASV GMF: {valid_oscar_wasv_gmf}.'
+        logger.error(msg_err)
+        raise KeyError(msg_err)
     
     df = pd.read_csv(fname)
     a = L(list(df['A']))
@@ -405,7 +408,7 @@ def convertDoppler2Velocity(freq_GHz, dop, inci):
     # Do not change, freq_GHz need to be in GHz ADMARTIN,
     # used in CEASELESS 2022
     if 100 < freq_GHz < 0.1:
-        raise Exception('Inputs freq_GHz should be in GHz, e.g. C-band: 5.5 '
+        raise ValueError('Inputs freq_GHz should be in GHz, e.g. C-band: 5.5 '
                         'X-band 9.55; Ku-band 13.6')
     n = 1.000293
     c_air = c / n
@@ -456,8 +459,11 @@ def mouche12(u10, phi, inc, pol):
     size = sizes.max()
     if ((sizes != size) & (sizes != 1)).any():
         raise Exception('Inputs sizes do not agree.')
-    if pol not in ['VV', 'HH']:
-        raise Exception('Unknown polarisation : ' + pol)
+    valid_pol = {'VV','HH'}
+    if pol not in valid_pol:
+        msg_err = f'Error, unknown polarisation: {pol}. Expected polarisation: {valid_pol}.'
+        logger.error(msg_err)
+        raise KeyError(msg_err)
     # NN coefficients (W=weights and B=biases)
     # (coefficient names in mouche2012 are given)
     if pol == 'VV':
