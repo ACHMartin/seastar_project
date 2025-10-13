@@ -611,21 +611,16 @@ def init_level2(level1):
 
 
 def init_auxiliary(level1, u10, wind_direction):
+    '''
+    WARNING: the function is descoped.
+    WARNING recommandation is to use:
+    seastar/performance/scene_generation/generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset
+    '''
 
-    "A Dataset containing WindSpeed, WindDirection,"
-    "IncidenceAngleImage, LookDirection, Polarization"
-    "All matrix should be the same size"
-    "Polarization (1=VV; 2=HH)"
-
-    WindSpeed, WindDirection =\
-        seastar.performance.scene_generation\
-            .generate_wind_field_from_single_measurement(u10,
-                                                    wind_direction,
-                                                    level1)
-    aux = xr.Dataset()
-    aux['WindSpeed'] = WindSpeed
-    aux['WindDirection'] = WindDirection
-
+    aux = seastar.performance.scene_generation.generate_constant_env_field(
+        level1.isel(Antenna=0).IncidenceAngleImage, 
+        {'WindSpeed': u10, 'WindDirection': wind_direction})
+    
     return aux
 
 
