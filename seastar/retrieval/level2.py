@@ -352,10 +352,13 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
             Xarray dataset of the L2 OSCAR data.
     """
 
-
+    # Initialisation
     gmf_dict = dict_L2_process['gmf']
     seastar.oscar.tools.is_valid_gmf_dict(gmf_dict)         # Check the format of gmf_dict
     
+    if dict_ambiguity is None:
+        dict_ambiguity = {'name':'sort_by_cost'}
+
     #-----------------------------------------------------------
     #               L2 PROCESSING
     #-----------------------------------------------------------

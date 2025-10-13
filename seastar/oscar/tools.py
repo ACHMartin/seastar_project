@@ -387,7 +387,7 @@ def is_valid_gmf_dict(gmf_dict):
     valid_keys = {"nrcs", "doppler"}
     valid_values = {
         "nrcs": {"nscat4ds"},
-        "doppler": {"mouche12", "yurovsky19"}
+        "doppler": {"mouche12", "yurovsky19", "oscar20220522T11-18_v20250318"}
     }
 
     # Vérifie que toutes les clés sont valides
