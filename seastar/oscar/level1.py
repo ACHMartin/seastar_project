@@ -777,6 +777,14 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         
     ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_list)
     
+    # Clean units attribute '[m]' -> 'm' in the L1AP 
+    ds_ml = seastar.oscar.tools.clean_units_attribute(ds_ml)
+
+    # Change long_name + add description for GroundRange and CrossRange
+    ds_ml['GroundRange'].attrs['description'] = 'Dimension of the image in ground range (ie across track) direction'
+    ds_ml['GroundRange'].attrs['long_name'] = 'Across track direction'
+    ds_ml['CrossRange'].attrs['description'] = 'Dimension of the image along cross-range (ie along track) direction'
+    ds_ml['CrossRange'].attrs['long_name'] = 'Along track direction'
     #-----------------------------------------------------------
     
     # Building L1 dataset
