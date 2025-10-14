@@ -3,7 +3,6 @@
 import os
 import numpy as np
 import re
-from seastar.utils.readers import readNetCDFFile
 from seastar.utils.tools import list_duplicates
 from scipy import interpolate
 import xarray as xr
@@ -39,7 +38,7 @@ def load_L1AP_OSCAR_data(file_path, file_list):
     ds_dict = dict()
     for ind, file_name in enumerate(file_list):
         antenna = identify_antenna_location_from_filename(file_name)
-        ds_dict[antenna] = readNetCDFFile(os.path.join(file_path,file_name))
+        ds_dict[antenna] = xr.open_dataset(os.path.join(file_path,file_name))
     return ds_dict
 
 

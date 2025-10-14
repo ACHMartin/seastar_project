@@ -10,29 +10,6 @@ import hashlib
 from _logger import logger
 
 
-
-def readNetCDFFile(netCFD_path):
-    """
-    Read a netCDF file and returns it as an `xarray.Dataset`.
-
-    :param netCFD_path: path to the netCDF file
-    :type netCFD_path: ``str``
-
-    :raises: ``ValueError`` if file cannot be read as netCDF and
-        returns ``None`` object
-
-    :return: xrray read from the netCDF file
-    :rtype: ``xarray``
-    """
-    data_xr = None
-    try:
-        data_xr = xr.open_dataset(netCFD_path)
-
-    except ValueError:
-        print(f'WARNING "{netCFD_path}" is not a readable netCDF file')
-
-    return data_xr
-
 def md5_checksum_from_file(file_name):
     """
     Create hexidecimal MD5 checksum from input file.
