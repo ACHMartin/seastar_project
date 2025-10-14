@@ -162,7 +162,7 @@ def compute_antenna_baseline(antenna_baseline):
     baseline = xr.DataArray(data=antenna_baseline)
     baseline.attrs['long_name'] =\
         'Antenna ATI baseline'
-    baseline.attrs['units'] = '[m]'
+    baseline.attrs['units'] = 'm'
     return baseline
 
 
@@ -863,8 +863,8 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         CalImage.attrs['units'] = ''
         CalImage.attrs['description'] = 'Sigma0 bias with GMF from OceanPattern calibration in linear units '
         da_out = seastar.utils.tools.db2lin(seastar.utils.tools.lin2db(ds_L1B.Intensity) - CalImage)
-        da_out.attrs['long_name'] = 'Sigma0'
-        da_out.attrs['units'] = ''
+        da_out.attrs['long_name'] = 'NRCS'
+        da_out.attrs['units'] = 'dB'
         da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
     elif calib.lower() == 'interferogram':
         interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
@@ -1034,6 +1034,11 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     'the along-track median is taken to generate Interferogram bias wrt the cross range (incidence angle) dimension. These data are then smoothed with a polynomial fit to generate Interferogram',
     'bias curves for the Fore and Aft antenna directions (Mid is set to zero)'])
 
+    # Drop uncalibrated high level variables
+    vars_to_drop = ['Intensity','Intensity_dB']
+    ds_L1C = ds_L1C.drop_vars(vars_to_drop)
+
+    # Filename formatting
     filename = seastar.oscar.tools.formatting_filename(ds_L1C)
 
     # Write the data in a NetCDF file
