@@ -1072,13 +1072,13 @@ def apply_phase_sign_convention(ds):
 
     """
     
-    flight = ds.StartTime[0:8]
+    flight_date = ds.StartTime[0:8]
     version = ds.DataVersion
     try:
         config = seastar.utils.readers.read_config_OSCAR('phase_sign_convention',info_dict={'version':version})
-        sign_convention = int(config[flight])
+        sign_convention = int(config[flight_date])
     except KeyError:
-        logger.error(f"Flight '{flight}' not found in config file. Setting default phase sign convention to 1")
+        logger.error(f"Flight '{flight_date}' not found in config file. Setting default phase sign convention to 1")
         sign_convention = 1    
     try:
         logger.info(f"Applying sign convention of {sign_convention} to Interferograms")
