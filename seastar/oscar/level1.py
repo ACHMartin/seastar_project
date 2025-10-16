@@ -360,30 +360,6 @@ def compute_multilooking_Master_Slave(ds, window=3,
     
     return ds_out[list(vars_to_send)]
 
-def compute_local_coordinates(ds):
-    lookdirec = re.sub('[^LR]', '', str(ds.LookDirection.data))
-    utmzone = int(ds.UTMZone)
-    utmhemi = dict({0: 'N', 1: 'S'})[int(ds.Hemisphere)]
-    E, N = seastar.utils.tools.wgs2utm_v3(ds.OrbLatImage,
-                                          ds.OrbLonImage,
-                                          utmzone,
-                                          utmhemi
-                                          )
-    gridinfo = ds.GBPGridInfo.data
-    if lookdirec == 'R':
-        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
-            + (N-gridinfo[1]) * np.cos(gridinfo[8])
-        orb_y = (E - gridinfo[0]) * np.cos(gridinfo[8])\
-            - (N - gridinfo[1]) * np.sin(gridinfo[8])
-    if lookdirec == 'L':
-        orb_x = (E - gridinfo[0]) * np.sin(gridinfo[8])\
-            + (N - gridinfo[1]) * np.cos(gridinfo[8])
-        orb_y = -(E - gridinfo[0]) * np.cos(gridinfo[8])\
-            + (N - gridinfo[1]) * np.sin(gridinfo[8])
-
-    return orb_x, orb_y
-
-
 def compute_antenna_azimuth_direction(ds, antenna, return_heading=False):
     """
     Calculate antenna azimuth relative to North in degrees.
