@@ -162,7 +162,7 @@ def compute_antenna_baseline(antenna_baseline):
     baseline = xr.DataArray(data=antenna_baseline)
     baseline.attrs['long_name'] =\
         'Antenna ATI baseline'
-    baseline.attrs['units'] = '[m]'
+    baseline.attrs['units'] = 'm'
     return baseline
 
 
@@ -611,21 +611,16 @@ def init_level2(level1):
 
 
 def init_auxiliary(level1, u10, wind_direction):
+    '''
+    WARNING: the function is descoped.
+    WARNING recommandation is to use:
+    seastar/performance/scene_generation/generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset
+    '''
 
-    "A Dataset containing WindSpeed, WindDirection,"
-    "IncidenceAngleImage, LookDirection, Polarization"
-    "All matrix should be the same size"
-    "Polarization (1=VV; 2=HH)"
-
-    WindSpeed, WindDirection =\
-        seastar.performance.scene_generation\
-            .generate_wind_field_from_single_measurement(u10,
-                                                    wind_direction,
-                                                    level1)
-    aux = xr.Dataset()
-    aux['WindSpeed'] = WindSpeed
-    aux['WindDirection'] = WindDirection
-
+    aux = seastar.performance.scene_generation.generate_constant_env_field(
+        level1.isel(Antenna=0).IncidenceAngleImage, 
+        {'WindSpeed': u10, 'WindDirection': wind_direction})
+    
     return aux
 
 
@@ -777,6 +772,14 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         
     ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_list)
     
+    # Clean units attribute '[m]' -> 'm' in the L1AP 
+    ds_ml = seastar.oscar.tools.clean_units_attribute(ds_ml)
+
+    # Change long_name + add description for GroundRange and CrossRange
+    ds_ml['GroundRange'].attrs['description'] = 'Dimension of the image in ground range (ie across track) direction'
+    ds_ml['GroundRange'].attrs['long_name'] = 'Across track direction'
+    ds_ml['CrossRange'].attrs['description'] = 'Dimension of the image along cross-range (ie along track) direction'
+    ds_ml['CrossRange'].attrs['long_name'] = 'Along track direction'
     #-----------------------------------------------------------
     
     # Building L1 dataset
@@ -863,8 +866,8 @@ def apply_calibration(ds_L1B, ds_calibration, calib):
         CalImage.attrs['units'] = ''
         CalImage.attrs['description'] = 'Sigma0 bias with GMF from OceanPattern calibration in linear units '
         da_out = seastar.utils.tools.db2lin(seastar.utils.tools.lin2db(ds_L1B.Intensity) - CalImage)
-        da_out.attrs['long_name'] = 'Sigma0'
-        da_out.attrs['units'] = ''
+        da_out.attrs['long_name'] = 'NRCS'
+        da_out.attrs['units'] = 'dB'
         da_out.attrs['description'] = 'Calibrated NRCS using ' + ds_calibration.NRCSGMF + ' and over-ocean OSCAR data'
     elif calib.lower() == 'interferogram':
         interpolated_values = [np.interp(ds_L1B.IncidenceAngleImage.sel(Antenna=ant),
@@ -1034,6 +1037,11 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     'the along-track median is taken to generate Interferogram bias wrt the cross range (incidence angle) dimension. These data are then smoothed with a polynomial fit to generate Interferogram',
     'bias curves for the Fore and Aft antenna directions (Mid is set to zero)'])
 
+    # Drop uncalibrated high level variables
+    vars_to_drop = ['Intensity','Intensity_dB']
+    ds_L1C = ds_L1C.drop_vars(vars_to_drop)
+
+    # Filename formatting
     filename = seastar.oscar.tools.formatting_filename(ds_L1C)
 
     # Write the data in a NetCDF file

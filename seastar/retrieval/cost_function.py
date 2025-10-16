@@ -5,6 +5,8 @@ import numpy as np
 import xarray as xr
 from scipy.optimize import least_squares
 import seastar
+from seastar.gmfs.doppler import compute_total_surface_motion
+from seastar.gmfs.nrcs import compute_nrcs
 from seastar.utils.tools import dotdict, da2py
 
 # import seastar.gmfs.doppler
@@ -68,15 +70,14 @@ def fun_residual(variables, level1, noise, gmf):
     model_rsv_list = [None] * level1.Antenna.size
     for aa, ant in enumerate(level1.Antenna.data):
         # print(aa, ant)
-        model_rsv_list[aa] = seastar.gmfs.doppler\
-            .compute_total_surface_motion(level1.sel(Antenna=ant),
+        model_rsv_list[aa] = compute_total_surface_motion(level1.sel(Antenna=ant),
                                           geo,
                                           gmf=gmf['doppler']['name'])
         # print(model_rsv_list[aa])
     model['RSV'] = xr.concat(model_rsv_list, dim='Antenna')
     # in future it should be: model['RSV'] = seastar.gmfs.doppler.compute_total_surface_motion(level1, geo, gmf=gmf.doppler) without the loop on antennas
 
-    model['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(level1, geo, gmf['nrcs'])
+    model['Sigma0'] = compute_nrcs(level1, geo, gmf['nrcs'])
 
     res = ( level1 - model ) / noise # DataSet with RSV and Sigma0 fields
 
@@ -158,7 +159,7 @@ def find_minima(level1_pixel, noise_pixel, gmf):
     for ii in [1,2,3]:
         try:
             lmout_dict = least_squares(
-                seastar.retrieval.cost_function.fun_residual,
+                fun_residual,
                 init[ii].x0,
                 args=(level1_pixel, noise_pixel, gmf),
                 **opt
@@ -509,7 +510,6 @@ def find_initial_values(sol1st_x, level1_inst, gmf):
 # end
 
     print("To Be Done find_initial_value")
-
     return init_list
 
 

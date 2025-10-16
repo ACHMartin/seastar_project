@@ -9,6 +9,7 @@ from datetime import datetime as dt
 from datetime import timezone
 from seastar.retrieval import cost_function, ambiguity_removal
 # from seastar.utils.tools import da2py
+from tqdm import tqdm
 from typing import Optional
 
 from _version import __version__
@@ -161,7 +162,10 @@ def run_find_minima(level1, noise, gmf, serial=False):
             lmoutmap = map(find_minima_parallel_task, input_mp)
         else:
             with multiprocessing.Pool() as pool:
-                lmoutmap = pool.map(find_minima_parallel_task, input_mp)
+                results = []
+                for result in tqdm(pool.imap(find_minima_parallel_task, input_mp), total=len(input_mp)):
+                    results.append(result)
+            lmoutmap = results
 
         lmmap = xr.concat(lmoutmap, dim='z')
         lmmap = lmmap.set_index(z=list_L1s0)
@@ -348,10 +352,13 @@ def processing_OSCAR_L1_to_L2(ds_L1, dict_L2_process, dict_ambiguity: Optional[d
             Xarray dataset of the L2 OSCAR data.
     """
 
-
+    # Initialisation
     gmf_dict = dict_L2_process['gmf']
     seastar.oscar.tools.is_valid_gmf_dict(gmf_dict)         # Check the format of gmf_dict
     
+    if dict_ambiguity is None:
+        dict_ambiguity = {'name':'sort_by_cost'}
+
     #-----------------------------------------------------------
     #               L2 PROCESSING
     #-----------------------------------------------------------

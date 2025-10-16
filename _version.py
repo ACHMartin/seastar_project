@@ -7,5 +7,5 @@ Version of the codebase
 """
 
 
-__version__ = '2025.06.2'
+__version__ = '2025.10.1'
 
