@@ -298,7 +298,7 @@ def sequential_current_retrieval(level1, dict_env, gmf):
     #L2 Processing
     #Initialise l2 dataset
     logger.info("Initialise l2 dataset")
-    level2=seastar.oscar.level1.init_level2(level1)
+    level2=init_level2(level1)
 
     #Compute current magnitude and direction
     logger.info("Compute current magnitude and direction")
@@ -309,6 +309,42 @@ def sequential_current_retrieval(level1, dict_env, gmf):
     level2['CurrentU'], level2['CurrentV'] = \
     seastar.utils.tools.currentVelDir2UV(level2['CurrentVelocity'], level2['CurrentDirection'])
     
+    return level2
+
+
+def init_level2(level1):
+    """
+    Initialise level2 dataset.
+
+    Parameters
+    ----------
+    dsa : xarray.Dataset
+        OSCAR SAR dataset for the aft antenna pair
+    dsf : xarray.Dataset
+        OSCAR SAR dataset for the fore antenna pair
+    dsm : xarray.Dataset
+        OSCAR SAR dataset for the mid antenna
+
+    Returns
+    -------
+    level2 : xarray.Dataset
+        OSCAR SAR L2 processing dataset
+    level2.RadialSurfaceVelocity : xarray.DataArray
+        Radial surface velocities (m/s) for the Fore and Aft antennas
+        with corresponding dimension 'Antenna' and Coords ['Fore','Aft']
+    level2.LookDirection : xarray.DataArray
+        Antenna look direction (degrees N) for the Fore and Aft antennas
+        with corresponding dimension 'Antenna' and Coords ['Fore','Aft']
+
+    """
+    level2 = xr.Dataset()
+    level2.attrs = level1.attrs.copy()
+#    level2.coords['longitude'] = level1.sel(Antenna='Fore').LonImage
+#    level2.coords['latitude'] = level1.sel(Antenna='Fore').LatImage
+    level2.coords['longitude'] = level1.longitude
+    level2.coords['latitude'] = level1.latitude
+#    level2 = level2.drop('Antenna')
+
     return level2
 
 
