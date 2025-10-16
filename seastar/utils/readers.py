@@ -77,27 +77,6 @@ def read_OSCAR_track_names_config(campaign, flight):
     track_names_dict = dict(track_names_config.items(flight))
     return track_names_dict
 
-def read_campaign_config():
-    """
-    Read campaign names configuration file.
-    
-    Reads in an OSCAR campaign names INI file and parses it as a dict of
-    {date : campaign_name}.
-
-    Returns
-    -------
-    campaign_names_dict : ``dict``
-        Dict of {date : campaign_name}. 
-    """
-    config_file_name = 'Campaign_name_lookup.ini'
-    logger.info(f"Reading Campaign config file {config_file_name}...")
-    campaign_names_config = ConfigParser()
-    campaign_names_config.optionxform = str
-    campaign_names_config.read(os.path.join(os.path.join('config', config_file_name)))
-    campaign_names_dict = dict(campaign_names_config.items('OSCAR_campaigns'))
-    return campaign_names_dict
-
-
 def read_config_OSCAR(config_type, info_dict=None):
     """
     Read configuration file related to OSCAR campaigns.
@@ -107,7 +86,10 @@ def read_config_OSCAR(config_type, info_dict=None):
     Parameters
     ----------
     config_type : ``str``
-        Config requested. Can be either "campaign" to extract the campaign names or "track" to extract the track names.
+        Config requested. Can be either:
+            "campaign" to extract the campaign names
+            "track" to extract the track names
+            "phase_sign_convention" to extract the phase direction convention
     info_dict : ``dict``
         Dict contraining the campaign name and the date of the flight with the following format {campaign: "campaign_name",  flight: "YYYYMMDD"}. 
         Default is None.
@@ -117,7 +99,9 @@ def read_config_OSCAR(config_type, info_dict=None):
     config_mapping : ``dict``
         Dict of {Track_time : Track_name}. Track time identical to L1A / L1AP track time in file name.
         or 
-        Dict of {date : campaign_name}. 
+        Dict of {date : campaign_name}
+        or
+        Dict of {date : phase sign convention}
     """
     if not isinstance(config_type, str):
         logger.error("Argument 'config_type' must be a string.")
@@ -128,7 +112,7 @@ def read_config_OSCAR(config_type, info_dict=None):
     section = ""
     
     if "campaign" in config_type:
-        config_file_name = "Campaign_name_lookup.ini"
+        config_file_name = "OSCAR_config.ini"
         section = "OSCAR_campaigns"
         logger.info(f"Reading {section} in config file : {config_file_name}...")
     elif "track" in config_type:
@@ -144,7 +128,10 @@ def read_config_OSCAR(config_type, info_dict=None):
         
         config_file_name = campaign+"_TrackNames.ini"
         logger.info(f"Reading {section} in config file : {config_file_name}...")
-        
+    elif "phase_sign_convention" in config_type:
+        config_file_name = "OSCAR_config.ini"
+        section = "phase_sign_convention"
+        logger.info(f"Reading {section} in config file : {config_file_name}...")
     else:
         logger.error(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
         raise ValueError(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
@@ -167,5 +154,6 @@ def read_config_OSCAR(config_type, info_dict=None):
     except MissingSectionHeaderError:
         logger.error(f"{config_file_name} does not contain valid INI format (missing section headers)")
         raise ValueError(f"{config_file_name} does not contain valid INI format (missing section headers)")
-    
-    return config_mapping 
+        
+    return config_mapping
+
