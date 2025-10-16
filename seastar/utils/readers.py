@@ -91,7 +91,9 @@ def read_config_OSCAR(config_type, info_dict=None):
             "track" to extract the track names
             "phase_sign_convention" to extract the phase direction convention
     info_dict : ``dict``
-        Dict contraining the campaign name and the date of the flight with the following format {campaign: "campaign_name",  flight: "YYYYMMDD"}. 
+        Dict containing the campaign name and the date of the flight with the following format {campaign: "campaign_name",  flight: "YYYYMMDD"}
+        or
+        Dict containing the data version with format {'version': data_version}
         Default is None.
 
     Returns
@@ -130,7 +132,15 @@ def read_config_OSCAR(config_type, info_dict=None):
         logger.info(f"Reading {section} in config file : {config_file_name}...")
     elif "phase_sign_convention" in config_type:
         config_file_name = "OSCAR_config.ini"
-        section = "phase_sign_convention"
+        if info_dict is None:
+            logger.error("info_dict contatining {'version':data_version} is required when looking for phase sign convention information.")
+            raise ValueError("info_dict containing {'version':data_version} is required when looking for phase sign convention information.")
+        try:
+            version = info_dict['version']
+        except KeyError as e:
+            logger.error(f"Missing key in info_dict: {e}")
+            raise KeyError(f"Missing key in info_dict: {e}")
+        section = '_'.join(['phase_sign_convention', version]) 
         logger.info(f"Reading {section} in config file : {config_file_name}...")
     else:
         logger.error(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
