@@ -4,6 +4,8 @@ import xarray as xr
 import glob, re, os
 from datetime import datetime as dt, timezone
 
+from typing import Optional
+
 import seastar
 from seastar.oscar.level1 import apply_calibration, compute_radial_surface_velocity
 from seastar.retrieval import ambiguity_removal
