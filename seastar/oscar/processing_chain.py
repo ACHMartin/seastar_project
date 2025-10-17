@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 
 import glob, re, os
+from os.path import join
 from datetime import datetime as dt, timezone
 
 from typing import Optional
@@ -231,7 +232,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
 
     # Loading the file names of the files corresponding to date_of_track (triplet of file - one per antenna)
-    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(L1AP_folder + "/*" + date_of_track + "*.nc"))]
+    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(join(L1AP_folder, f"*{date_of_track}*.nc")))]
 #-----------------------------------------------------------
 #               L1B PROCESSING
 #-----------------------------------------------------------
