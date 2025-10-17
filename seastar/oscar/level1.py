@@ -723,37 +723,32 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
 
     # Getting the date for every tracks in the dict.
     track_names_dict = seastar.utils.readers.read_config_OSCAR('track', {"campaign" : campaign, "flight" : acq_date})  #read_OSCAR_track_names_config(campaign, acq_date)
-    
+
     # Getting the date for the track we are interested in
     if track in track_names_dict.values():
         date_of_track = [key for key, v in track_names_dict.items() if v == track][0]
         logger.info(f"Track '{track}' found, acquisition time: {date_of_track}")
     else:
         logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
-        
+    
     # Loading the file names of the files corresponding to date_of_track (triplet of file - one per antenna)
     L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(L1AP_folder + "/*" + date_of_track + "*.nc"))]
+#-----------------------------------------------------------
+#               L1B PROCESSING
+#-----------------------------------------------------------
 
-    #-----------------------------------------------------------
-    #               L1B PROCESSING
-    #-----------------------------------------------------------
-    
     vars_to_keep = dict_L1B_process.get('vars_to_keep',['LatImage','LonImage','IncidenceAngleImage',
-                                                        'LookDirection','SquintImage','CentralFreq','OrbitHeadingImage'])
-
+                                                    'LookDirection','SquintImage','CentralFreq','OrbitHeadingImage'])
     logger.info(f"Opening track: {track} on day: {acq_date}")
-
     ds_dict = seastar.oscar.tools.load_L1AP_OSCAR_data(L1AP_folder, L1AP_file_names) 
-
     # Getting the antenna identificators
     antenna_list = list(ds_dict.keys())
     logger.info(f"Antenna: {antenna_list}")
-
     ds_ml = dict()
     for i, antenna in enumerate(antenna_list):
         logger.info(f"Begining of the processing of {L1AP_file_names[i]}")
         ds_dict[antenna] = seastar.oscar.level1.replace_dummy_values(
-                ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
+            ds_dict[antenna], dummy_val=float(ds_dict[antenna].Dummy.data))
         ds_ml[antenna] = seastar.oscar.level1.compute_multilooking_Master_Slave(ds_dict[antenna], dict_L1B_process['window'])
         ds_ml[antenna]['Polarization'] = seastar.oscar.level1.check_antenna_polarization(ds_dict[antenna])
         ds_ml[antenna]['AntennaAzimuthImage'] = seastar.oscar.level1.compute_antenna_azimuth_direction(ds_dict[antenna], antenna=antenna)
@@ -762,46 +757,39 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         if not np.isnan(ds_ml[antenna].TimeLag).all():
             ds_ml[antenna]['TimeLag'] = ds_ml[antenna].TimeLag\
                 .rolling({'CrossRange': 5}).median()\
-                .rolling({'GroundRange': 5}).median()
-                
+                    .rolling({'GroundRange': 5}).median()
+            
         ds_ml[antenna][vars_to_keep] = ds_dict[antenna][vars_to_keep]
         ds_ml[antenna]['TrackTime'] = seastar.oscar.level1.track_title_to_datetime(ds_ml[antenna].StartTime)
         ds_ml[antenna]['Intensity_dB'] = seastar.utils.tools.lin2db(ds_ml[antenna].Intensity)
+        #Applying phase sign convention correction from config\OSCAR_config.ini
+        ds_ml[antenna]['Interferogram'] = seastar.oscar.level1.apply_phase_sign_convention(ds_ml[antenna])
         ds_ml[antenna]['RadialSurfaceVelocity'] = seastar.oscar.level1.compute_radial_surface_velocity(ds_ml[antenna])
-        
-        
     ds_ml = seastar.oscar.level1.fill_missing_variables(ds_ml, antenna_list)
-    
-    # Clean units attribute '[m]' -> 'm' in the L1AP 
-    ds_ml = seastar.oscar.tools.clean_units_attribute(ds_ml)
 
-    # Change long_name + add description for GroundRange and CrossRange
-    ds_ml['GroundRange'].attrs['description'] = 'Dimension of the image in ground range (ie across track) direction'
-    ds_ml['GroundRange'].attrs['long_name'] = 'Across track direction'
-    ds_ml['CrossRange'].attrs['description'] = 'Dimension of the image along cross-range (ie along track) direction'
-    ds_ml['CrossRange'].attrs['long_name'] = 'Along track direction'
-    #-----------------------------------------------------------
-    
     # Building L1 dataset
     logger.info(f"Build L1 dataset for :  {track} of day: {acq_date}")
-    
     ds_L1B = seastar.oscar.level1.merge_beams(ds_ml, antenna_list)
+    # Clean units attribute '[m]' -> 'm' in the L1B dataset
+    seastar.oscar.tools.clean_units_attribute(ds_L1B)
+    # Change long_name + add description for GroundRange and CrossRange
+    ds_L1B['GroundRange'].attrs['description'] = 'Dimension of the image in ground range (ie across track) direction'
+    ds_L1B['GroundRange'].attrs['long_name'] = 'Across track direction'
+    ds_L1B['CrossRange'].attrs['description'] = 'Dimension of the image along cross-range (ie along track) direction'
+    ds_L1B['CrossRange'].attrs['long_name'] = 'Along track direction'
+
     del ds_ml   
     ds_L1B = ds_L1B.drop_vars(['LatImage', 'LonImage'], errors='ignore')
-
     #Updating of the CodeVersion in the attrs:
     ds_L1B.attrs["CodeVersion"] = __version__
-
     # Updating of the history in the attrs:
     current_history = ds_L1B.attrs.get("History", "")                                          # Get the current history or initialize it
     str_time = dt.now(timezone.utc).strftime('%d-%b-%Y %H:%M:%S')
     new_entry = f"{str_time} L1B processing."                                                  # Create a new history entry
     updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
     ds_L1B.attrs["History"] = updated_history                                                       # Update the dataset attributes
-
     # Defining filename for datafile
     filename = seastar.oscar.tools.formatting_filename(ds_L1B)
-
     # Write the data in a NetCDF file
     if write_nc: 
         path_new_data = os.path.join(os.path.dirname(L1AP_folder).replace("L1AP", "L1B"), os.path.basename(L1AP_folder))
@@ -809,12 +797,11 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
             os.makedirs(path_new_data, exist_ok=True)
             logger.info(f"Created directory {path_new_data}")
         else: logger.info(f"Directory {path_new_data} already exists.")
-        
+    
         logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
         ds_L1B.to_netcdf(os.path.join(path_new_data, filename)) 
 
     return ds_L1B
-
 
 def apply_calibration(ds_L1B, ds_calibration, calib):
     """
@@ -1056,3 +1043,48 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         ds_L1C.to_netcdf(os.path.join(path_new_data, filename)) 
 
     return ds_L1C
+
+def apply_phase_sign_convention(ds):
+    """
+    Apply phase sign correction.
+    
+    Reads OSCAR_config.ini and applies phase sign convention correction to
+    Interferograms in the input dataset.
+    
+    Default behaviour is phase sign convention = 1 (i.e., no change), unless
+    sign convention is specified for the acquisition's flight in the ini file.
+
+    Parameters
+    ----------
+    ds : ``xarray.DataSet``
+        OSCAR dataset containing Interferogram variables.
+    
+    Raises
+    ------
+    Exception
+        Raises a ValueError if the dataset does not contain Interferograms
+        Logs a KeyError if flight is not found in the OSCAR_config.ini file
+
+    Returns
+    -------
+    da_out : ``xr.DataArray``
+        OSCAR Interferograms with phase sign convention applied
+
+    """
+    
+    flight_date = ds.StartTime[0:8]
+    version = ds.DataVersion
+    try:
+        config = seastar.utils.readers.read_config_OSCAR('phase_sign_convention',info_dict={'version':version})
+        sign_convention = int(config[flight_date])
+    except KeyError:
+        logger.error(f"Flight '{flight_date}' not found in config file. Setting default phase sign convention to 1")
+        sign_convention = 1    
+    try:
+        logger.info(f"Applying sign convention of {sign_convention} to Interferograms")
+        da_out = ds.Interferogram * sign_convention
+    except AttributeError:
+        logger.error("Dataset does not contain Interferograms for phase sign convention change.")
+        raise ValueError("DataSet does not contain Interferogram variable")
+        
+    return da_out
