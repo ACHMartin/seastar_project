@@ -15,6 +15,7 @@ from seastar.retrieval.level2 import run_find_minima, sol2level2, is_valid_gmf_d
 from _logger import logger
 from _version import __version__
 
+#TODO put all the os.path.join/basename as directly "join" (after rebase clean_tree)
 
 def processing_OSCAR_L1_to_L2(ds_L1, 
                               dict_L2_process, 
@@ -22,10 +23,18 @@ def processing_OSCAR_L1_to_L2(ds_L1,
                               dict_env: Optional[dict]=None, 
                               write_nc: Optional[bool]=False, 
                               L1_folder: Optional[str]="." 
-                              ):
+                              ) ->  xr.DataArray:
     """
-    Processing OSCAR from L1 to L2.
-    Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows to calculate the wind direction and speed as well as the current speed and direction.
+    Processing OSCAR from L1 (NRCS, Interferogram) to L2 (Current vectors + Wind vectors for WCR).
+
+    Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows 
+    to calculate the wind direction and speed as well as the current speed and direction.
+    It provides two outputs: 
+    - L2A including full details about the inversions for the WCR inversion; 
+    - L2B including only the retrieved Current (+ Wind vectors for WCR inversion)
+
+    WCR: Wind & Current retrieval
+    SCR: Sequential Current retrieval (using wind vector as input)
 
     Parameters
     ----------
@@ -38,19 +47,17 @@ def processing_OSCAR_L1_to_L2(ds_L1,
             "RSV_Noise": RSV_noise,
             "Kp" : Kp (noise of NRCS).
             Defaults to dict().
-        dict_ambiguity : ``dict``, (optional)
+        dict_ambiguity : ``dict``, (optional)             Defaults to None.
             Dictionary containing the information needed for ambiguity removal. Example:
             dict_ambiguity = {"name" : "closest_truth",       # Can be "sort_by_cost" or "closest_truth"
                               "method" : "wind",      # Can be "wind", "current", or "windcurrent"
                               "truth" : geo}  
-            Defaults to None.
-        dict_env : ``dict``, (optional)
+        dict_env : ``dict``, (optional)             Defaults to None.
             Dictionary containing the environnement information needed for SCR inversion. Shall contain 'u10' and 'wind_direction'.
-            Defaults to None.
-        write_nc : bool (optional)
-            Argument to write the data in a netcdf file. Defaults to False.
-        L1_folder : ``str``, (optional)
-            Path to save the L2 OSCAR data. Defaults to ".".
+        write_nc : bool (optional) Defaults to False.
+            Argument to write the data in a netcdf file. 
+        L1_folder : ``str``, (optional) Defaults to ".".
+            Path to save the L2 OSCAR data. 
 
     Returns:
     ----------
@@ -106,7 +113,7 @@ def processing_OSCAR_L1_to_L2(ds_L1,
         uncerty, noise = seastar.performance.scene_generation.uncertainty_fct(ds_L1, uncertainty)
 
         lmout = run_find_minima(ds_L1, noise, gmf_dict) # noise is a dataset same size as ds_L1
-        sol = ambiguity_removal.solve_ambiguity(lmout, dict_ambiguity)
+        sol = ambiguity_removal.solve_ambiguity(lmout, dict_ambiguity) # include full details of the retrieval
         ds_L2 = sol2level2(sol)
 
         ds_L2.attrs = ds_L1.attrs.copy()            # Copy the attrs from L1 to L2
@@ -114,8 +121,11 @@ def processing_OSCAR_L1_to_L2(ds_L1,
         ds_L2.attrs['RSV_Noise'] = dict_L2_process["RSV_Noise"]
         ds_L2.attrs['Sigma0GMF'] = gmf_dict['nrcs']['name']
 
+        #----------------------
+        #     L2A products 
+        #----------------------
         logger.info("Merging L2 data with sol giving L2A data")
-        ds_L2A = xr.merge([ds_L2, sol])
+        ds_L2A = xr.merge([ds_L2, sol]) #merge with the full details of the retrieval from "sol"
 
         # Defining filename for datafile of L2A products  
         ds_L2A.attrs['ProcessingLevel'] = "L2A"
