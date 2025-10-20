@@ -235,7 +235,7 @@ def formatting_filename(ds):
         ds.attrs.get("L2Processor", ""),  # Only for L2
         ds.attrs.get("DopplerGMF", ""),  # Only for L2
         f"Kp{ds.attrs.get('Kp')}" if ds.attrs.get('Kp') else "",  # Only for L2
-        f"RSV{ds.attrs.get('RSVNoise')}" if ds.attrs.get('RSVNoise') else "",  # Only for L2
+        f"RSV{ds.attrs.get('RSV_Noise')}" if ds.attrs.get('RSV_Noise') else "",  # Only for L2
         __version__,
     ]
 
@@ -298,7 +298,7 @@ def check_attrs_dataset(ds):
         required_attrs_L1C = ["Calibration", "NRCSGMF"]
         missing_attrs.extend([attr for attr in required_attrs_L1C if attr not in ds.attrs])
     if "L2" in processing_level:
-        required_attrs_L2 = ["DopplerGMF", "Kp", "RSVNoise", "L2Processor"]
+        required_attrs_L2 = ["DopplerGMF", "Kp", "RSV_Noise", "L2Processor"]
         missing_attrs.extend([attr for attr in required_attrs_L2 if attr not in ds.attrs])
 
     # Raise error if missing attributes
