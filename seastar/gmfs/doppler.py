@@ -166,7 +166,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
                 aux_geo.OceanSurfaceWindSpeed.values,
                 relative_wind_direction.values,
                 L1.IncidenceAngleImage.values,
-                L1.Polarization.data,
+                str(L1.Polarization.data),
             )
         else:
             dop_c = np.full(L1.IncidenceAngleImage.shape, np.nan)
