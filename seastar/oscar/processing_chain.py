@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 
 import glob, re, os
-from os.path import join
+from os.path import join, basename, dirname, exists
 from datetime import datetime as dt, timezone
 
 from typing import Optional
@@ -15,17 +15,27 @@ from seastar.retrieval.level2 import run_find_minima, sol2level2, is_valid_gmf_d
 from _logger import logger
 from _version import __version__
 
+valid_L2_processor = {'SCR', 'WCR'}
 
-def processing_OSCAR_L1_to_L2(ds_L1, 
-                              dict_L2_process, 
-                              dict_ambiguity: Optional[dict]=None, 
-                              dict_env: Optional[dict]=None, 
-                              write_nc: Optional[bool]=False, 
-                              L1_folder: Optional[str]="." 
-                              ):
+def processing_OSCAR_L1_to_L2(ds_L1,
+                              dict_L2_process,
+                              dict_ambiguity: Optional[dict]=None,
+                              dict_env: Optional[dict]=None,
+                              write_nc: Optional[bool]=False,
+                              L1_folder: Optional[str]=".",
+                              write_L2A_nc: Optional[bool]=True,
+                              ) ->  xr.Dataset:
     """
-    Processing OSCAR from L1 to L2.
-    Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows to calculate the wind direction and speed as well as the current speed and direction.
+    Processing OSCAR from L1 (NRCS, Interferogram) to L2 (Current vectors + Wind vectors for WCR).
+
+    Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows
+    to calculate the wind direction and speed as well as the current speed and direction.
+    It provides two outputs:
+    - L2A including full details about the inversions for the WCR inversion;
+    - L2B including only the retrieved Current (+ Wind vectors for WCR inversion)
+
+    WCR: Wind & Current retrieval
+    SCR: Sequential Current retrieval (using wind vector defined in 'dict_env' as input)
 
     Parameters
     ----------
@@ -33,24 +43,25 @@ def processing_OSCAR_L1_to_L2(ds_L1,
             L1B or L1C OSCAR dataset.
         dict_L2_process : ``dict``
             Dictionary containing the information needed for L2 processing:
-            "gmf" : gmf dictionary
-            "L2_processor" : L2 processor for wind current inversion. Can be "SCR" or "WCR", set by default on SCR,
-            "RSV_Noise": RSV_noise,
-            "Kp" : Kp (noise of NRCS).
-            Defaults to dict().
-        dict_ambiguity : ``dict``, (optional)
+            "gmf" : gmf dictionary of the form:
+              {'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+            "L2_processor" : L2 processor for wind current inversion.
+              Can be "SCR" or "WCR", set by default on SCR using 'dict_env' wind,
+            "RSV_Noise": RSV_noise, scalar, eg 0.2m/s, needed for 'WCR'
+            "Kp" : Kp (noise of NRCS), scalar, eg 0.2, needed for 'WCR'.
+        dict_ambiguity : ``dict``, (optional)             Defaults to None.
             Dictionary containing the information needed for ambiguity removal. Example:
             dict_ambiguity = {"name" : "closest_truth",       # Can be "sort_by_cost" or "closest_truth"
                               "method" : "wind",      # Can be "wind", "current", or "windcurrent"
-                              "truth" : geo}  
-            Defaults to None.
-        dict_env : ``dict``, (optional)
+                              "truth" : geo}
+        dict_env : ``dict``, (optional)             Defaults to None.
             Dictionary containing the environnement information needed for SCR inversion. Shall contain 'u10' and 'wind_direction'.
-            Defaults to None.
-        write_nc : bool (optional)
-            Argument to write the data in a netcdf file. Defaults to False.
-        L1_folder : ``str``, (optional)
-            Path to save the L2 OSCAR data. Defaults to ".".
+        write_nc : bool (optional) Defaults to False.
+            Argument to write the Level2B data in a netcdf file.
+        L1_folder : ``str``, (optional) Defaults to ".".
+            Path to save the L2 OSCAR data.
+        write_L2A_nc : bool (optional) Defaults to True.
+            Argument to write the Level2A (including Level2B + all inversion details) data in a netcdf file.
 
     Returns:
     ----------
@@ -68,109 +79,184 @@ def processing_OSCAR_L1_to_L2(ds_L1,
     #-----------------------------------------------------------
     #               L2 PROCESSING
     #-----------------------------------------------------------
-    # L2_processor, set by default on SCR (Sequential Current Retrieval) 
+    # L2_processor, set by default on SCR (Sequential Current Retrieval)
     L2_processor = dict_L2_process.get("L2_processor","SCR")
 
-    if L2_processor == "SCR":
+    if L2_processor == "SCR": # Sequential Current Retrieval
         logger.info(f"The processor chosen is: {L2_processor}")
+        ds_L2B = _run_sequential_current_retrieval(ds_L1, dict_env, gmf_dict)
 
-        ds_L2 = seastar.retrieval.level2.sequential_current_retrieval(ds_L1, dict_env, gmf_dict['doppler']['name'])
-
-    elif L2_processor == "WCR":
+    elif L2_processor == "WCR":     # Wind Current Retrieval
         logger.info(f"The processor chosen is: {L2_processor}")
-        ds_L1 = ds_L1.load()
-
-        logger.info("Compute uncertainty")
-        uncertainty = xr.Dataset({"RSV":ds_L1.RadialSurfaceVelocity.copy(deep=True),
-                            "Kp":ds_L1.Intensity.copy(deep=True)})
-
-        if "RSV_Noise" not in dict_L2_process:
-            logger.error("Missing 'RSV_Noise' in dict_L2_process. The code will crash.")
-            raise KeyError("Missing 'RSV_Noise' in dict_L2_process")
-        if "Kp" not in dict_L2_process:
-            logger.error("Missing 'Kp' in dict_L2_process. The code will crash.")
-            raise KeyError("Missing 'Kp' in dict_L2_process")
-
-        uncertainty["RSV"] = dict_L2_process["RSV_Noise"]
-        uncertainty["Kp"] = dict_L2_process["Kp"]
-
-        if "Sigma0" not in ds_L1:
-            if "Intensity" in ds_L1:
-                logger.warning("Variable 'Sigma0' is missing from the dataset, we create it from 'Intensity'.")
-                ds_L1["Sigma0"] = ds_L1.Intensity
-            else:
-                logger.error("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
-                raise ValueError("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
-
-        ds_L1["RSV"] = ds_L1.RadialSurfaceVelocity
-        uncerty, noise = seastar.performance.scene_generation.uncertainty_fct(ds_L1, uncertainty)
-
-        lmout = run_find_minima(ds_L1, noise, gmf_dict) # noise is a dataset same size as ds_L1
-        sol = ambiguity_removal.solve_ambiguity(lmout, dict_ambiguity)
-        ds_L2 = sol2level2(sol)
-
-        ds_L2.attrs = ds_L1.attrs.copy()            # Copy the attrs from L1 to L2
-        ds_L2.attrs['Kp'] = dict_L2_process["Kp"]
-        ds_L2.attrs['RSV_Noise'] = dict_L2_process["RSV_Noise"]
-        ds_L2.attrs['Sigma0GMF'] = gmf_dict['nrcs']['name']
-
-        logger.info("Merging L2 data with sol giving L2A data")
-        ds_L2A = xr.merge([ds_L2, sol])
-
-        # Defining filename for datafile of L2A products  
-        ds_L2A.attrs['ProcessingLevel'] = "L2A"
-        filename_L2A = seastar.oscar.tools.formatting_filename(ds_L2A)
-
-        # Write the data in a NetCDF file
-        if ds_L1.attrs["ProcessingLevel"] in os.path.dirname(L1_folder):
-            path_L2A_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2A"), os.path.basename(L1_folder))
-        else:
-            path_L2A_data = os.path.join(L1_folder, "L2A")
-        if not os.path.exists(path_L2A_data):
-            os.makedirs(path_L2A_data, exist_ok=True)
-            logger.info(f"Created directory {path_L2A_data}")
-        else: logger.info(f"Directory {path_L2A_data} already exists.")
-
-        logger.info(f"Writing in {os.path.join(path_L2A_data, filename_L2A)}")
-        ds_L2A.to_netcdf(os.path.join(path_L2A_data, filename_L2A))
+        (ds_L2B, ds_L2A) = _run_wind_current_retrieval(
+                    ds_L1,
+                    dict_L2_process,
+                    dict_ambiguity, # by default sort_by_cost defined above
+                    L1_folder, # default '.' 
+                    write_L2A_nc
+        )
 
     else:
-        logger.error("Unknown level 2 processor, should be in {valid_L2_processor}. The code will crash.")
-        raise ValueError("Unknown level 2 processor. The code will crash.")
+        msg_error = f"Unknown level 2 processor, should be in {valid_L2_processor}. The code will crash."
+        logger.error(msg_error)
+        raise ValueError(msg_error)
 
-    #Updating of the CodeVersion and ProcessingLevel in the attrs:
-    ds_L2.attrs["CodeVersion"] = __version__
-    ds_L2.attrs['ProcessingLevel'] = "L2B"
+    if write_nc:
+        _write_product_in_nc_file(ds_L1, ds_L2B, L1_folder)
 
+    return ds_L2B
+
+
+def _run_sequential_current_retrieval(ds_L1, dict_env, gmf_dict):
+    """
+    run_sequential_retrieval, cf processing_OSCAR_L1_to_L2 for details on the inputs
+    
+    Returns:
+    ----------
+        ds_L2B: ``xr.Dataset``
+            Xarray dataset of the L2 OSCAR data.
+    """
+    L2_processor = 'SCR'
+    ds_L2B = seastar.retrieval.level2.sequential_current_retrieval(ds_L1, dict_env, gmf_dict['doppler']['name'])
+    # Updating ProcessingLevel in the attrs:
+    ds_L2B.attrs['ProcessingLevel'] = "L2B"
+    # Updating attributes
+    attrs2add = {
+        'DopplerGMF': gmf_dict['doppler']['name'],
+        'L2Processor': L2_processor,
+    }
+    ds_L2B = _update_attrs(ds_L2B, attrs2add)
+    # Updating of the history in the attrs:
+    ds_L2B.attrs["History"] = _update_history(ds_L2B, f'L2 processing: {L2_processor}')
+    return(ds_L2B)
+
+def _update_history(ds, message):
+    """
+    Updating of the history in the attrs
+    """
+    # Updating of the history in the attrs:
+    current_history = ds.attrs.get("History", "")                                               # Get the current history or initialize it
+    new_entry = f"{dt.now(timezone.utc).strftime(r'%d-%b-%Y %H:%M:%S')} {message}."             # Create a new history entry
+    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
+    
+    return(updated_history)                                                       # Update the dataset attributes
+
+def _update_attrs(ds, add_attrs):
+    """
+    Updating of the attrs
+    """
+    # Updating of the CodeVersion in the attrs:
+    ds.attrs["CodeVersion"] = __version__
     # Adding of L2 attrs
-    ds_L2.attrs['DopplerGMF'] = gmf_dict['doppler']['name']
-    ds_L2.attrs['L2Processor'] = L2_processor
+    for key in add_attrs: 
+        ds.attrs[key] = add_attrs[key]
+
+    return(ds)
+
+def _run_wind_current_retrieval(
+        ds_L1,
+        dict_L2_process,
+        dict_ambiguity,
+        L1_folder,
+        write_L2A_nc: Optional[bool]=True,
+    ) ->  (xr.DataArray, xr.DataArray):
+    """
+    run_wind_current_retrieval, cf processing_OSCAR_L1_to_L2 for details on the inputs
+    
+    Returns:
+    ----------
+        (ds_L2B, ds_L2A): ``xr.Dataset``
+            Xarray dataset of the L2 OSCAR data. L2A (all details) & L2B (without details) 
+    """
+
+    ds_L1 = ds_L1.load() # load L1, needed for multiprocessing
+
+    if "RSV_Noise" not in dict_L2_process:
+        logger.error("Missing 'RSV_Noise' in dict_L2_process. The code will crash.")
+        raise KeyError("Missing 'RSV_Noise' in dict_L2_process")
+    if "Kp" not in dict_L2_process:
+        logger.error("Missing 'Kp' in dict_L2_process. The code will crash.")
+        raise KeyError("Missing 'Kp' in dict_L2_process")
+    if "Sigma0" not in ds_L1:
+        if "Intensity" in ds_L1:
+            logger.warning("Variable 'Sigma0' is missing from the dataset, we create it from 'Intensity'.")
+            ds_L1["Sigma0"] = ds_L1.Intensity
+        else:
+            logger.error("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
+            raise ValueError("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
+    gmf_dict = dict_L2_process['gmf']
+
+    logger.info("Get uncertainty")
+
+    uncertainty = xr.Dataset()
+    uncertainty["RSV"] = dict_L2_process["RSV_Noise"]
+    uncertainty["Kp"] = dict_L2_process["Kp"]
+    uncerty, noise = seastar.performance.scene_generation.uncertainty_fct(ds_L1, uncertainty)
+
+    # nickname "RSV" used in run_find_minima function
+    ds_L1["RSV"] = ds_L1.RadialSurfaceVelocity
+
+    # the proper computing taking time is below
+    lmout = run_find_minima(ds_L1, noise, gmf_dict) # noise is a dataset same size as ds_L1
+    sol = ambiguity_removal.solve_ambiguity(lmout, dict_ambiguity) # "sol" include full details of the retrieval
+    ds_L2 = sol2level2(sol)
+
+    ds_L2.attrs = ds_L1.attrs.copy()            # Copy the attrs from L1 to L2
+
+    # Updating attributes
+    attrs2add = {
+        'Kp': dict_L2_process["Kp"],
+        'RSV_Noise': dict_L2_process["RSV_Noise"],
+        'Sigma0GMF': gmf_dict['nrcs']['name'],
+        'DopplerGMF': gmf_dict['doppler']['name'],
+        'L2Processor': dict_L2_process['L2_processor'],
+    }
+    ds_L2 = _update_attrs(ds_L2, attrs2add)
 
     # Updating of the history in the attrs:
-    current_history = ds_L2.attrs.get("History", "")                                               # Get the current history or initialize it
-    new_entry = f"{dt.now(timezone.utc).strftime(r'%d-%b-%Y %H:%M:%S')} L2 processing."             # Create a new history entry
-    updated_history = f"{current_history}\n{new_entry}" if current_history else new_entry           # Append to the history
-    ds_L2.attrs["History"] = updated_history                                                       # Update the dataset attributes
+    ds_L2.attrs["History"] = _update_history(ds_L2, f'L2 processing: {dict_L2_process['L2_processor']}')
+
+    #----------------------
+    #     L2A products - including all outputs
+    #----------------------
+    logger.info("Merging L2 data with sol giving L2A data")
+    ds_L2A = xr.merge([ds_L2, sol]) #merge with the full details of the retrieval from "sol"
+
+    # Updating ProcessingLevel in the attrs
+    ds_L2A.attrs['ProcessingLevel'] = "L2A"
+    ds_L2.attrs['ProcessingLevel'] = "L2B"
+
+    if write_L2A_nc:
+        _write_product_in_nc_file(ds_L1, ds_L2A, L1_folder)
+
+    return (ds_L2, ds_L2A)
+
+
+def _write_product_in_nc_file(ds_L1, ds_L2, L1_folder):
+
+    if 'ProcessingLevel' not in ds_L1.attrs:
+        raise KeyError("Missing 'ProcessingLevel' 'ds_L1.attrs' attributes")
+    if 'ProcessingLevel' not in ds_L2.attrs:
+        raise KeyError("Missing 'ProcessingLevel' 'ds_L2.attrs' attributes")
 
     # Defining filename for datafile
     filename = seastar.oscar.tools.formatting_filename(ds_L2)
 
     # Write the data in a NetCDF file
-    if write_nc:
-        if ds_L1.attrs["ProcessingLevel"] in os.path.dirname(L1_folder):
-            path_L2B_data = os.path.join(os.path.dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], "L2B"), os.path.basename(L1_folder))
-        else:
-            path_L2B_data = os.path.join(L1_folder, "L2B")
-        if not os.path.exists(path_L2B_data):
-            os.makedirs(path_L2B_data, exist_ok=True)
-            logger.info(f"Created directory {path_L2B_data}")
-        else: logger.info(f"Directory {path_L2B_data} already exists.")
+    if ds_L1.attrs["ProcessingLevel"] in dirname(L1_folder):
+        path_L2_data = join(dirname(L1_folder).replace(ds_L1.attrs["ProcessingLevel"], ds_L2.attrs["ProcessingLevel"]), 
+                            basename(L1_folder))
+    else:
+        path_L2_data = join(L1_folder, ds_L2.attrs["ProcessingLevel"])
+    if not exists(path_L2_data):
+        os.makedirs(path_L2_data, exist_ok=True)
+        logger.info(f"Created directory {path_L2_data}")
+    # else: logger.info(f"Directory {path_L2_data} already exists.") # not really useful
 
-        logger.info(f"Writing in {os.path.join(path_L2B_data, filename)}")
-        ds_L2.to_netcdf(os.path.join(path_L2B_data, filename))
-
-    return ds_L2
-
+    filepath = join(path_L2_data, filename)
+    logger.info(f"Writing in {filepath}")
+    ds_L2.to_netcdf(filepath)
+    return
 
 def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1B_process=dict(), write_nc=False):
     """
@@ -187,7 +273,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         acq_date : ``str``
             Date of the data acquisition with the format "YYYYMMDD".
         track : ``str``
-            Track name as defined in config/XXX_TrackNames.ini file. Format should be "Track_x" for tracks over ocean and 
+            Track name as defined in config/XXX_TrackNames.ini file. Format should be "Track_x" for tracks over ocean and
             "Track_Lx" for tracks over land with "x" the number of the track.
         dict_L1B_process : ``dict``
             Dictionnary containing information about the window for the rolling mean for the multilooking computation,
@@ -196,7 +282,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
             vars_to_keep default list is: ['LatImage', 'LonImage', 'IncidenceAngleImage',
                                            'LookDirection', 'SquintImage', 'CentralFreq', 'OrbitHeadingImage']
             vars_to_send default list is: ['Intensity', 'Interferogram', 'Coherence']
-        write_nc (bool, optional): 
+        write_nc (bool, optional):
             Argument to write the data in a netcdf file. Defaults to False.
 
     Returns:
@@ -232,7 +318,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         logger.warning(f"Track '{track}' not found in track_names_dict. The code will crash.")
 
     # Loading the file names of the files corresponding to date_of_track (triplet of file - one per antenna)
-    L1AP_file_names = [os.path.basename(file) for file in sorted(glob.glob(join(L1AP_folder, f"*{date_of_track}*.nc")))]
+    L1AP_file_names = [basename(file) for file in sorted(glob.glob(join(L1AP_folder, f"*{date_of_track}*.nc")))]
 #-----------------------------------------------------------
 #               L1B PROCESSING
 #-----------------------------------------------------------
@@ -292,14 +378,14 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
     filename = seastar.oscar.tools.formatting_filename(ds_L1B)
     # Write the data in a NetCDF file
     if write_nc:
-        path_new_data = os.path.join(os.path.dirname(L1AP_folder).replace("L1AP", "L1B"), os.path.basename(L1AP_folder))
-        if not os.path.exists(path_new_data):
+        path_new_data = join(dirname(L1AP_folder).replace("L1AP", "L1B"), basename(L1AP_folder))
+        if not exists(path_new_data):
             os.makedirs(path_new_data, exist_ok=True)
             logger.info(f"Created directory {path_new_data}")
         else: logger.info(f"Directory {path_new_data} already exists.")
 
-        logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
-        ds_L1B.to_netcdf(os.path.join(path_new_data, filename))
+        logger.info(f"Writing in {join(path_new_data, filename)}")
+        ds_L1B.to_netcdf(join(path_new_data, filename))
 
     return ds_L1B
 
@@ -390,7 +476,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     # Loading data
     logger.info(f"Opening track: {track} on day: {acq_date}")
     L1B_file_name = seastar.oscar.tools.find_file_by_track_name(os.listdir(L1B_folder), track=track)
-    ds_L1B = xr.open_dataset(os.path.join(L1B_folder, L1B_file_name))
+    ds_L1B = xr.open_dataset(join(L1B_folder, L1B_file_name))
     ds_L1C = ds_L1B.copy(deep=True)
     ds_L1C.attrs['ProcessingLevel'] = 'L1C'
 
@@ -460,13 +546,13 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
 
     # Write the data in a NetCDF file
     if write_nc:
-        path_new_data = os.path.join(os.path.dirname(L1B_folder).replace("L1B", "L1C"), os.path.basename(L1B_folder))
-        if not os.path.exists(path_new_data):
+        path_new_data = join(dirname(L1B_folder).replace("L1B", "L1C"), basename(L1B_folder))
+        if not exists(path_new_data):
             os.makedirs(path_new_data, exist_ok=True)
             logger.info(f"Created directory {path_new_data}")
         else: logger.info(f"Directory {path_new_data} already exists.")
 
-        logger.info(f"Writing in {os.path.join(path_new_data, filename)}")
-        ds_L1C.to_netcdf(os.path.join(path_new_data, filename))
+        logger.info(f"Writing in {join(path_new_data, filename)}")
+        ds_L1C.to_netcdf(join(path_new_data, filename))
 
     return ds_L1C
