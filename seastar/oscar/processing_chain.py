@@ -220,7 +220,7 @@ def _run_wind_current_retrieval(
     #     L2A products - including all outputs
     #----------------------
     logger.info("Merging L2 data with sol giving L2A data")
-    ds_L2A = xr.merge([ds_L2, sol]) #merge with the full details of the retrieval from "sol"
+    ds_L2A = xr.merge([lmout, ds_L2], compat='override', combine_attrs='no_conflicts') #merge with the full details of the retrieval from "lmout"
 
     # Updating ProcessingLevel in the attrs
     ds_L2A.attrs['ProcessingLevel'] = "L2A"
