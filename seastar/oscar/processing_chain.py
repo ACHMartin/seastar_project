@@ -185,6 +185,7 @@ def _run_wind_current_retrieval(
             logger.error("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
             raise ValueError("Variables 'Sigma0' and 'Intensity are missing from the dataset.")
     gmf_dict = dict_L2_process['gmf']
+    L2_processor = dict_L2_process['L2_processor']
 
     logger.info("Get uncertainty")
 
@@ -209,12 +210,12 @@ def _run_wind_current_retrieval(
         'RSV_Noise': dict_L2_process["RSV_Noise"],
         'Sigma0GMF': gmf_dict['nrcs']['name'],
         'DopplerGMF': gmf_dict['doppler']['name'],
-        'L2Processor': dict_L2_process['L2_processor'],
+        'L2Processor': L2_processor,
     }
     ds_L2 = _update_attrs(ds_L2, attrs2add)
 
     # Updating of the history in the attrs:
-    ds_L2.attrs["History"] = _update_history(ds_L2, f'L2 processing: {dict_L2_process['L2_processor']}')
+    ds_L2.attrs["History"] = _update_history(ds_L2, f'L2 processing: {L2_processor}')
 
     #----------------------
     #     L2A products - including all outputs
