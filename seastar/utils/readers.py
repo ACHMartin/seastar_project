@@ -153,7 +153,14 @@ def read_config_OSCAR(config_type, info_dict=None):
         logger.error(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
         raise ValueError(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
         
-    config_path = os.path.join('config', config_file_name)
+    current_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    target = 'seastar_project'
+    parts = current_directory.split(os.sep)
+    if target in parts:
+        idx = parts.index(target)
+        ROOT_DIR = os.sep.join(parts[:idx + 1])
+
+    config_path = os.path.join(ROOT_DIR, 'config', config_file_name)
     
     if not os.path.exists(config_path):
         logger.error(f"Config file not found: {config_path}")
