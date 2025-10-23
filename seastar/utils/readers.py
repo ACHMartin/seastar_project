@@ -74,8 +74,13 @@ def read_OSCAR_track_names_config(campaign, flight):
     logger.info(f"Reading Track name config file {config_file_name}...")
     track_names_config = ConfigParser()
     track_names_config.optionxform = str
-    print (os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
-    track_names_config.read(os.path.join(os.path.join('config', config_file_name)))
+    current_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    target = 'seastar_project'
+    parts = current_directory.split(os.sep)
+    if target in parts:
+        idx = parts.index(target)
+        ROOT_DIR = os.sep.join(parts[:idx + 1])
+    track_names_config.read(os.path.join(os.path.join(ROOT_DIR, 'config', config_file_name)))
     track_names_dict = dict(track_names_config.items(flight))
     return track_names_dict
 
