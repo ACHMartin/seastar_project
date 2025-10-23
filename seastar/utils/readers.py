@@ -74,12 +74,7 @@ def read_OSCAR_track_names_config(campaign, flight):
     logger.info(f"Reading Track name config file {config_file_name}...")
     track_names_config = ConfigParser()
     track_names_config.optionxform = str
-    current_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    target = 'seastar_project'
-    parts = current_directory.split(os.sep)
-    if target in parts:
-        idx = parts.index(target)
-        ROOT_DIR = os.sep.join(parts[:idx + 1])
+    ROOT_DIR = find_seastar_project_root()
     track_names_config.read(os.path.join(os.path.join(ROOT_DIR, 'config', config_file_name)))
     track_names_dict = dict(track_names_config.items(flight))
     return track_names_dict
@@ -153,13 +148,7 @@ def read_config_OSCAR(config_type, info_dict=None):
         logger.error(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
         raise ValueError(f"Invalid 'config_type' value: '{config_type}'. Must contain 'campaign' or 'track'.")
         
-    current_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    target = 'seastar_project'
-    parts = current_directory.split(os.sep)
-    if target in parts:
-        idx = parts.index(target)
-        ROOT_DIR = os.sep.join(parts[:idx + 1])
-
+    ROOT_DIR = find_seastar_project_root()
     config_path = os.path.join(ROOT_DIR, 'config', config_file_name)
     
     if not os.path.exists(config_path):
@@ -181,3 +170,23 @@ def read_config_OSCAR(config_type, info_dict=None):
         
     return config_mapping
 
+def find_seastar_project_root():
+    """
+    Find seastar_project root directory.
+    
+    Gets the current directory and builds a root directory to /seastar_project
+
+    Returns
+    -------
+    ROOT_DIR : `str`
+        Full path to the 'seastar_project' root directory.
+
+    """
+    
+    current_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    target = 'seastar_project'
+    parts = current_directory.split(os.sep)
+    if target in parts:
+        idx = parts.index(target)
+        ROOT_DIR = os.sep.join(parts[:idx + 1])
+    return ROOT_DIR
