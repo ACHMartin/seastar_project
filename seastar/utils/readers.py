@@ -6,6 +6,7 @@ import xarray as xr
 import platform
 from configparser import ConfigParser, NoSectionError, MissingSectionHeaderError
 import hashlib
+import inspect
 
 from _logger import logger
 
@@ -73,7 +74,7 @@ def read_OSCAR_track_names_config(campaign, flight):
     logger.info(f"Reading Track name config file {config_file_name}...")
     track_names_config = ConfigParser()
     track_names_config.optionxform = str
-    print(os.getcwd())
+    print (os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
     track_names_config.read(os.path.join(os.path.join('config', config_file_name)))
     track_names_dict = dict(track_names_config.items(flight))
     return track_names_dict
