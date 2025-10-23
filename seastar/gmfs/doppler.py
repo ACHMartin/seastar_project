@@ -166,7 +166,7 @@ def compute_wasv(L1, aux_geo, gmf, **kwargs):
                 aux_geo.OceanSurfaceWindSpeed.values,
                 relative_wind_direction.values,
                 L1.IncidenceAngleImage.values,
-                str(L1.Polarization.data),
+                L1.Polarization.data,
             )
         else:
             dop_c = np.full(L1.IncidenceAngleImage.shape, np.nan)
@@ -460,7 +460,7 @@ def mouche12(u10, phi, inc, pol):
     size = sizes.max()
     if ((sizes != size) & (sizes != 1)).any():
         raise Exception('Inputs sizes do not agree.')
-    valid_pol = {'VV','HH'}
+    valid_pol = ['VV','HH']
     if pol not in valid_pol:
         msg_err = f'Error, unknown polarisation: {pol}. Expected polarisation: {valid_pol}.'
         logger.error(msg_err)
