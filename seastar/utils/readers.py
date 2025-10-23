@@ -6,7 +6,6 @@ import xarray as xr
 import platform
 from configparser import ConfigParser, NoSectionError, MissingSectionHeaderError
 import hashlib
-import inspect
 
 from _logger import logger
 
