@@ -144,13 +144,17 @@ def find_minima(level1_pixel, noise_pixel, gmf):
 
     lmout = [None] * 4
     # find the first minimum with begin current = 0
-    lmout_dict = least_squares(
-            seastar.retrieval.cost_function.fun_residual,
-            init[0].x0,
-            args=(level1_pixel, noise_pixel, gmf),
-            **opt
-            )
-    
+    try:
+        lmout_dict = least_squares(
+                seastar.retrieval.cost_function.fun_residual,
+                init[0].x0,
+                args=(level1_pixel, noise_pixel, gmf),
+                **opt
+                )
+    except ValueError:
+        print(f'{init[0]}; Infeasible x0, setting variables to NaN', flush=True)
+        lmout_dict = create_null_lmout_dict(lmout_dict_first_ambiguity)
+
     lmout[0] = optimizeResults2dataset(lmout_dict, init[0].x0, level1_pixel)
     # find the 3 ambiguities and run the minimisation to find the 3 minima
     init[1:3] = find_initial_values(lmout[0].x, level1_pixel, gmf)
@@ -165,7 +169,7 @@ def find_minima(level1_pixel, noise_pixel, gmf):
                 **opt
                 )
         except ValueError:
-            print('Infeasible x0, setting variables to NaN', flush=True)
+            print(f'{init[ii]}; Infeasible x0, setting variables to NaN', flush=True)
             lmout_dict = create_null_lmout_dict(lmout_dict_first_ambiguity)
         lmout[ii] = optimizeResults2dataset(lmout_dict, init[ii].x0, level1_pixel)
 
