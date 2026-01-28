@@ -122,7 +122,7 @@ function [campaign_name] = get_campaign_name_from_config(L1AP_file_name)
 %GET_CAMPAIGN_NAME_FROM_CONFIG Get OSCAR campaign name from Campaign_name_lookup.ini
 %
 
-ini_file = INI('File','../../config/Campaign_name_lookup.ini');
+ini_file = INI('File','../../config/OSCAR_campaigns.ini');
 ini_struct = ini_file.read();
 expression = '\d*T\d*';
 pat = regexpPattern(expression);
@@ -372,3 +372,5 @@ if length(CrossRange_resolution) ~= 1 || length(GroundRange_resolution) ~= 1
      throw(baseException)
 end
 end
+
+
