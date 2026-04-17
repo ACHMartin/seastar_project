@@ -6,7 +6,6 @@ import seastar
 import re
 import warnings
 from datetime import datetime as dt
-
 from _version import __version__
 from _logger import logger
 
@@ -59,7 +58,7 @@ def merge_beams(ds_dict, antenna_list):
     Adds `longitude` and `latitude` coordinates to merged dataset.
 
     Requires a ``dict`` of OSCAR L1 ``xarray.Dataset``, containing the
-    ``xarray.DataArray``s `LonImage` and `LatImage`. These arrays must be 2D,
+    ``xarray.DataArray`` `LonImage` and `LatImage`. These arrays must be 2D,
     with only two dimensions.
 
     Parameters
@@ -229,14 +228,15 @@ def compute_multilooking_Master_Slave(ds, window=3,
                                                     'Interferogram',
                                                     'Coherence']):
     """
-    Compute  multilooking Master/Slave L1b image products.
+    Compute multilooking Master/Slave L1b image products.
 
-    Computes multilooking ATI variables from L1 variables present in an
-    ``xarray.Dataset``. As a minimum must contain the following 2D
-    ``xarray.DataArray``s:
+    Computes multilooking ATI variables from L1 variables present in a ``xarray.Dataset``. As a minimum must contain the following 2D ``xarray.DataArray`` :
+
         - `SigmaImageSingleLookRealPart`
         - `SigmaImageSingleLookImaginaryPart`
+
     Optionally, `ds` must include:
+
         - `SigmaImageSingleLookRealPartSlave`
         - `SigmaImageSingleLookImaginaryPartSlave`
 
@@ -261,8 +261,8 @@ def compute_multilooking_Master_Slave(ds, window=3,
     Exception
         Raises exception if `vars_to_send` is not within:
             ['Intensity', 'Interferogram', 'Coherence',
-             'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster',
-             'IntensityAvgSlave']
+            'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster',
+            'IntensityAvgSlave']
     Exception
         Raises exception if `SigmaImageSingleLookRealPart` is not a 2D variable
     """
@@ -516,6 +516,7 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
 
     Compute radial surface current (RSC) from radial surface velocity (RSV)
     and the wind artifact surface velocity (WASV) from:
+
         RSC = RSV - WASV
 
     Parameters

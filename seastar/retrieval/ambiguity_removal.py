@@ -112,10 +112,7 @@ def solve_ambiguity(lmout, ambiguity):
     ambiguity : ``dict``
         Dictionary with keys `name`:
         - name = `sort_by_cost`
-        - name = `closest_truth`
-            `truth` HAVE to be in the dict.
-            optional `method` within `windcurrent` (default), `wind`, `current`
-            optional `windcurrentratio` default = 10
+        - name = `closest_truth`. `truth` HAVE to be in the dict. Optional `method` within `windcurrent` (default), `wind`, `current`. Optional `windcurrentratio` default = 10
     Returns
     ----------
     sol : ``xarray.Dataset``

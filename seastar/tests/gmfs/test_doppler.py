@@ -10,22 +10,67 @@ from seastar.gmfs import doppler
 
 @pytest.fixture
 def point_wind_speed():
+    """
+    Wind speed definition.
+
+    Returns
+    -------
+    ``int``
+        Wind speed (7 m/s).
+
+    """
     return(7) # in m/s
 
 @pytest.fixture
 def point_relative_dir():
+    """
+    Relative direction definition.
+
+    Returns
+    -------
+    ``int``
+        Relative direction (3 degrees).
+
+    """
     return(3) # in degree
 
 @pytest.fixture
 def point_inci_angle():
+    """
+    Incidence angle definition.
+
+    Returns
+    -------
+    ``int``
+        Incidence angle in degrees from nadir (30 degrees).
+
+    """
     return(30) # in degree from nadir
 
 @pytest.fixture
 def point_polarization():
+    """
+    Polarization definition.
+
+    Returns
+    -------
+    ``str``
+        Polarization ('VV').
+
+    """
     return 'VV' # in degree
 
 @pytest.fixture
 def level1_geo_dataset():
+    """
+    Deine level 1 geophysical dataset.
+
+    Returns
+    -------
+    ``dict``
+        ``dict`` of ``xr.Dataset`` containing level1 and geo information.
+
+    """
     level1 = xr.Dataset(
         data_vars=dict(
             CentralWavenumber=([], 270),
@@ -88,6 +133,15 @@ def level1_geo_dataset():
 
 @pytest.fixture
 def gmf_mouche():
+    """
+    Definition of gmf.
+
+    Returns
+    -------
+    gmf : ``dict``
+        ``dict`` of mf name definitions for the doppler and nrcs gmfs.
+
+    """
     gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
     gmf['doppler'] = dotdict({'name': 'mouche12'})
     return gmf
@@ -96,7 +150,14 @@ def gmf_mouche():
 
 
 def test_mouche12(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization):
+    """
+    Test mouche12.
 
+    Returns
+    -------
+    Test for mouche12 gmf.
+
+    """
     assert doppler.mouche12(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization) \
            == pytest.approx(24, 1) # 1 +- 5 => error on pol in mouche12, with pol expected as a str not a function
     # Test points
@@ -146,6 +207,14 @@ def test_mouche12(point_wind_speed, point_relative_dir, point_inci_angle, point_
     )
 
 def test_compute_wasv(level1_geo_dataset, gmf_mouche):
+    """
+    Test compute_wasv.
+
+    Returns
+    -------
+    Test for the WASV computation.
+
+    """
     level1 = level1_geo_dataset['level1']
     L1ant = level1.sel(Antenna='Fore')
     geo = level1_geo_dataset['geo']

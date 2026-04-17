@@ -31,36 +31,37 @@ def processing_OSCAR_L1_to_L2(ds_L1,
     Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows
     to calculate the wind direction and speed as well as the current speed and direction.
     It provides two outputs:
-    - L2A including full details about the inversions for the WCR inversion;
-    - L2B including only the retrieved Current (+ Wind vectors for WCR inversion)
+
+        - L2A including full details about the inversions for the WCR inversion;
+        - L2B including only the retrieved Current (+ Wind vectors for WCR inversion)
 
     WCR: Wind & Current retrieval
     SCR: Sequential Current retrieval (using wind vector defined in 'dict_env' as input)
 
     Parameters
     ----------
-        ds_L1 : ``xr.Dataset"
+        ds_L1 : ``xr.Dataset``
             L1B or L1C OSCAR dataset.
         dict_L2_process : ``dict``
             Dictionary containing the information needed for L2 processing:
             "gmf" : gmf dictionary of the form:
-              {'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+            {'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
             "L2_processor" : L2 processor for wind current inversion.
-              Can be "SCR" or "WCR", set by default on SCR using 'dict_env' wind,
+            Can be "SCR" or "WCR", set by default on SCR using 'dict_env' wind,
             "RSV_Noise": RSV_noise, scalar, eg 0.2m/s, needed for 'WCR'
             "Kp" : Kp (noise of NRCS), scalar, eg 0.2, needed for 'WCR'.
         dict_ambiguity : ``dict``, (optional)             Defaults to None.
             Dictionary containing the information needed for ambiguity removal. Example:
             dict_ambiguity = {"name" : "closest_truth",       # Can be "sort_by_cost" or "closest_truth"
-                              "method" : "wind",      # Can be "wind", "current", or "windcurrent"
-                              "truth" : geo}
+            "method" : "wind",      # Can be "wind", "current", or "windcurrent"
+            "truth" : geo}
         dict_env : ``dict``, (optional)             Defaults to None.
             Dictionary containing the environnement information needed for SCR inversion. Shall contain 'u10' and 'wind_direction'.
-        write_nc : bool (optional) Defaults to False.
+        write_nc : ``bool`` (optional) Defaults to False.
             Argument to write the Level2B data in a netcdf file.
         L1_folder : ``str``, (optional) Defaults to ".".
             Path to save the L2 OSCAR data.
-        write_L2A_nc : bool (optional) Defaults to True.
+        write_L2A_nc : ``bool`` (optional) Defaults to True.
             Argument to write the Level2A (including Level2B + all inversion details) data in a netcdf file.
 
     Returns:
@@ -279,9 +280,8 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         dict_L1B_process : ``dict``
             Dictionnary containing information about the window for the rolling mean for the multilooking computation,
             the vars to keep (vars_to_keep) from L1AP to L1B file and the vars to provide (vars_to_send) after the multilooking computation.
-            window default value is 3
-            vars_to_keep default list is: ['LatImage', 'LonImage', 'IncidenceAngleImage',
-                                           'LookDirection', 'SquintImage', 'CentralFreq', 'OrbitHeadingImage']
+            window default value is 3 vars_to_keep default list is: ['LatImage', 'LonImage', 'IncidenceAngleImage',
+            'LookDirection', 'SquintImage', 'CentralFreq', 'OrbitHeadingImage'].
             vars_to_send default list is: ['Intensity', 'Interferogram', 'Coherence']
         write_nc (bool, optional):
             Argument to write the data in a netcdf file. Defaults to False.

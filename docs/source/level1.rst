@@ -10,11 +10,11 @@ OSCAR L1 processing
 .. automodule:: seastar.oscar.level1
    :members:
 
-OSCAR tools
------------
-.. automodule:: seastar.oscar.tools
-   :members:
-   
+OSCAR Processing chain
+----------------------
+.. automodule:: seastar.oscar.processing_chain
+   :members:   
+
 .. |br| raw:: html
 
    <br />

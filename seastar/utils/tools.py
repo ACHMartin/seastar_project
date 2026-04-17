@@ -148,7 +148,7 @@ def windUV2SpeedDir(u, v):
 
 
 def wind_current_component_conversion(env_dict: dict, basevarname: str or list) -> dict:
-    '''
+    """
     Add U, V to Speed/Velocity, Direction or the other way around for "Current", 
     "Wind", "OceanSurfaceWind", "EarthRelativeWind".
     
@@ -168,8 +168,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
     Examples:
     ----------
     .. code-block:: python
-        env = {'CurrentVelocity': 1, 'CurrentDirection':0,
-                'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
+        env = {'CurrentVelocity': 1, 'CurrentDirection':0, 'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
         env
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,
@@ -185,7 +184,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
         'CurrentU': 6.123233995736766e-17,
         'CurrentV': 1.0}
     
-    '''
+    """
 
     env = env_dict.copy() 
     # case if basevarname is a list
