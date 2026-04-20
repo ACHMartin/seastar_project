@@ -8,7 +8,6 @@ from scipy import interpolate
 import xarray as xr
 from datetime import datetime as dt
 from datetime import timezone
-import re
 from _version import __version__
 from _logger import logger
 
@@ -168,18 +167,18 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
 
     Parameters
     ----------
-    data_in : `xr.DataArray`, `array`
+    data_in : ``xr.DataArray``, ``array``
         Data at points to be co-locoated
     latitude : `array` of `float`
         Array of latitude coordinates
-    longitude : `array` of `float`
+    longitude : ``array`` of ``float``
         Array of longitude coordinates
-    ds_out : `xr.DataArray`
-        `xr.DataArray` with lat and lon coordinates to co-locate the data to.
+    ds_out : ``xr.DataArray``
+        ``xr.DataArray`` with lat and lon coordinates to co-locate the data to.
 
     Returns
     -------
-    colocated_var : `xr.DataArray`
+    colocated_var : ``xr.DataArray``
         Data array of co-located data
 
     """
@@ -197,22 +196,22 @@ def colocate_variable_lat_lon(data_in, latitude, longitude, ds_out):
                         )
     return colocated_var
 
-
-
 def formatting_filename(ds):
     """
-    Formatting the filename of the dataset.
+    Format dataset file name.
+    
+    Formats the filename of a dataset for saving to disk.
     
     Parameters
     ----------
-    ds : `xr.DataArray`
-       dataset to format and to save as a NetCDF file.
+    ds : ``xr.DataArray``
+       Dataset to format and to save as a NetCDF file.
        
     Returns
-    ----------
-    ds : xr.Dataset
+    -------
+    ds : ``xr.Dataset``
         The dataset with updated metadata.
-    filename : `str`
+    filename : ``str``
         Name of the OSCAR NetCDF file.
     """    
     # Checking dataset attributes
@@ -247,20 +246,20 @@ def formatting_filename(ds):
 def check_attrs_dataset(ds):
     """
     Check dataset attributes.
-    Test the dataset to check if all the attributes, from the defined list of mandatory atributes, are reported in the dataset.
-    It test L1 and L2 datasets.
+
+    Tests the dataset to check if all the attributes, from the defined list of mandatory atributes, are reported in the dataset.
+    Tests L1 and L2 datasets.
 
     Parameters
     ----------
-    ds : `xr.DataArray`
-       dataset to check.
+    ds : ``xr.DataArray``
+       Dataset to check.
 
     Returns
-    ----------
-    ds : xr.Dataset
+    -------
+    ds : ``xr.Dataset``
         The dataset.
     """
-    
     logger.info("Checking the attrs dataset.")
 
     # Check if ds is a valid xarray Dataset
@@ -346,7 +345,9 @@ def clean_units_attribute(ds):
 
 
 def is_valid_acq_date(acq_date):
-    """Check acquisition date.
+    """
+    Check acquisition date.
+    
     Check if the input acquisition date is a valid date string in 'YYYYMMDD' format.
 
     Parameters
@@ -356,7 +357,7 @@ def is_valid_acq_date(acq_date):
 
     Returns
     -------
-        bool
+        ``bool``
             True if the date is valid and correctly formatted (YYYYMMDD), False otherwise.
     """
     try:
@@ -367,7 +368,7 @@ def is_valid_acq_date(acq_date):
 
 def find_file_by_track_name(files, track):
     """
-    Find file by track name
+    Find file by track name.
     
     Matches a full OSCAR L1 or L2 file name by track name and returns the matched file name.
     `files` as generated using, e.g., `os.listdir('path_to_L1_data')`.
@@ -385,7 +386,6 @@ def find_file_by_track_name(files, track):
         Full OSCAR file name matched with track name
 
     """
-    
     escaped_track = re.escape(track)
     # Match the exact string followed by _ or . or end of string, but NOT more letters/numbers
     pattern = rf'{escaped_track}(?=(_|\.|$))'
@@ -408,6 +408,7 @@ def coarsen_grid_resolution(ds, options):
     options : ``dict``
         Options dict containing keys `MultiLookCrossRangeEffectiveResolution`
         and `MultiLookGroundRangeEffectiveResolution`.
+
     Raises
     ------
     Exception
@@ -419,7 +420,6 @@ def coarsen_grid_resolution(ds, options):
         OSCAR coarsened dataset.
 
     """
-    
     valid_options = ['MultiLookCrossRangeEffectiveResolution', 'MultiLookGroundRangeEffectiveResolution']
     # Raise exception if both valid options not in options input
     if not all([option in options.keys() for option in valid_options]):

@@ -6,7 +6,7 @@ tailored for the Ocean Surface Current Airborne Radar demonstrator (OSCAR).
 This manual is designed to provide the user with a straightforward guide to utilizing
 this software effectively in the processing of OSCAR data as delivered from MetaSensing BV.
 
-**SeaSTAR** is a new Earth Explorer mission concept dedicated to observing fast-evolving small-scale
+**SeaSTAR** was an Earth Explorer 11 mission concept dedicated to observing fast-evolving small-scale
 ocean surface dynamics in all coastal seas, shelf seas and marginal ice zones. Its science goals are:
 
 1. To understand the role of fast-evolving small-scale ocean dynamics in mediating exchanges between
@@ -17,9 +17,6 @@ ocean surface dynamics in all coastal seas, shelf seas and marginal ice zones. I
 
 3. To improve understanding of coastal, shelf and marginal ice zones contributions to the global
    climate system.
-
-SeaSTAR has been selected as an ESA Earth Explorer 11 candidate to proceed to phase 0
-in competition with 3 other candidates.
 
 OSCAR is the airborne demonstrator of SeaSTAR and has been developed by MetaSensing under the
 framework of ESA contract *4000116401/16/NL/BJ*.

@@ -26,8 +26,8 @@ def processing_OSCAR_L1_to_L2(ds_L1,
                               write_L2A_nc: Optional[bool]=True,
                               ) ->  xr.Dataset:
     """
-    Processing OSCAR from L1 (NRCS, Interferogram) to L2 (Current vectors + Wind vectors for WCR).
-
+    Process OSCAR Level-1 data to Level2.
+    
     Processing chain of the OSCAR data from L1 (L1B or L1C) to L2. This processing chain allows
     to calculate the wind direction and speed as well as the current speed and direction.
     It provides two outputs:
@@ -50,26 +50,25 @@ def processing_OSCAR_L1_to_L2(ds_L1,
             Can be "SCR" or "WCR", set by default on SCR using 'dict_env' wind,
             "RSV_Noise": RSV_noise, scalar, eg 0.2m/s, needed for 'WCR'
             "Kp" : Kp (noise of NRCS), scalar, eg 0.2, needed for 'WCR'.
-        dict_ambiguity : ``dict``, (optional)             Defaults to None.
+        dict_ambiguity : ``dict``, default: `{None}`
             Dictionary containing the information needed for ambiguity removal. Example:
             dict_ambiguity = {"name" : "closest_truth",       # Can be "sort_by_cost" or "closest_truth"
             "method" : "wind",      # Can be "wind", "current", or "windcurrent"
             "truth" : geo}
-        dict_env : ``dict``, (optional)             Defaults to None.
+        dict_env : ``dict``, default: `{None}`
             Dictionary containing the environnement information needed for SCR inversion. Shall contain 'u10' and 'wind_direction'.
-        write_nc : ``bool`` (optional) Defaults to False.
+        write_nc : ``bool``, default: `False`
             Argument to write the Level2B data in a netcdf file.
-        L1_folder : ``str``, (optional) Defaults to ".".
+        L1_folder : ``str``, default: `'.'`
             Path to save the L2 OSCAR data.
-        write_L2A_nc : ``bool`` (optional) Defaults to True.
+        write_L2A_nc : ``bool``, default: `True`
             Argument to write the Level2A (including Level2B + all inversion details) data in a netcdf file.
 
-    Returns:
-    ----------
+    Returns
+    -------
         ds_L2: ``xr.Dataset``
             Xarray dataset of the L2 OSCAR data.
     """
-
     # Initialisation
     gmf_dict = dict_L2_process['gmf']
     is_valid_gmf_dict(gmf_dict)         # Check the format of gmf_dict
@@ -110,12 +109,26 @@ def processing_OSCAR_L1_to_L2(ds_L1,
 
 def _run_sequential_current_retrieval(ds_L1, dict_env, gmf_dict):
     """
-    run_sequential_retrieval, cf processing_OSCAR_L1_to_L2 for details on the inputs
+    Run sequential current retrieval.
     
-    Returns:
+    Performs sequential current retrieval (SCR) on an OSCAR L1B or L1C dataset
+    using environmental wind data and choices of GMF as inputs.
+
+    Parameters
     ----------
-        ds_L2B: ``xr.Dataset``
-            Xarray dataset of the L2 OSCAR data.
+    ds_L1 : `xr.Dataset``
+        OSCAR Level-1 dataset to be processed to Level-2B via sequential retrieval.
+    dict_env : ``dict``
+        Dictionary containing the environnement information needed for SCR inversion.
+        Must contain environmental data `u10` and `wind_direction`.
+    gmf_dict : ``dict``
+        gmf dictionary of the form: {'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+
+    Returns
+    -------
+    ds_L2B : ``xr.Dataset``
+        Dataset of OSCAR Level 2B data.
+
     """
     L2_processor = 'SCR'
     ds_L2B = seastar.retrieval.level2.sequential_current_retrieval(ds_L1, dict_env, gmf_dict['doppler']['name'])
@@ -133,7 +146,22 @@ def _run_sequential_current_retrieval(ds_L1, dict_env, gmf_dict):
 
 def _update_history(ds, message):
     """
-    Updating of the history in the attrs
+    Update history attribute in dataset.
+    
+    Builds an updated `History` message to be inserted into an OSCAR dataset's  attributes.
+
+    Parameters
+    ----------
+    ds : ``xr.Dataset``
+        OSCAR dataset
+    message : ``str``
+        Message to add to the Dataset `History` attribute.
+
+    Returns
+    -------
+    updated_history : ``str``
+        Updated `History` message
+
     """
     # Updating of the history in the attrs:
     current_history = ds.attrs.get("History", "")                                               # Get the current history or initialize it
@@ -144,7 +172,22 @@ def _update_history(ds, message):
 
 def _update_attrs(ds, add_attrs):
     """
-    Updating of the attrs
+    Update OSCAR dataset attributes.
+    
+    Updates attributes in an OSCAR dataset, including `CodeVersion` as standard.
+
+    Parameters
+    ----------
+    ds : ``xr.Dataset``
+        OSCAR dataset
+    add_attrs : ``dict``
+        ``dict`` of attributes to add to dataset of the form `{'attribute_name':attribute}`
+
+    Returns
+    -------
+    ds : ``xr.Dataset``
+        OSCAR dataset with attributes updated.
+
     """
     # Updating of the CodeVersion in the attrs:
     ds.attrs["CodeVersion"] = __version__
@@ -162,14 +205,39 @@ def _run_wind_current_retrieval(
         write_L2A_nc: Optional[bool]=True,
     ) ->  (xr.DataArray, xr.DataArray):
     """
-    run_wind_current_retrieval, cf processing_OSCAR_L1_to_L2 for details on the inputs
+    Run wind-current retrieval.
     
-    Returns:
+    Runs the L2 wind-current retrieval on an OSCAR Level-1 dataset using
+    the WCR method.
+    
+    Parameters
     ----------
-        (ds_L2B, ds_L2A): ``xr.Dataset``
-            Xarray dataset of the L2 OSCAR data. L2A (all details) & L2B (without details) 
-    """
+    ds_L1 : ``xr.Dataset``
+        OSCAR Level-1 dataset for Level-2 WCR processing.
+    dict_L2_process : ``dict``
+        Dictionary containing the information needed for L2 processing:
+        "gmf" : gmf dictionary of the form:
+        {'nrcs': {'name': 'nscat4ds'}, 'doppler': {'name': 'mouche12'}}
+        "L2_processor" : L2 processor for wind current inversion.
+        Can be "SCR" or "WCR", set by default on SCR using 'dict_env' wind,
+        "RSV_Noise": RSV_noise, scalar, eg 0.2m/s, needed for 'WCR'
+        "Kp" : Kp (noise of NRCS), scalar, eg 0.2, needed for 'WCR'.
+    dict_ambiguity : ``dict``
+        Dictionary containing the information needed for ambiguity removal. Example:
+        dict_ambiguity = {"name" : "closest_truth",       # Can be "sort_by_cost" or "closest_truth"
+        "method" : "wind",      # Can be "wind", "current", or "windcurrent"
+        "truth" : geo}
+    L1_folder : ``str``
+        Folder for storage.
+    write_L2A_nc : ``bool``, default : `True`
+        Optional switch to write L2A data to file (full details)
 
+    Returns
+    -------
+    (ds_L2B, ds_L2A): ``xr.Dataset``
+        Xarray dataset of the L2 OSCAR data. L2A (all details) & L2B (without details)
+
+    """
     ds_L1 = ds_L1.load() # load L1, needed for multiprocessing
 
     if "RSV_Noise" not in dict_L2_process:
@@ -235,7 +303,30 @@ def _run_wind_current_retrieval(
 
 
 def _write_product_in_nc_file(ds_L1, ds_L2, L1_folder):
+    """
+    Write L2 producs to NetCDF file.
 
+    Parameters
+    ----------
+    ds_L1 : ``xr.Dataset``
+        OSCAR Level-1 dataset with processing attributes.
+    ds_L2 : ``xr.Dataset``
+        OSCAR Level-2 dataset for writing to NetCDF.
+    L1_folder : ``str``
+        Folder containing the matching OSCAR Level-1 dataset.
+
+    Raises
+    ------
+    KeyError
+        Missing 'ProcessingLevel' 'ds_L1.attrs' attributes
+    KeyError
+        Missing 'ProcessingLevel' 'ds_L2.attrs' attributes
+
+    Returns
+    -------
+    None.
+
+    """
     if 'ProcessingLevel' not in ds_L1.attrs:
         raise KeyError("Missing 'ProcessingLevel' 'ds_L1.attrs' attributes")
     if 'ProcessingLevel' not in ds_L2.attrs:
@@ -262,7 +353,7 @@ def _write_product_in_nc_file(ds_L1, ds_L2, L1_folder):
 
 def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1B_process=dict(), write_nc=False):
     """
-    Processing chain from L1AP tp L1B.
+    Process OSCAR data from L1AP to L1B.
 
     This function processes the OSCAR data from L1AP to L1B. It needs a triplet of L1AP file to generate a L1B file with data of the three antennas.
 
@@ -283,15 +374,14 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
             window default value is 3 vars_to_keep default list is: ['LatImage', 'LonImage', 'IncidenceAngleImage',
             'LookDirection', 'SquintImage', 'CentralFreq', 'OrbitHeadingImage'].
             vars_to_send default list is: ['Intensity', 'Interferogram', 'Coherence']
-        write_nc (bool, optional):
-            Argument to write the data in a netcdf file. Defaults to False.
+        write_nc : ``bool``, default: `False`
+            Argument to write the data in a netcdf file.
 
-    Returns:
-    ----------
+    Returns
+    -------
         ds_L1B: ``xr.Dataset``
             Xarray dataset of the L1B OSCAR data.
     """
-
     # checking acq_date format:
     if seastar.oscar.tools.is_valid_acq_date(acq_date):
         logger.info("'acq_date' format is okay")
@@ -409,10 +499,10 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         Track name of data to process in the form of e.g., `Track_1`
     calib_dict : ``dict``
         Dict containing the following (name:content):
-            {'Sigma0_calib_file': full filename including path for Sigma0 calib file,
-             'Interferogram_calib_file': full filename including path for Interferogram calib file,
-             }
-    write_nc : ``bool``, optional
+
+            - Sigma0_calib_file': full filename including path for Sigma0 calib file
+            - 'Interferogram_calib_file': full filename including path for Interferogram calib file
+    write_nc : ``bool``, default: `False`
         Option to write L1C file to disk. The default is False.
 
     Raises
