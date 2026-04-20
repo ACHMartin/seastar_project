@@ -6,7 +6,7 @@ build:
     python: "3.11"
   jobs:
     post_install:
-      - python -m pip install sphinx-rtd-theme
+      - python -m pip install "sphinx-rtd-theme>=3.0.0"
 
 conda:
   environment: environment.yml
