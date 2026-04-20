@@ -170,6 +170,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
     Examples
     --------
     .. code-block:: python
+
         env = {'CurrentVelocity': 1, 'CurrentDirection':0, 'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
         env
         {'CurrentVelocity': 1,
@@ -178,6 +179,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
         'OceanSurfaceWindDirection': 180}
 
     .. code-block:: python
+
         wind_current_component_conversion(env,'Current')
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,

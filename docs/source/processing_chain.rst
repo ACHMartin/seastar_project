@@ -42,11 +42,6 @@ To process from L1 to L2 the function ``processing_OSCAR_L1_to_L2`` can be used 
                                                                 write_L2A_nc=False,
                                                                )
 
-The L2 WCR processor is parallelised, and set to utilise as many cores and threads as are available on a multi-core CPU. A progress bar is included that will inform the user
-of the percentage progress, estimated time remaining and iterations per second in the following format::
-
-    '57%|██████████████████████████████████████████████▏                                  | 57/100 [01:46<00:40,  1.07it/s]
-
 To process L1AP to L1B data the function `processing_OSCAR_L1AP_to_L1B` is used in the following way:
 
 .. code-block:: python
