@@ -617,7 +617,7 @@ class dotdict(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-def _da2py(v, include_dims=False):
+def da2py(v, include_dims=False):
 
     if isinstance(v, xr.DataArray):
         if include_dims:
