@@ -251,7 +251,9 @@ def EarthRelativeSpeedDir2all(ds):
     Parameters
     ----------
     mydict : ``xarray.Dataset``
-        A dictionary with ['EarthRelativeWindSpeed'], ['EarthRelativeWindDirection'], ['CurrentVelocity'], ['CurrentDirection'] elements
+        A dictionary with ['EarthRelativeWindSpeed'],
+        ['EarthRelativeWindDirection'], ['CurrentVelocity'],
+        ['CurrentDirection'] elements
     Returns
     -------
     mydict : ``xarray.Dataset``
@@ -285,7 +287,8 @@ def EarthRelativeUV2all(ds):
     Parameters
     ----------
     mydict : ``xarray.Dataset``
-        a dictionary with ['EarthRelativeWindU'], ['EarthRelativeWindV'], ['CurrentU'], ['CurrentV'] elements
+        a dictionary with ['EarthRelativeWindU'], ['EarthRelativeWindV'],
+        ['CurrentU'], ['CurrentV'] elements
     Returns
     -------
     mydict : ``xarray.Dataset``
