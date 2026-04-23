@@ -779,7 +779,7 @@ def lin2db(lin):
 
 def db2lin(db):
     """
-    Logarithmic to linear conversionconversion.
+    Logarithmic to linear conversion.
     
     Convert a base 10 logarithmic value to linear scale.
 
