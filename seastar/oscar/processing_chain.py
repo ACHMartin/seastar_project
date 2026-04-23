@@ -172,9 +172,9 @@ def _update_history(ds, message):
 
 def _update_attrs(ds, add_attrs):
     """
-    Update OSCAR dataset attributes.
+    Update dataset attributes.
     
-    Updates attributes in an OSCAR dataset, including `CodeVersion` as standard.
+    Updates attributes in a dataset, including `CodeVersion` as standard.
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ def _update_attrs(ds, add_attrs):
     Returns
     -------
     ds : ``xr.Dataset``
-        OSCAR dataset with attributes updated.
+        Dataset with attributes updated.
 
     """
     # Updating of the CodeVersion in the attrs:
