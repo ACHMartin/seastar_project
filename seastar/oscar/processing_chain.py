@@ -500,7 +500,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
     calib_dict : ``dict``
         Dict containing the following (name:content):
 
-            - Sigma0_calib_file': full filename including path for Sigma0 calib file
+            - 'Sigma0_calib_file': full filename including path for Sigma0 calib file
             - 'Interferogram_calib_file': full filename including path for Interferogram calib file
     write_nc : ``bool``, default: `False`
         Option to write L1C file to disk. The default is False.
