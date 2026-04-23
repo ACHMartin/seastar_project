@@ -2,12 +2,12 @@ OSCAR data processing chain
 ---------------------------
 
 OSCAR data processing follows a data-level heirarchy with the following levels:
-    - L1A (Level-1A): SAR-focussed Single-Look Complex (SLC) images from one of the three OSCAR look directions (Fore, Mid, Aft)
+    - L1A (Level-1A): SAR-focussed Single-Look Complex (SLC) images from one of the three OSCAR look directions (Fore, Mid, Aft). Provided by MetaSensing BV.
     - L1AP (Level-1AP): L1A data pre-processed using MATLAB to inject required data fields (e.g., Squint, Incidence Angle)
     - L1B (Level-1B): Combined dataset with all three independent looks (Fore, Aft, Mid) from a single acquisition. Processed for Multilooking, computation of Radial Surface Velocity, Sigma0, etc.
     - L1C (Level-1C): Calibrated L1B dataset. Calibration takes the form of over-land or over-ocean methods to correct for incidence angle dependent biases in Sigma0 and Interferometric phase.
     - L2A (Level-2A): Retrieved Total Surface Current Vector (TSCV) and Ocean Surface Vector Wind (OSVW) from the Wind-Current Retrieval (WCR) method, including full output from all ambiguities.
-    - L2B (Level-2B): Retrieved TSCV and OSVW using either the WCR or Sequenctial Current Retrieval (SCR) methods.
+    - L2B (Level-2B): Retrieved TSCV and OSVW using either the the Wind-Current Retrieval (WCR) or Sequential Current Retrieval (SCR) methods.
 
 Examples of use
 ===============
@@ -93,7 +93,7 @@ To perform the calibration step from L1B to L1C data the function `processing_OS
                                                                    calib_dict,
                                                                    write_nc=False)
     
-If `write_nc` is set to `True`, a formatted L1B netCDF file will be written to disk in a new or existing folder tree mirroring the L1AP file structure. It is recommended that the following
+If `write_nc` is set to `True`, a formatted L1B or L1C netCDF file will be written to disk in a new or existing folder tree mirroring the L1AP file structure. It is recommended that the following
 file tree structure is followed:
 ::
 
