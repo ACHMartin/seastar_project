@@ -6,8 +6,11 @@ tailored for the Ocean Surface Current Airborne Radar demonstrator (OSCAR).
 This manual is designed to provide the user with a straightforward guide to utilizing
 this software effectively in the processing of OSCAR data as delivered from MetaSensing BV.
 
-**SeaSTAR** was an Earth Explorer 11 mission concept dedicated to observing fast-evolving small-scale
-ocean surface dynamics in all coastal seas, shelf seas and marginal ice zones. Its science goals are:
+**SeaSTAR** is a satellite mission concept dedicated to observing fast-evolving 
+small-scale ocean surface dynamics in all coastal seas, shelf seas and marginal 
+ice zones. It was selected as one of four Earth Explorer 11 candidate to proceed 
+to phase 0. It was down selected in Fall 2023/Winter2024 (TBC) at the end of Phase 0. 
+Its science goals are:
 
 1. To understand the role of fast-evolving small-scale ocean dynamics in mediating exchanges between
    land, the cryosphere, the atmosphere, the marine biosphere and the deep ocean.
