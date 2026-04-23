@@ -230,7 +230,9 @@ def compute_multilooking_Master_Slave(ds, window=3,
     """
     Compute multilooking Master/Slave L1b image products.
 
-    Computes multilooking ATI variables from L1 variables present in a ``xarray.Dataset``. As a minimum must contain the following 2D ``xarray.DataArray`` :
+    Computes multilooking ATI variables from L1 variables present in a 
+    ``xarray.Dataset``. As a minimum must contain the following 2D 
+    ``xarray.DataArray`` :
 
         - `SigmaImageSingleLookRealPart`
         - `SigmaImageSingleLookImaginaryPart`
