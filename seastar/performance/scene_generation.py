@@ -4,7 +4,6 @@ import pathlib
 from typing import Optional
 import numpy as np
 import xarray as xr
-#from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict
 
