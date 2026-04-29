@@ -51,25 +51,28 @@ The different steps are as below:
 
 2. *Level-1B* (L1B) processing, including the computation of *Interferograms*,
     *Sigma0* and *Radial Surface Velocity* using a function in the
-     *oscar.processing_chain* module:
+     *oscar.processing_chain* module. For example use of this function 
+     see the *Processing Chain* section of the documentation.
 ```
     seastar.oscar.processing_chain.processing_OSCAR_L1AP_to_L1B()
 ```
-    For example use of this function see the *Processing Chain* section of the documentation.
+    
 
 3. *Residual calibration* (L1B to L1C) using a calibration file in the *calib*
-    folder of the OSCAR data repository.
+    folder of the OSCAR data repository. For example use of this function 
+    see the *Processing Chain* section of the documentation.
 ```
     seastar.oscar.processing_chain.processing_OSCAR_L1B_to_L1C()
 ```
-    For example use of this function see the *Processing Chain* section of the documentation.
+    
 4. *Retrieval of TSCV and OSVW* using *simultaenous inversion*, or computation of TSCV using
-   *sequential inversion* and ancilliary OSVW data:
+   *sequential inversion* and ancilliary OSVW data. For example use of this 
+   function see the *Processing Chain* section of the documentation.
 ```
     seastar.oscar.processing_chain.processing_OSCAR_L1_to_L2()
 
 ```
-    For example use of this function see the *Processing Chain* section of the documentation.
+    
 
 ## 1. Installation
 
