@@ -6,7 +6,6 @@ import seastar
 import re
 import warnings
 from datetime import datetime as dt
-
 from _version import __version__
 from _logger import logger
 
@@ -59,7 +58,7 @@ def merge_beams(ds_dict, antenna_list):
     Adds `longitude` and `latitude` coordinates to merged dataset.
 
     Requires a ``dict`` of OSCAR L1 ``xarray.Dataset``, containing the
-    ``xarray.DataArray``s `LonImage` and `LatImage`. These arrays must be 2D,
+    ``xarray.DataArray`` `LonImage` and `LatImage`. These arrays must be 2D,
     with only two dimensions.
 
     Parameters
@@ -229,14 +228,17 @@ def compute_multilooking_Master_Slave(ds, window=3,
                                                     'Interferogram',
                                                     'Coherence']):
     """
-    Compute  multilooking Master/Slave L1b image products.
+    Compute multilooking Master/Slave L1b image products.
 
-    Computes multilooking ATI variables from L1 variables present in an
-    ``xarray.Dataset``. As a minimum must contain the following 2D
-    ``xarray.DataArray``s:
+    Computes multilooking ATI variables from L1 variables present in a 
+    ``xarray.Dataset``. As a minimum must contain the following 2D 
+    ``xarray.DataArray`` :
+
         - `SigmaImageSingleLookRealPart`
         - `SigmaImageSingleLookImaginaryPart`
+
     Optionally, `ds` must include:
+
         - `SigmaImageSingleLookRealPartSlave`
         - `SigmaImageSingleLookImaginaryPartSlave`
 
@@ -244,8 +246,8 @@ def compute_multilooking_Master_Slave(ds, window=3,
     ----------
     ds : ``xarray.Dataset``
         OSCAR L1a dataset
-    window : ``int``
-        Integer averaging window size. The default is 3.
+    window : ``int``, default : 3
+        Integer averaging window size.
     vars_to_send:  list
         default: vars_to_send = ['Intensity, Interferogram', 'Coherence']
         can in addition take among: 'IntensityAvgComplexMasterSlave',
@@ -261,8 +263,8 @@ def compute_multilooking_Master_Slave(ds, window=3,
     Exception
         Raises exception if `vars_to_send` is not within:
             ['Intensity', 'Interferogram', 'Coherence',
-             'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster',
-             'IntensityAvgSlave']
+            'IntensityAvgComplexMasterSlave', 'IntensityAvgMaster',
+            'IntensityAvgSlave']
     Exception
         Raises exception if `SigmaImageSingleLookRealPart` is not a 2D variable
     """
@@ -367,8 +369,8 @@ def compute_antenna_azimuth_direction(ds, antenna, return_heading=False):
         OSCAR SAR dataset with "SquintImage" as a required field
     antenna : ``str``
         'Fore' Fore beam pair, 'Aft' Aft beam pair
-    return_heading: ``bool``
-        Option to return OrbitHeadingImage variable, default=False
+    return_heading: ``bool``, default : `False`
+        Option to return OrbitHeadingImage variable
 
     Returns
     -------
@@ -516,6 +518,7 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
 
     Compute radial surface current (RSC) from radial surface velocity (RSV)
     and the wind artifact surface velocity (WASV) from:
+
         RSC = RSV - WASV
 
     Parameters
@@ -524,9 +527,8 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
         L1 dataset
     aux : ``xarray.Dataset``
         Dataset containing geophysical wind data
-    gmf : ``str``, optional
+    gmf : ``str``, default : `'mouche12'`
         Choice of geophysical model function to compute the WASV.
-        The default is 'mouche12'.
 
     Returns
     -------
@@ -548,12 +550,12 @@ def compute_radial_surface_current(level1, aux, gmf='mouche12'):
 
 
 def init_auxiliary(level1, u10, wind_direction):
-    '''
+    """
     WARNING: the function is descoped.
+
     WARNING recommandation is to use:
     seastar/performance/scene_generation/generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset
-    '''
-
+    """
     aux = seastar.performance.scene_generation.generate_constant_env_field(
         level1.isel(Antenna=0).IncidenceAngleImage, 
         {'WindSpeed': u10, 'WindDirection': wind_direction})
@@ -572,10 +574,10 @@ def replace_dummy_values(ds, dummy_val=-9999, replace=np.nan):
     ----------
     ds : ``xarray.Dataset``
         Dataset containing variables with dummy values to replace.
-    dummy_val : ``int``, ``float``, optional
-        Dummy value to replace. The default is -9999.
-    replace : ``int``, ``float``, optional
-        Constant value to replace Dummy values with. The default is NaN
+    dummy_val : ``int``, ``float``, default : -9999
+        Dummy value to replace.
+    replace : ``int``, ``float``, default : NaN
+        Constant value to replace Dummy values with.
 
     Returns
     -------
@@ -710,12 +712,12 @@ def apply_phase_sign_convention(ds):
         OSCAR Interferograms with phase sign convention applied
 
     """
-    
     flight_date = ds.StartTime[0:8]
     version = ds.DataVersion
     try:
         config = seastar.utils.readers.read_config_OSCAR('phase_sign_convention',info_dict={'version':version})
         sign_convention = int(config[flight_date])
+        logger.info(f"Applying phase sign convention of {sign_convention}")
     except KeyError:
         logger.error(f"Flight '{flight_date}' not found in config file. Setting default phase sign convention to 1")
         sign_convention = 1    

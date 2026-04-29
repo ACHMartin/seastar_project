@@ -24,9 +24,8 @@ def add_version(ds, attr='seastar_version'):
     ----------
     ds : ``xarray.Dataset``
         Dataset processed with the seastar package.
-    attr : ``str``, optional
+    attr : ``str``, default : `'seastar_version'`
         Name of the attribute to write the `__version__` number to.
-        The default is 'seastar_version'.
 
     Returns
     -------
@@ -45,7 +44,7 @@ def currentVelDir2UV(vel, cdir):
     ----------
     vel : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Magnitude of current (m/s).
-    cdir : `float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
+    cdir : ``float``, ``numpy.array``, ``numpy.ndarray``, ``xarray.DataArray``
         Direction of current (degrees N) in oceanographic convention.
 
     Returns
@@ -148,28 +147,31 @@ def windUV2SpeedDir(u, v):
 
 
 def wind_current_component_conversion(env_dict: dict, basevarname: str or list) -> dict:
-    '''
+    """
+    Convert wind/current components.
+    
     Add U, V to Speed/Velocity, Direction or the other way around for "Current", 
     "Wind", "OceanSurfaceWind", "EarthRelativeWind".
     
     Parameters
-    ------------
+    ----------
     env : ``dict``
         Dictionnary with with CurrentYYY and Wind keys (either EarthRelativeWindXXX or OceanSurfaceWindXXX)
         with XXX being Speed, Direction, U or V. 'YYY' same as 'XXX' but 'Velocity' is used instead of 'Speed'.
-    basevarname: ``str``
+    basevarname: ``str`` or ``list`` of ``str``
         Values are within: 'Current', 'OceanSurfaceWind', 'EarthRelativeWind'
+
     Returns
-    ---------
+    -------
     env : ``dict``
         return a dictionary with completed field U, V, Speed/Velocity, Direction
         for Current, OceanSurfaceWind and EarthRelativeWind
 
-    Examples:
-    ----------
+    Examples
+    --------
     .. code-block:: python
-        env = {'CurrentVelocity': 1, 'CurrentDirection':0,
-                'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
+
+        env = {'CurrentVelocity': 1, 'CurrentDirection':0, 'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
         env
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,
@@ -177,6 +179,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
         'OceanSurfaceWindDirection': 180}
 
     .. code-block:: python
+
         wind_current_component_conversion(env,'Current')
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,
@@ -185,8 +188,7 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
         'CurrentU': 6.123233995736766e-17,
         'CurrentV': 1.0}
     
-    '''
-
+    """
     env = env_dict.copy() 
     # case if basevarname is a list
     if type(basevarname) is list:
@@ -244,18 +246,19 @@ def wind_current_component_conversion(env_dict: dict, basevarname: str or list) 
 
 def EarthRelativeSpeedDir2all(ds):
     """
-    Convert a dictionary with Earth Relative wind to Ocean Surface Wind
+    Convert a dictionary with Earth Relative wind to Ocean Surface Wind.
 
     Parameters
     ----------
     mydict : ``xarray.Dataset``
-        a dictionary with ['EarthRelativeWindSpeed'], ['EarthRelativeWindDirection'], ['CurrentVelocity'], ['CurrentDirection'] elements
+        A dictionary with ['EarthRelativeWindSpeed'],
+        ['EarthRelativeWindDirection'], ['CurrentVelocity'],
+        ['CurrentDirection'] elements
     Returns
     -------
     mydict : ``xarray.Dataset``
-        a dictionary with previous fields + OceanSurfaceWind elements
+        A dictionary with previous fields + OceanSurfaceWind elements
     """
-
     [ds['CurrentU'], ds['CurrentV']] = \
         currentVelDir2UV(
             ds['CurrentVelocity'],
@@ -279,18 +282,18 @@ def EarthRelativeSpeedDir2all(ds):
 
 def EarthRelativeUV2all(ds):
     """
-    Convert a dictionary with Earth Relative wind to Ocean Surface Wind
+    Convert a dictionary with Earth Relative wind to Ocean Surface Wind.
 
     Parameters
     ----------
     mydict : ``xarray.Dataset``
-        a dictionary with ['EarthRelativeWindU'], ['EarthRelativeWindV'], ['CurrentU'], ['CurrentV'] elements
+        a dictionary with ['EarthRelativeWindU'], ['EarthRelativeWindV'],
+        ['CurrentU'], ['CurrentV'] elements
     Returns
     -------
     mydict : ``xarray.Dataset``
         a dictionary with previous fields + OceanSurfaceWind elements
     """
-
     ds['OceanSurfaceWindU'] = ds['EarthRelativeWindU'] - ds['CurrentU']
     ds['OceanSurfaceWindV'] = ds['EarthRelativeWindV'] - ds['CurrentV']
 
@@ -319,19 +322,20 @@ def EarthRelativeUV2all(ds):
 
 def windCurrentUV2all(mydict):
     """
+    Wind/Current component conversion.
+    
     Convert a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements to
     a full dictionary with vis_u, vis_v, vis_wspd, vis_wdir, c_vel, c_dir
 
     Parameters
     ----------
-    mydict : dict or dotdict
+    mydict : ``dict`` or ``dotdict``
         a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements
     Returns
     -------
-    mydict : dict or dotdict
+    mydict : ``dict`` or ``dotdict``
         a dictionary with ['u'], ['v'], ['c_u'], ['c_v'] elements
     """
-
     mydict['vis_u'] = mydict['u'] - mydict['c_u']
     mydict['vis_v'] = mydict['v'] - mydict['c_v']
     mydict['vis_wspd'], mydict['vis_wdir'] = \
@@ -519,10 +523,10 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
         Dictionary of antenna L1 datasets.
     star_pattern_tracks : ``dict``
         Dictionary of track names and their associated file indices
-    rounding : ``int``, optional
-        Look direction rounding number in degrees. The default is 10.
-    d_precision : ``int``, optional
-        Precision of look direction comparison in degrees. The default is 5.
+    rounding : ``int``, default : 10
+        Look direction rounding number in degrees.
+    d_precision : ``int``, default : 5
+        Precision of look direction comparison in degrees.
 
     Returns
     -------
@@ -569,17 +573,17 @@ def find_coincident_looks(ds_l1_star, star_pattern_tracks, file_time_triplets,
 
 
 def polarizationStr2Val(da):
-    '''
-    Transform Polarization string ('VV' or 'HH') towards values (1, 2)
+    """
+    Transform Polarization string ('VV' or 'HH') towards values (1, 2).
 
     Parameters
     ----------
-    da: `DataArray`
+    da: ``xr.DataArray``
+    
     Returns
     -------
-    out: `DataArray`
-    '''
-
+    out: ``xr.DataArray``
+    """
     keys = {'VV': 1, 'HH': 2}
     data = np.vectorize(keys.get)(da.data)
     out = xr.DataArray(
@@ -590,17 +594,17 @@ def polarizationStr2Val(da):
     return out
 
 def polarizationVal2Str(da):
-    '''
-    Transform Polarization values (1, 2) to string ('VV' or 'HH')
+    """
+    Transform Polarization values (1, 2) to string ('VV' or 'HH').
 
     Parameters
     ----------
-    da: `DataArray`
+    da: ``xr.DataArray``
+    
     Returns
     -------
-    out: `DataArray`
-    '''
-
+    out: ``xr.DataArray``
+    """
     keys = {1: 'VV', 2: 'HH'}
     data = np.vectorize(keys.get)(da.data)
     out = xr.DataArray(
@@ -612,12 +616,14 @@ def polarizationVal2Str(da):
 
 
 class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
+    """dot.notation access to dictionary attributes."""
+
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
 def da2py(v, include_dims=False):
+
     if isinstance(v, xr.DataArray):
         if include_dims:
             return (v.dims, v.values)
@@ -642,32 +648,31 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
         xarray.DataArray to compute the land mask for. Must contain
         `longitude` and `latitude` coordinates as well as
         coords and dims to align the new `mask` to.
-    boundary : ``list``, optional
+    boundary : ``list``, default : `None`
         Optional boundary to check for the presence of coastlines in the GSHHS
         dataset. Supply `boundary` in the form:
         `[min(long), max(long), min(lat), max(lat)]`.
         The default boundary will be set to the minimum and maximum extent of
         the `longitude` and `latitude` data present in the coords of `da`.
-    skip : ``float``, optional
-        Speed-up factor in degrees longitude / latitude. The default is 1/1000.
+    skip : ``float``, default : 1/1000
+        Speed-up factor in degrees longitude / latitude.
         Lower than 1/250 resolution will result in a coarsening of the computed
         `mask`.
-    erosion : ``bool``, optional
+    erosion : ``bool``, default : `False`
         Boolean switch to trigger binary erosion of the resulting `mask`.
-        The default is False.
-    erode_scale : ``int``, ``float``, optional
+    erode_scale : ``int``, ``float``, default : 3
         Scale for the array-like structure used for optional binary erosion.
         When default is used but `erosion=True` then a
         `erode_scale` of 3 is assumed.
-    coastline_selection : ``int``, ``list``, optional
+    coastline_selection : ``int``, ``list``, default : 0
         Manual choice of which identified coastlines present within the 
         `boundary` are used in the generation of the `mask`. 
         Choice is a key or list of keys of type ``int``. The default is 0. 
         The default behaviour is the first identified coastline within 
         `boundary` is used to generate the `mask`, corresponding to the largest
         coastline within the `boundary` by internal area.
-    quiet : ``bool``, optional
-        Quiet mode, supressing console output. Default is False.
+    quiet : ``bool``, default : `False`
+        Quiet mode, supressing console output.
 
     Raises
     ------
@@ -754,9 +759,41 @@ def compute_land_mask_from_GSHHS(da, boundary=None, skip=1/1000, erosion=False,
     return mask
 
 def lin2db(lin):
+    """
+    Linear to logarithmic conversion.
+    
+    Convert a linear level to base 10 logarithmic for Decibels
+
+    Parameters
+    ----------
+    lin : ``float``
+        Value or values in linear scale
+
+    Returns
+    -------
+    ``float``
+        Value or values in dB
+
+    """
     return 10*np.log10(lin)
 
 def db2lin(db):
+    """
+    Logarithmic to linear conversion.
+    
+    Convert a base 10 logarithmic value to linear scale.
+
+    Parameters
+    ----------
+    db : ``float``
+        Value or values in logarithmic dB scale.
+
+    Returns
+    -------
+    ``float``
+        Value or values in linear scale.
+
+    """
     return 10**(db/10)
 
 def reduce_0_360_to_0_180(input_degree):

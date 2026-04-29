@@ -12,7 +12,6 @@ Two GMFs to compute the WASV are available in this package: mouche12 and yurovsk
 
 All these methods are described below:
 
-
 .. automodule:: seastar.gmfs.doppler
    :members:
    
@@ -23,5 +22,10 @@ The NRCS section concerns all the elements directly related to the Normalized Ra
 A Ku-band GMF to compute NRCS is available in this package: nscat4ds.
 
 The methods are described below:
+
 .. automodule:: seastar.gmfs.nrcs
    :members:
+
+.. |br| raw:: html
+
+   <br />

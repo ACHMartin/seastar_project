@@ -13,7 +13,7 @@
 import os
 import sys
 autodoc_mock_imports = ["numpy", "xarray", "scipy", "utm", "pytest", "cartopy",
-                        "shapely"]
+                        "shapely", "pandas"]
 
 sys.path.insert(0, os.path.abspath('../..'))
 print(os.path.abspath('../..'))
@@ -34,10 +34,11 @@ release = '1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.napoleon',
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
+    'sphinx_rtd_theme',
 ]
 
 # -- Options for LaTeX output ---------------------------------------------

@@ -92,11 +92,10 @@ def read_config_OSCAR(config_type, info_dict=None):
             "campaign" to extract the campaign names
             "track" to extract the track names
             "phase_sign_convention" to extract the phase direction convention
-    info_dict : ``dict``
+    info_dict : ``dict``, default : `None`
         Dict containing the campaign name and the date of the flight with the following format {campaign: "campaign_name",  flight: "YYYYMMDD"}
         or
         Dict containing the data version with format {'version': data_version}
-        Default is None.
 
     Returns
     -------
@@ -178,11 +177,10 @@ def find_seastar_project_root():
 
     Returns
     -------
-    ROOT_DIR : `str`
+    ROOT_DIR : ``str``
         Full path to the 'seastar_project' root directory.
 
     """
-    
     current_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     target = 'seastar_project'
     parts = current_directory.split(os.sep)

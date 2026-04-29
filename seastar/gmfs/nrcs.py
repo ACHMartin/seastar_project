@@ -9,7 +9,24 @@ from os.path import abspath, dirname, join
 
 
 def _load_gmf_table(fname, shape):
-    """Loads and reshapes a GMF table from a binary file."""
+    """
+    Load gmf table.
+    
+    Loads and reshapes a GMF table from a binary file.
+
+    Parameters
+    ----------
+    fname : ``str``
+        Filelame of gmf table.
+    shape : ``tuple``
+        Shape of gmf table.
+
+    Returns
+    -------
+    gmf_table : `array``
+        Table of gmf data.
+
+    """
     gmf_table = np.fromfile(fname, dtype=np.float32)
     # Remove head and tail
     # To access the table as a three-dimensional Fortran-ordered m x n x p matrix (shape),
@@ -23,17 +40,17 @@ def get_gmf_table_and_points(gmf_model):
 
     Parameters
     ----------
-    gmf_model : str
+    gmf_model : ``str``
         The GMF model to load. Supported options are 'nscat4ds' or 'cmod7'.
 
     Returns
     -------
     tuple
         A tuple containing:
-        
         - numpy.ndarray: The GMF table.
         - tuple of numpy.ndarray: The corresponding points, which include arrays for
         `wspd`, `rdir`, `inci`, and optionally `pol`.
+
     """
     dirpath = abspath(dirname(__file__))
 

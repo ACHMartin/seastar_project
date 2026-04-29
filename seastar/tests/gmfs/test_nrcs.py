@@ -10,23 +10,68 @@ from seastar.gmfs import nrcs
 
 @pytest.fixture # TODO 
 def point_wind_speed():
+    """
+    Wind speed definition.
+
+    Returns
+    -------
+    ``int``
+        Wind speed (7 m/s).
+
+    """
     return(7) # in m/s
 
 @pytest.fixture
 def point_relative_dir():
+    """
+    Relative direction definition.
+
+    Returns
+    -------
+    ``int``
+        Relative direction (3 degrees).
+
+    """
     return(3) # in degree
 
 @pytest.fixture
 def point_inci_angle():
+    """
+    Incidence angle definition.
+
+    Returns
+    -------
+    ``int``
+        Incidence angle in degrees from nadir (30 degrees).
+
+    """
     return(30) # in degree from nadir
 
 @pytest.fixture
 def point_polarization():
+    """
+    Polarization definition.
+
+    Returns
+    -------
+    ``int``
+        Polarization (1 for 'VV').
+
+    """
     return 1 # 1 for VV 
 
 
 def test_cmod7(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization):
+    """
+    Test CMOD7.
+    
+    Pytest for the CMOD7 NRCS GMF.
 
+    Returns
+    -------
+    Test for the CMOD7 GMF.
+
+    """
     assert nrcs.cmod7(point_wind_speed, point_relative_dir, point_inci_angle, point_polarization) \
            == pytest.approx(0.0795, abs=1e-4)
     # Test points

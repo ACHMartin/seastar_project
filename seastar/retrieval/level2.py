@@ -98,7 +98,7 @@ def sol2level2(sol):
     """
     Convert solution.x into EarthRelativeWindU, EarthRelativeWindV, EarthRelativeWindSpeed, EarthRelativeWindDirection,
     same for OceanSurfaceWindU, V, Speed, Direction and
-     CurrentU, V, Velocity, Direction
+    CurrentU, V, Velocity, Direction
 
     Parameters
     ----------
@@ -351,10 +351,8 @@ def init_level2(level1):
 def is_valid_gmf_dict(gmf_dict):
     """
     Check the gmf dict in OSCAR L2 processing chain. Shall be:
-    gmf={
-        'nrcs': {'name': 'nscat4ds'},
-        'doppler': {'name': 'mouche12' or 'yurovsky19'},
-    }
+
+        gmf={'nrcs': {'name': 'nscat4ds'},'doppler': {'name': 'mouche12' or 'yurovsky19'},}
 
     Parameters
     ----------
@@ -362,7 +360,7 @@ def is_valid_gmf_dict(gmf_dict):
             Dictionnary containing the information about the NRCS GMF and Doppler GMF
 
     Returns:
-        bool
+        ``bool``
             True if the format of the dictionnaire is correct.
     """
     # Clés et valeurs valides attendues

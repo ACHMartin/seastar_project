@@ -1,32 +1,28 @@
 # -*- coding: utf-8 -*-
-"""Functions to generate seastar scenes."""
-
 import os
 import pathlib
 from typing import Optional
 import numpy as np
 import xarray as xr
-from scipy.optimize import least_squares
 import seastar
 from seastar.utils.tools import dotdict
 
 
 def create_scene_dataset(geo, inst):
     """
-    Scene generation function of geophysical parameters (direct models) and acquisition geometry
+    Scene generation function of geophysical parameters (direct models) and acquisition geometry.
 
     Can be run with:
-    - a single point
-    - a swath of datapoints
-    - a 2D field without geographical coordinate
-    - a 2D field WITH geographical coordinate
 
-    To Be Discussed: we need to link the ground truth grid with the instrument grid
+        - a single point
+        - a swath of datapoints
+        - a 2D field without geographical coordinate
+        - a 2D field WITH geographical coordinate
 
     Parameters
     ----------
     geo : ``xarray.Dataset``
-        Truth in term of:
+        Truth in terms of:
         - geophysical parameters: WindSpeed, WindDirection, CurrentVel, CurrentDir, others (waves)
         - geographic coordinates: longitude, latitude (optional?)
     inst : ``xarray.Dataset``
@@ -48,6 +44,7 @@ def create_scene_dataset(geo, inst):
         same as geo but with direct model measurements and longitude, latitude
         - direct model measurements: NRCS, RSV (including attributes concerning the model used and its attributes)
     """
+    # To Be Discussed: we need to link the ground truth grid with the instrument grid.
     gmf = dotdict({'nrcs': dotdict({'name': 'nscat4ds'})})
     gmf['doppler'] = dotdict({'name': 'mouche12'})
 
@@ -56,16 +53,16 @@ def create_scene_dataset(geo, inst):
 
     truth_out = truth_fct(geo, inst)
 
-
-    return level1, truth_out, inst_out
+    # TODO level1 and inst_out need to be defined.
+    return truth_out
 
 
 def truth_fct(geo, inst, gmf):
     """
 
-    Should work for all dimension; same behavior than xarray with dimension between geo and inst
+    Should work for all dimension; same behavior than xarray with dimension between geo and inst.
 
-   Parameters
+    Parameters
     ----------
     geo : ``xarray.Dataset``
         Truth in term of:
@@ -80,13 +77,11 @@ def truth_fct(geo, inst, gmf):
 
     Returns
     -------
-    truth : ``xarray.DataArray`` list
+    truth : ``list`` of  ``xarray.DataArray``
         with WindSpeed, wdir, cvel, cdir, u, v, c_u, c_v, vis_u, vis_v,
-             sigma0, RSV
+        sigma0, RSV
     """
-
     truth = xr.broadcast(inst, geo)[0]
-
 
     truth['Sigma0'] = seastar.gmfs.nrcs.compute_nrcs(truth, geo, gmf['nrcs'])
 
@@ -127,7 +122,7 @@ def truth_fct(geo, inst, gmf):
 
 def uncertainty_fct( truth, uncertainty):
     """
-    Computed and Filled in all the uncertainty parameters
+    Computed and Filled in all the uncertainty parameters.
 
     Should work for:
     - a point
@@ -146,7 +141,6 @@ def uncertainty_fct( truth, uncertainty):
 
 
     """
-
     uncerty = uncertainty
     uncerty['Sigma0'] = truth.Sigma0 * uncerty.Kp
 
@@ -192,12 +186,23 @@ def uncertainty_fct( truth, uncertainty):
 
 def noise_generation(truth, noise):
     """
+    Noise generation.
+    
+    Generate normally-distributed noise and apply it to a level1 dataset.
 
-    :param truth:
-    :param noise:
-    :return:
+    Parameters
+    ----------
+    truth : ``xr.Dataset``
+        Dataset of level1 'truth' data.
+    noise : ``xr.Dataset``
+        Dataset of Sigma0 and RSV noise values.
+
+    Returns
+    -------
+    level1 : ``xr.Dataset``
+        Level1 dataset with noise applied.
+
     """
-
     level1 = noise.drop_vars(noise.data_vars)
 
     rng = np.random.default_rng()
@@ -213,26 +218,22 @@ def noise_generation(truth, noise):
 
 
 def satellite_looking_geometry(input):
-    """
-    Computed satellite looking geometry as function of given parameters
-
-    Should work for:
-    - a point
-    - a swath 1D
-    - 2D field?
+#Computed satellite looking geometry as function of given parameters
+#Should work for:
+    # - a point
+    # - a swath 1D
+    # - 2D field?
 
 
-    Parameters
-    ----------
+    # Parameters
+    # ----------
 
 
-    Returns
-    -------
-    geometry : ``xarray.Dataset``
-        with all values filled
+    # Returns
+    # -------
+    # geometry : ``xarray.Dataset``
+    #     with all values filled
 
-
-    """
 
     print("To Be Done")
 
@@ -368,24 +369,29 @@ def satellite_looking_geometry(input):
 
 
 def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
-    '''
+    """
+    Generate constant environment fields.
+    
     Field generation of constant fields of the same dimension as the DataArray "da" with the "env" conditions
 
     Parameters
-    ------------
+    ----------
     da : ``xarray.DataArray``
     env : ``dict``
         Dictionnary for example with CurrentYYY and Wind keys (either EarthRelativeWindXXX or OceanSurfaceWindXXX)
         with XXX being Speed, Direction, U or V. 'YYY' same as 'XXX' but 'Velocity' is used instead of 'Speed'.
+
     Returns
-    ---------
+    -------
     ds_env : ``xarray.Dataset``
         return a dataset or array of the same size and dims as "da" input, 
         with keys and values in "env" dictionnary
         for example with U, V, Speed/Velocity, Direction for Current, OceanSurfaceWind and EarthRelativeWind
-    Examples:
-    ----------
+
+    Examples
+    --------
     .. code-block:: python
+
         a = xr.DataArray(np.arange(25).reshape(5, 5), dims=("x", "y"))
         a
         <xarray.DataArray (x: 5, y: 5)> Size: 200B
@@ -396,6 +402,7 @@ def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
             [20, 21, 22, 23, 24]])
         Dimensions without coordinates: x, y
     .. code-block:: python
+
         env = {'CurrentVelocity': 1, 'CurrentDirection':0,
                 'OceanSurfaceWindSpeed':10, 'OceanSurfaceWindDirection':180}
         env
@@ -405,6 +412,7 @@ def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
         'OceanSurfaceWindDirection': 180}
 
     .. code-block:: python
+
         seastar.utils.tools.wind_current_component_conversion(env,'Current')
         {'CurrentVelocity': 1,
         'CurrentDirection': 0,
@@ -414,10 +422,10 @@ def generate_constant_env_field(da: xr.DataArray, env: dict) -> xr.Dataset:
         'CurrentV': 1.0}
 
     .. code-block:: python
+
         generate_constant_env_field(a, env)
         <xarray.DataSet (x: 5, y: 5)>
-    '''
-    
+    """
     ds_env = xr.Dataset()
     # get the coordinates along the differents dims
     for var_dim in da.sizes:
