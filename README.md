@@ -49,27 +49,27 @@ The different steps are as below:
       matlab/metasensing/add_inc_and_squint_to_netcdf_batch.m
 ```
 
-2. *Multilooking*, computation of the *Radial Surface Velocity* (L1ap to L1b) using functions
-   in the *oscar.level1* module:
+2. *Level-1B* (L1B) processing, including the computation of *Interferograms*,
+    *Sigma0* and *Radial Surface Velocity* using a function in the
+     *oscar.processing_chain* module:
 ```
-      seastar.oscar.level1.compute_SLC_Master_Slave()
-   
-      seastar.oscar.level1.compute_multilooking_Master_Slave()
-   
-      seastar.oscar.level1.compute_time_lag_Master_Slave()
-   
-      seastar.oscar.level1.compute_radial_surface_velocity()
+    seastar.oscar.processing_chain.processing_OSCAR_L1AP_to_L1B()
 ```
-3. *Residual calibration* and coarsening (averaging) to required ground resolution (L1b to L1c).
+    For example use of this function see the *Processing Chain* section of the documentation.
 
-4. *Retrieval of TSCV and OSVW* using *simultaenous inversion*, or computation of TSCV using
-   *sequential inversion* and ancilliary OSVW data, using functions in the *retrieval.level2*
-   module (simultaneous) or the *oscar.level1* module (sequential):
-```  
-       seastar.retrieval.level2.wind_current_retrieval()
-       
-       seastar.oscar.level1.compute_radial_surface_current()
+3. *Residual calibration* (L1B to L1C) using a calibration file in the *calib*
+    folder of the OSCAR data repository.
 ```
+    seastar.oscar.processing_chain.processing_OSCAR_L1B_to_L1C()
+```
+    For example use of this function see the *Processing Chain* section of the documentation.
+4. *Retrieval of TSCV and OSVW* using *simultaenous inversion*, or computation of TSCV using
+   *sequential inversion* and ancilliary OSVW data:
+```
+    seastar.oscar.processing_chain.processing_OSCAR_L1_to_L2()
+
+```
+    For example use of this function see the *Processing Chain* section of the documentation.
 
 ## 1. Installation
 
