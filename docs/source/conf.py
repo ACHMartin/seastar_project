@@ -17,7 +17,7 @@ autodoc_mock_imports = ["numpy", "xarray", "scipy", "utm", "pytest", "cartopy",
 
 sys.path.insert(0, os.path.abspath('../..'))
 print(os.path.abspath('../..'))
-
+from _version import __version__ 
 # -- Project information -----------------------------------------------------
 
 project = 'SeaSTAR'
@@ -25,7 +25,7 @@ copyright = '2023, Adrien Martin, David McCann, Eva Le Merle'
 author = 'Adrien Martin, David McCann, Eva Le Merle'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
