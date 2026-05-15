@@ -390,7 +390,7 @@ def processing_OSCAR_L1AP_to_L1B(L1AP_folder, campaign, acq_date, track, dict_L1
         raise ValueError("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
 
     # Checking campaign name:
-    valid_campaign = ["202205_IroiseSea", "202305_MedSea"]
+    valid_campaign = ["202204_Ned", "202205_IroiseSea", "202305_MedSea"]
     if campaign in valid_campaign:
         logger.info("Camapaign name has valid value.")
     else:
@@ -532,7 +532,7 @@ def processing_OSCAR_L1B_to_L1C(L1B_folder, campaign, acq_date, track, calib_dic
         raise ValueError("'acq_date' should be a valid date string in 'YYYYMMDD' format ")
 
     # Checking campaign name:
-    valid_campaign = ["202205_IroiseSea", "202305_MedSea"]
+    valid_campaign = ["202204_Ned", "202205_IroiseSea", "202305_MedSea"]
     if campaign in valid_campaign:
         logger.info("Campaign name has valid value.")
     else:
