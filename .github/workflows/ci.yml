@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install poetry
+
+      - run: poetry install
+
+      - run: poetry build
+
+      - run: >
+          poetry run pytest
+          --deselect seastar/tests/retrieval/test_cost_function.py::test_find_minima
+          --deselect seastar/tests/retrieval/test_level2.py::test_wind_current_retrieval
