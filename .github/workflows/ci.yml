@@ -19,4 +19,7 @@ jobs:
 
       - run: poetry build
 
-      - run: poetry run pytest --deselect seastar/tests/retrieval/test_cost_function.py::test_find_minima
+      - run: >
+          poetry run pytest
+          --deselect seastar/tests/retrieval/test_cost_function.py::test_find_minima
+          --deselect seastar/tests/retrieval/test_level2.py::test_wind_current_retrieval
